@@ -24,11 +24,16 @@ ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
 
-/* You need to define the following RE's 
-Float_constant ({digit}+)(e(+|-)?{digit}+) | ({digit}+ (\. {digit}+) (e (+|-)?{digit}+)?) | ({digit}+)? (\. {digit}+) (e (+|-)?{digit}+)?
-String_constant
-comment
-*/
+sign [+-]
+digitSeq {digit}+
+exponent [eE]{sign}?{digitSeq}
+floaingSuffix [fFlL]
+dottedDigits ({digitSeq}"."({digitSeq}?)) | "."{digitSeq}
+
+/* You need to define the following RE's
+Float_constant {digitSeq}{exponent}{floaingSuffix}? | {dottedDigits}{exponent}?{floaingSuffix}?
+String_constant \"([^\\n\r]*)\"
+comment \/\*([^*]*((\[^*])?[.]*)*)\*\/
 
 OP_assign        "="
 OP_or   "||"
