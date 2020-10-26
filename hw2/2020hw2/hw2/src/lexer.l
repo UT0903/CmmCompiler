@@ -30,10 +30,10 @@ exponent [eE]{sign}?{digitSeq}
 floaingSuffix [fFlL]
 dottedDigits ({digitSeq}"."({digitSeq}?)) | "."{digitSeq}
 
-/* You need to define the following RE's
+/* You need to define the following RE's */
 Float_constant {digitSeq}{exponent}{floaingSuffix}? | {dottedDigits}{exponent}?{floaingSuffix}?
-String_constant \"([^\\n\r]*)\"
-comment \/\*([^*]*((\[^*])?[.]*)*)\*\/
+String_constant \"([^\\\n\r"]*)\"
+comment \/\*([^*]|\*+[^*/])*\*+\/
 
 OP_assign        "="
 OP_or   "||"
