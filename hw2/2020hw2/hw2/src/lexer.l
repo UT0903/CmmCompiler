@@ -28,7 +28,7 @@ comment_lower \*/
 sign [+-]
 digitSeq {digit}+
 exponent [eE]{sign}?{digitSeq}
-dottedDigits ({digitSeq}\.({digitSeq}?)) | (\.{digitSeq})
+dottedDigits ({digitSeq}"."({digitSeq}?)) | ("."{digitSeq})
 
 /* You need to define the following RE's */
 Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
