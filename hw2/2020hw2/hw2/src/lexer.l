@@ -23,17 +23,17 @@ digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
-
+comment_upper /\*
+comment_lower \*/
 sign [+-]
 digitSeq {digit}+
 exponent [eE]{sign}?{digitSeq}
-floaingSuffix [fFlL]
-dottedDigits ({digitSeq}"."({digitSeq}?)) | "."{digitSeq}
+dottedDigits ({digitSeq}\.({digitSeq}?)) | (\.{digitSeq})
 
 /* You need to define the following RE's */
-Float_constant {digitSeq}{exponent}{floaingSuffix}? | {dottedDigits}{exponent}?{floaingSuffix}?
+Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
 String_constant \"([^\\\n\r"]*)\"
-comment \/\*([^*]|\*+[^*/])*\*+\/
+comment {comment_upper}[^{comment_lower}]*{comment_lower}
 
 OP_assign        "="
 OP_or   "||"
