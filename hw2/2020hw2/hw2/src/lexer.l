@@ -90,8 +90,8 @@ error    .
 
 ">="			/* return OP_GE; */
 "<="			/* return OP_LE; */
-"!="			/* return OP_; */
-"=="			/* return OP_OR; */
+"!="			/* return OP_NEQ; */
+"=="			/* return OP_EQ; */
 "||"			/* return OP_OR; */
 "&&"			/* return OP_AND; */
 
