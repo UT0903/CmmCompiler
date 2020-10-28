@@ -8,8 +8,6 @@ symtab * ptr;
 void     insertID();
 void 	 printSymTab();
 /* You need to define for all tokens in C--, here are some examples */
-#define INT		10
-#define FLOAT 		11 
 
 #define OP_GE		30
 #define OP_LE		31
@@ -26,13 +24,22 @@ void 	 printSymTab();
 #define OP_GT		41
 #define OP_LT 		42
 #define OP_ASSIGN 	43
+ 
+#define RETURN 		10
+#define TYPEDEF 	11
+#define IF 			12
+#define ELSE 		13
+#define INT 		14
+#define FLOAT 		15
+#define FOR 		16
+#define VOID 		17
+#define WHILE 		18
 
-#define MK_LPAREN 	14 
-#define MK_RPAREN 	15
 
-#define IF 			16
-#define ELSE 		17
-#define TYPEDEF 	18
+#define MK_LPAREN 	50 
+#define MK_RPAREN 	51
+#define MK_LBRACE	52
+#define MK_RBRACE	53
 
 #define ERROR 		100 
 
@@ -52,7 +59,7 @@ dottedDigits ({digitSeq}"."({digitSeq}?)) | ("."{digitSeq})
 
 /* You need to define the following RE's */
 Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
-String_constant \"([^\\n\r"]*)\"
+String_constant \"([^\{newline}"]*)\"
 comment {comment_upper}[^{comment_lower}]*{comment_lower}
 
 
@@ -69,17 +76,21 @@ DL_comma  ","
 DL_semicol ";"
 DL_dot  "."
 
-/* Other separators appear here */
-RWInt "int"
-RWFloat "float"
-
 error    .
 
 %%
 
 {WS}            {}
-"int"         {/* return INT; */ }
-"float"       {/* return FLOAT; */}
+"return"		/* return RETURN; */
+"typedef"		/* return TYPEDEF; */
+"if"		/* return IF; */
+"else"		/* return ELSE; */
+"int"		/* return INT; */
+"float"		/* return FLOAT; */
+"for"		/* return FOR; */
+"void"		/* return VOID; */
+"while"		/* return WHILE; */
+
 {ID}            { 
 			ptr = lookup(yytext);
 			if (ptr == NULL)
@@ -110,6 +121,7 @@ error    .
 {DL_rbrace}     /* return MK_RBRACE; */
 {DL_comma}      {}
 {DL_semicol}    {}
+{DL_dot} 		{}
 {newline}       linenumber += 1;
 {error}         printf("ERR \n");/* return ERROR; */
 
