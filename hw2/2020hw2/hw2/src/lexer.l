@@ -50,8 +50,8 @@ digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
-comment_upper /\*
-comment_lower \*/
+comment_upper "/*"
+comment_lower "*/"
 sign [+-]
 digitSeq {digit}+
 exponent [eE]{sign}?{digitSeq}
@@ -59,7 +59,7 @@ dottedDigits ({digitSeq}"."({digitSeq}?)) | ("."{digitSeq})
 
 /* You need to define the following RE's */
 Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
-String_constant \"([^\{newline}"]*)\"
+String_constant \"[^\{newline}"]\"
 comment {comment_upper}[^{comment_lower}]*{comment_lower}
 
 
@@ -80,6 +80,9 @@ error    .
 
 %%
 
+{comment} 		{}
+{Float_constant} {}
+{String_constant} {}
 {WS}            {}
 "return"		/* return RETURN; */
 "typedef"		/* return TYPEDEF; */
@@ -123,7 +126,7 @@ error    .
 {DL_semicol}    {}
 {DL_dot} 		{}
 {newline}       linenumber += 1;
-{error}         printf("ERR \n");/* return ERROR; */
+{error}         {ECHO; printf("\n");}  /*{ printf("ERROR\n");  return ERROR; */
 
 
 %%
