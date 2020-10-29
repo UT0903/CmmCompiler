@@ -59,7 +59,7 @@ dottedDigits (({Int_constant}[.]({Int_constant}?))|([.]{Int_constant}))
 /* You need to define the following RE's */
 Float_constant {Int_constant}{exponent})|({dottedDigits}({exponent}?)|{Int_constant}
 String_constant \"([^\\n\r"]*)\"
-comment {comment_upper}([^*]*([*][^/])?)*{comment_lower}
+comment {comment_upper}([^*]|[*]+[^/*])*[*]+[/]
 
 
 /* Other operators appear here */ 

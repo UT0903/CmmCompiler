@@ -77,12 +77,12 @@ void printSymTab()
     for (i=0; i<TABLE_SIZE; i++)
     {
         symtab* symptr;
-	symptr = hash_table[i];
-	while (symptr != NULL)
-	{
-        //printf("====>  index = %d \n", i);
-	    printSym(symptr);
-	    symptr=symptr->front;
-	}
+		symptr = hash_table[i];
+		while (symptr != NULL)
+		{
+			//printf("====>  index = %d \n", i);
+			printSym(symptr);
+			symptr=symptr->front;
+		}
     }
 }
