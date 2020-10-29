@@ -50,28 +50,16 @@ digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
-<<<<<<< HEAD
 comment_upper \/\*
 comment_lower \*\/
-=======
-comment_upper "/*"
-comment_lower "*/"
->>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 sign [+-]
-digitSeq {digit}+
-exponent [eE]{sign}?{digitSeq}
-dottedDigits (({digitSeq}[.]({digitSeq}?))|([.]{digitSeq}))
+exponent [eE]{sign}?{Int_constant}
+dottedDigits (({Int_constant}[.]({Int_constant}?))|([.]{Int_constant}))
 
 /* You need to define the following RE's */
-<<<<<<< HEAD
-Float_constant {digitSeq}{exponent})|({dottedDigits}({exponent}?)|{digitSeq}
+Float_constant {Int_constant}{exponent})|({dottedDigits}({exponent}?)|{Int_constant}
 String_constant \"([^\\n\r"]*)\"
 comment {comment_upper}([^*]*([*][^/])?)*{comment_lower}
-=======
-Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
-String_constant \"[^\{newline}"]\"
-comment {comment_upper}[^{comment_lower}]*{comment_lower}
->>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 
 
 /* Other operators appear here */ 
@@ -90,9 +78,6 @@ error    .
 
 %%
 
-{comment} 		{}
-{Float_constant} {}
-{String_constant} {}
 {WS}            {}
 "return"		/* return RETURN; */
 "typedef"		/* return TYPEDEF; */
@@ -136,14 +121,11 @@ error    .
 {DL_semicol}    {}
 {DL_dot} 		{}
 {newline}       linenumber += 1;
-<<<<<<< HEAD
 {comment}       printf("%s\n", yytext);
+{Int_constant} {}
 {String_constant} {}
 {Float_constant} {}
 {error}         printf("ERR: %s \n", yytext);/* return ERROR; */
-=======
-{error}         {ECHO; printf("\n");}  /*{ printf("ERROR\n");  return ERROR; */
->>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 
 
 %%
