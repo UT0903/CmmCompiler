@@ -35,7 +35,6 @@ void 	 printSymTab();
 #define VOID 		17
 #define WHILE 		18
 
-
 #define MK_LPAREN 	50 
 #define MK_RPAREN 	51
 #define MK_LBRACE	52
@@ -79,8 +78,8 @@ error    .
 %%
 
 {WS}            {}
-"return"		/* return RETURN; */
-"typedef"		/* return TYPEDEF; */
+"return"	/* return RETURN; */
+"typedef"	/* return TYPEDEF; */
 "if"		/* return IF; */
 "else"		/* return ELSE; */
 "int"		/* return INT; */

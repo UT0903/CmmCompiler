@@ -65,14 +65,24 @@ void insertID(char *name){
 	symptr->counter=1;
 }
 
-void printSym(symtab* ptr) 
-{
-		printf("%s %d\n", ptr->lexeme, ptr->counter);
+typedef struct{
+	char lex[35];
+	int cnt;
+}WORD;
+void printSym(WORD word) {
+		printf("%s %d\n", word.lex, word.cnt);
+}
+
+int cmp(const void *pa, const void *pb){
+	WORD *a = (WORD *)pa;
+	WORD *b = (WORD *)pb;
+	return strcmp(a->lex, b->lex);
 }
 
 void printSymTab()
 {
-    int i;
+    int i, now = 0;
+    WORD word[100000];
     // printf("----- Symbol Table ---------\n");
     for (i=0; i<TABLE_SIZE; i++)
     {
@@ -81,8 +91,16 @@ void printSymTab()
 		while (symptr != NULL)
 		{
 			//printf("====>  index = %d \n", i);
-			printSym(symptr);
+			strcpy(word[now].lex, symptr->lexeme);
+			word[now].cnt = symptr->counter;
+			now++;
+			//printSym(symptr);
 			symptr=symptr->front;
 		}
+    }
+    //printf("OK\n");
+    qsort(word, now, sizeof(WORD), cmp);
+    for(int i = 0; i < now; i++){
+    	printSym(word[i]);
     }
 }
