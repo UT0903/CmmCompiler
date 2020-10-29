@@ -43,21 +43,20 @@ digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
-comment_upper /\*
-comment_lower \*/
+comment_upper \/\*
+comment_lower \*\/
 sign [+-]
 digitSeq {digit}+
 exponent [eE]{sign}?{digitSeq}
-dottedDigits ({digitSeq}"."({digitSeq}?)) | ("."{digitSeq})
+dottedDigits (({digitSeq}[.]({digitSeq}?))|([.]{digitSeq}))
 
 /* You need to define the following RE's */
-Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
+Float_constant {digitSeq}{exponent})|({dottedDigits}({exponent}?)|{digitSeq}
 String_constant \"([^\\n\r"]*)\"
-comment {comment_upper}[^{comment_lower}]*{comment_lower}
+comment {comment_upper}([^*]*([*][^/])?)*{comment_lower}
 
 
 /* Other operators appear here */ 
-
 
 newline  "\n"
 
@@ -111,7 +110,10 @@ error    .
 {DL_comma}      {}
 {DL_semicol}    {}
 {newline}       linenumber += 1;
-{error}         printf("ERR \n");/* return ERROR; */
+{comment}       printf("%s\n", yytext);
+{String_constant} {}
+{Float_constant} {}
+{error}         printf("ERR: %s \n", yytext);/* return ERROR; */
 
 
 %%
