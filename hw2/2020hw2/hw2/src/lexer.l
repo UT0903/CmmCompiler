@@ -8,8 +8,6 @@ symtab * ptr;
 void     insertID();
 void 	 printSymTab();
 /* You need to define for all tokens in C--, here are some examples */
-#define INT		10
-#define FLOAT 		11 
 
 #define OP_GE		30
 #define OP_LE		31
@@ -26,13 +24,22 @@ void 	 printSymTab();
 #define OP_GT		41
 #define OP_LT 		42
 #define OP_ASSIGN 	43
+ 
+#define RETURN 		10
+#define TYPEDEF 	11
+#define IF 			12
+#define ELSE 		13
+#define INT 		14
+#define FLOAT 		15
+#define FOR 		16
+#define VOID 		17
+#define WHILE 		18
 
-#define MK_LPAREN 	14 
-#define MK_RPAREN 	15
 
-#define IF 			16
-#define ELSE 		17
-#define TYPEDEF 	18
+#define MK_LPAREN 	50 
+#define MK_RPAREN 	51
+#define MK_LBRACE	52
+#define MK_RBRACE	53
 
 #define ERROR 		100 
 
@@ -43,17 +50,28 @@ digit    [0-9]
 ID	 {letter}({letter}|{digit}|"_")*
 WS	 [ \t]+
 Int_constant {digit}+
+<<<<<<< HEAD
 comment_upper \/\*
 comment_lower \*\/
+=======
+comment_upper "/*"
+comment_lower "*/"
+>>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 sign [+-]
 digitSeq {digit}+
 exponent [eE]{sign}?{digitSeq}
 dottedDigits (({digitSeq}[.]({digitSeq}?))|([.]{digitSeq}))
 
 /* You need to define the following RE's */
+<<<<<<< HEAD
 Float_constant {digitSeq}{exponent})|({dottedDigits}({exponent}?)|{digitSeq}
 String_constant \"([^\\n\r"]*)\"
 comment {comment_upper}([^*]*([*][^/])?)*{comment_lower}
+=======
+Float_constant {digitSeq}{exponent} | {dottedDigits}{exponent}?
+String_constant \"[^\{newline}"]\"
+comment {comment_upper}[^{comment_lower}]*{comment_lower}
+>>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 
 
 /* Other operators appear here */ 
@@ -68,17 +86,24 @@ DL_comma  ","
 DL_semicol ";"
 DL_dot  "."
 
-/* Other separators appear here */
-RWInt "int"
-RWFloat "float"
-
 error    .
 
 %%
 
+{comment} 		{}
+{Float_constant} {}
+{String_constant} {}
 {WS}            {}
-"int"         {/* return INT; */ }
-"float"       {/* return FLOAT; */}
+"return"		/* return RETURN; */
+"typedef"		/* return TYPEDEF; */
+"if"		/* return IF; */
+"else"		/* return ELSE; */
+"int"		/* return INT; */
+"float"		/* return FLOAT; */
+"for"		/* return FOR; */
+"void"		/* return VOID; */
+"while"		/* return WHILE; */
+
 {ID}            { 
 			ptr = lookup(yytext);
 			if (ptr == NULL)
@@ -109,11 +134,16 @@ error    .
 {DL_rbrace}     /* return MK_RBRACE; */
 {DL_comma}      {}
 {DL_semicol}    {}
+{DL_dot} 		{}
 {newline}       linenumber += 1;
+<<<<<<< HEAD
 {comment}       printf("%s\n", yytext);
 {String_constant} {}
 {Float_constant} {}
 {error}         printf("ERR: %s \n", yytext);/* return ERROR; */
+=======
+{error}         {ECHO; printf("\n");}  /*{ printf("ERROR\n");  return ERROR; */
+>>>>>>> 48d3b71cf4e802b6d6fe9d37fb8dce80edb4746a
 
 
 %%
