@@ -5,7 +5,6 @@ struct symtab{
 	int line;
 	int counter;
 };
-
 typedef struct symtab symtab;
 symtab * lookup(char *name);
 void insert(char *name);
