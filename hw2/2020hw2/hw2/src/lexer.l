@@ -78,20 +78,11 @@ error    .
 %%
 
 {WS}            {}
-"return"	/* return RETURN; */
-"typedef"	/* return TYPEDEF; */
-"if"		/* return IF; */
-"else"		/* return ELSE; */
-"int"		/* return INT; */
-"float"		/* return FLOAT; */
-"for"		/* return FOR; */
-"void"		/* return VOID; */
-"while"		/* return WHILE; */
 
 {ID}            { 
 			ptr = lookup(yytext);
 			if (ptr == NULL)
-			     insertID(yytext);	
+			     insertID(yytext, 0);	
 			else 
 			     ptr->counter++;
 		}
@@ -131,6 +122,15 @@ error    .
 
 int main(int argc, char **argv)
 {
+   insertID("if", 1);
+   insertID("return", 1);
+   insertID("typedef", 1);
+   insertID("void", 1);
+   insertID("while", 1);
+   insertID("for", 1);
+   insertID("else", 1);
+   insertID("int", 1);
+   insertID("float", 1);
  argc--; ++argv;
    if (argc > 0)
       yyin = fopen(argv[0], "r");
