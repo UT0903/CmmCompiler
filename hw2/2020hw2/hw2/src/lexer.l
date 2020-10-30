@@ -54,10 +54,10 @@ comment_lower \*\/
 sign [+-]
 exponent [eE]{sign}?{Int_constant}
 dottedDigits ({Int_constant}[.]({Int_constant}?))|([.]{Int_constant})
-
+enter "\r\n"
 /* You need to define the following RE's */
 Float_constant {Int_constant}{exponent}|{dottedDigits}({exponent}?)|{Int_constant}
-String_constant \"([^\\\n\r"]*)\"
+String_constant \"[^\n"]*\"
 comment {comment_upper}([^*]|[*]+[^/*])*[*]+[/]
 
 
