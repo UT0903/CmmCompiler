@@ -78,11 +78,11 @@ int cmp(const void *pa, const void *pb){
 	WORD *b = (WORD *)pb;
 	return strcmp(a->lex, b->lex);
 }
-
+WORD word[1000000];
 void printSymTab()
 {
     int i, now = 0;
-    WORD word[100000];
+    
     // printf("----- Symbol Table ---------\n");
     for (i=0; i<TABLE_SIZE; i++)
     {

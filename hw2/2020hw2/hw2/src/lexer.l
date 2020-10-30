@@ -53,11 +53,11 @@ comment_upper \/\*
 comment_lower \*\/
 sign [+-]
 exponent [eE]{sign}?{Int_constant}
-dottedDigits (({Int_constant}[.]({Int_constant}?))|([.]{Int_constant}))
+dottedDigits ({Int_constant}[.]({Int_constant}?))|([.]{Int_constant})
 
 /* You need to define the following RE's */
-Float_constant {Int_constant}{exponent})|({dottedDigits}({exponent}?)|{Int_constant}
-String_constant \"([^\\n\r"]*)\"
+Float_constant {Int_constant}{exponent}|{dottedDigits}({exponent}?)|{Int_constant}
+String_constant \"([^\\\n\r"]*)\"
 comment {comment_upper}([^*]|[*]+[^/*])*[*]+[/]
 
 
