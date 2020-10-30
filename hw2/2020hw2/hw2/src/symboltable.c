@@ -39,7 +39,7 @@ symtab * lookup(char *name){
 }
 
 
-void insertID(char *name){
+void insertID(char *name, int isReserve){
 	int hash_key;
 	symtab* ptr;
 	symtab* symptr=(symtab*)malloc(sizeof(symtab));	
@@ -63,6 +63,10 @@ void insertID(char *name){
 	strcpy(symptr->lexeme,name);
 	symptr->line=linenumber;
 	symptr->counter=1;
+	if(isReserve)
+		symptr->type = Reserve;
+	else
+		symptr->type = NReserve;
 }
 
 typedef struct{
@@ -91,10 +95,10 @@ void printSymTab()
 		while (symptr != NULL)
 		{
 			//printf("====>  index = %d \n", i);
-			strcpy(word[now].lex, symptr->lexeme);
-			word[now].cnt = symptr->counter;
-			now++;
-			//printSym(symptr);
+			if(symptr->type == NReserve){
+				strcpy(word[now].lex, symptr->lexeme);
+				word[now ++].cnt = symptr->counter;
+			}
 			symptr=symptr->front;
 		}
     }
