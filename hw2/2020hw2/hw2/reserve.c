@@ -1,0 +1,14 @@
+els
+else
+float
+for
+fuck
+i
+if
+int
+return
+typedef
+void
+vii
+while
+whilee
