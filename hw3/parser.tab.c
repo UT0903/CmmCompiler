@@ -619,16 +619,16 @@ static const yytype_int8 yyrhs[] =
 static const yytype_uint16 yyrline[] =
 {
        0,   166,   166,   167,   170,   174,   180,   184,   190,   197,
-     201,   207,   213,   217,   223,   228,   233,   237,   243,   248,
-     253,   257,   262,   267,   272,   276,   282,   286,   292,   296,
-     302,   306,   312,   316,   322,   326,   330,   334,   339,   347,
-     352,   356,   361,   365,   369,   375,   379,   385,   389,   395,
-     399,   403,   409,   413,   421,   426,   430,   437,   441,   445,
-     451,   456,   461,   465,   477,   481,   487,   491,   498,   502,
-     508,   512,   518,   522,   526,   530,   534,   538,   545,   550,
-     555,   559,   565,   569,   575,   579,   585,   589,   595,   599,
-     605,   610,   614,   620,   624,   629,   633,   638,   644,   648,
-     655,   659
+     205,   211,   220,   224,   232,   237,   244,   248,   254,   259,
+     264,   268,   273,   278,   283,   287,   293,   297,   303,   307,
+     313,   317,   323,   327,   333,   337,   341,   345,   350,   358,
+     363,   367,   372,   376,   380,   386,   390,   396,   400,   406,
+     410,   414,   420,   424,   432,   437,   441,   448,   452,   456,
+     462,   467,   472,   476,   488,   492,   498,   502,   509,   513,
+     519,   523,   529,   533,   537,   541,   545,   549,   556,   561,
+     566,   570,   576,   580,   586,   590,   596,   600,   606,   610,
+     616,   621,   625,   631,   635,   640,   644,   649,   655,   659,
+     666,   670
 };
 #endif
 
@@ -1713,11 +1713,15 @@ yyreduce:
 #line 198 "parser.y"
     {
                         /*TODO*/
+                        (yyval.node) = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
+                        makeChild(parameterList, (yyvsp[(4) - (8)].node));
+                        makeFamily((yyval.node), 4, makeIDNode("void", NORMAL_ID), makeIDNode((yyvsp[(2) - (8)].lexeme), NORMAL_ID), parameterList, (yyvsp[(7) - (8)].node));
                     ;}
     break;
 
   case 10:
-#line 202 "parser.y"
+#line 206 "parser.y"
     {
                         (yyval.node) = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
@@ -1726,28 +1730,33 @@ yyreduce:
     break;
 
   case 11:
-#line 208 "parser.y"
+#line 212 "parser.y"
     {
                         /*TODO*/
+                        (yyval.node) = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
+                        makeFamily((yyval.node), 4, makeIDNode("void", NORMAL_ID), makeIDNode((yyvsp[(2) - (7)].lexeme), NORMAL_ID), emptyParameterList, (yyvsp[(6) - (7)].node));
                     ;}
     break;
 
   case 12:
-#line 214 "parser.y"
+#line 221 "parser.y"
     {
                     (yyval.node) = makeSibling((yyvsp[(1) - (3)].node), (yyvsp[(3) - (3)].node));
                 ;}
     break;
 
   case 13:
-#line 218 "parser.y"
+#line 225 "parser.y"
     {
                     /*TODO*/
+                    (yyval.node)= makeChild(Allocate(PARAM_LIST_NODE), (yyvsp[(1) - (1)].node));
+                    
                 ;}
     break;
 
   case 14:
-#line 224 "parser.y"
+#line 233 "parser.y"
     {
                     (yyval.node) = makeDeclNode(FUNCTION_PARAMETER_DECL);
                     makeFamily((yyval.node), 2, (yyvsp[(1) - (2)].node), makeIDNode((yyvsp[(2) - (2)].lexeme), NORMAL_ID));
@@ -1755,49 +1764,51 @@ yyreduce:
     break;
 
   case 15:
-#line 229 "parser.y"
+#line 238 "parser.y"
     {
                     /*TODO*/
+                    (yyval.node) = makeDeclNode(FUNCTION_PARAMETER_DECL);
+                    makeFamily((yyval.node), 2, (yyvsp[(1) - (3)].node), makeChild(makeIDNode((yyvsp[(2) - (3)].lexeme), ARRAY_ID), (yyvsp[(3) - (3)].node)));
                 ;}
     break;
 
   case 16:
-#line 234 "parser.y"
+#line 245 "parser.y"
     {
                     (yyval.node) = (yyvsp[(2) - (3)].node);
                 ;}
     break;
 
   case 17:
-#line 238 "parser.y"
+#line 249 "parser.y"
     {
                     (yyval.node) = makeSibling((yyvsp[(1) - (4)].node), (yyvsp[(3) - (4)].node));
                 ;}
     break;
 
   case 18:
-#line 244 "parser.y"
+#line 255 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 19:
-#line 248 "parser.y"
+#line 259 "parser.y"
     {
                     (yyval.node) = Allocate(NUL_NODE); 
                 ;}
     break;
 
   case 20:
-#line 254 "parser.y"
+#line 265 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 21:
-#line 258 "parser.y"
+#line 269 "parser.y"
     {
                         (yyval.node) = Allocate(BLOCK_NODE);
                         makeChild((yyval.node), makeChild(Allocate(STMT_LIST_NODE), (yyvsp[(1) - (1)].node)));
@@ -1805,7 +1816,7 @@ yyreduce:
     break;
 
   case 22:
-#line 263 "parser.y"
+#line 274 "parser.y"
     {
                         (yyval.node) = Allocate(BLOCK_NODE);
                         makeChild((yyval.node), makeChild(Allocate(VARIABLE_DECL_LIST_NODE), (yyvsp[(1) - (1)].node)));
@@ -1813,119 +1824,119 @@ yyreduce:
     break;
 
   case 23:
-#line 267 "parser.y"
+#line 278 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 24:
-#line 273 "parser.y"
+#line 284 "parser.y"
     {
                         /*TODO*/
                 ;}
     break;
 
   case 25:
-#line 277 "parser.y"
+#line 288 "parser.y"
     {
                         /*TODO*/
                 ;}
     break;
 
   case 26:
-#line 283 "parser.y"
+#line 294 "parser.y"
     {
                     (yyval.node) = (yyvsp[(1) - (1)].node);
                 ;}
     break;
 
   case 27:
-#line 287 "parser.y"
+#line 298 "parser.y"
     {
                     (yyval.node) = (yyvsp[(1) - (1)].node);
                 ;}
     break;
 
   case 28:
-#line 293 "parser.y"
+#line 304 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 29:
-#line 297 "parser.y"
+#line 308 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 30:
-#line 303 "parser.y"
+#line 314 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 31:
-#line 307 "parser.y"
+#line 318 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 32:
-#line 313 "parser.y"
+#line 324 "parser.y"
     {
                     (yyval.node) = makeIDNode("int", NORMAL_ID);  
                 ;}
     break;
 
   case 33:
-#line 317 "parser.y"
+#line 328 "parser.y"
     {
                     (yyval.node) = makeIDNode("float", NORMAL_ID);
                 ;}
     break;
 
   case 34:
-#line 323 "parser.y"
+#line 334 "parser.y"
     {
                     (yyval.node) = makeIDNode((yyvsp[(1) - (1)].lexeme), NORMAL_ID);
                 ;}
     break;
 
   case 35:
-#line 327 "parser.y"
+#line 338 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 36:
-#line 331 "parser.y"
+#line 342 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 37:
-#line 335 "parser.y"
+#line 346 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 38:
-#line 340 "parser.y"
+#line 351 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 39:
-#line 348 "parser.y"
+#line 359 "parser.y"
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
                     makeFamily((yyval.node), 2, (yyvsp[(1) - (3)].node), (yyvsp[(3) - (3)].node));
@@ -1933,196 +1944,196 @@ yyreduce:
     break;
 
   case 40:
-#line 353 "parser.y"
+#line 364 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 41:
-#line 357 "parser.y"
+#line 368 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 42:
-#line 362 "parser.y"
+#line 373 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 43:
-#line 366 "parser.y"
+#line 377 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 44:
-#line 370 "parser.y"
+#line 381 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 45:
-#line 376 "parser.y"
+#line 387 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 46:
-#line 380 "parser.y"
+#line 391 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 47:
-#line 386 "parser.y"
+#line 397 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 48:
-#line 390 "parser.y"
+#line 401 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 49:
-#line 396 "parser.y"
+#line 407 "parser.y"
     {
                     (yyval.node) = makeIDNode((yyvsp[(1) - (1)].lexeme), NORMAL_ID);
                 ;}
     break;
 
   case 50:
-#line 400 "parser.y"
+#line 411 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 51:
-#line 404 "parser.y"
+#line 415 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 52:
-#line 410 "parser.y"
+#line 421 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 53:
-#line 414 "parser.y"
+#line 425 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 54:
-#line 422 "parser.y"
+#line 433 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 55:
-#line 427 "parser.y"
-    {
-                    /*TODO*/
-                ;}
-    break;
-
-  case 56:
-#line 431 "parser.y"
-    {
-                    /*TODO*/
-                ;}
-    break;
-
-  case 57:
 #line 438 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
-  case 58:
+  case 56:
 #line 442 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
+  case 57:
+#line 449 "parser.y"
+    {
+                    /*TODO*/
+                ;}
+    break;
+
+  case 58:
+#line 453 "parser.y"
+    {
+                    /*TODO*/
+                ;}
+    break;
+
   case 59:
-#line 446 "parser.y"
+#line 457 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 60:
-#line 452 "parser.y"
+#line 463 "parser.y"
     {
                         /*TODO*/
                      ;}
     break;
 
   case 61:
-#line 456 "parser.y"
+#line 467 "parser.y"
     {
                          (yyval.node) = Allocate(NUL_NODE); 
                      ;}
     break;
 
   case 62:
-#line 462 "parser.y"
+#line 473 "parser.y"
     {
                                         /*TODO*/
                                     ;}
     break;
 
   case 63:
-#line 466 "parser.y"
+#line 477 "parser.y"
     {
                                         /*TODO*/
                                     ;}
     break;
 
   case 64:
-#line 478 "parser.y"
+#line 489 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 65:
-#line 482 "parser.y"
+#line 493 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 66:
-#line 488 "parser.y"
+#line 499 "parser.y"
     {
                     (yyval.node) = (yyvsp[(1) - (1)].node);
                 ;}
     break;
 
   case 67:
-#line 492 "parser.y"
+#line 503 "parser.y"
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_OR);
                     makeFamily((yyval.node), 2, (yyvsp[(1) - (3)].node), (yyvsp[(3) - (3)].node));
@@ -2130,175 +2141,175 @@ yyreduce:
     break;
 
   case 68:
-#line 499 "parser.y"
+#line 510 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 69:
-#line 503 "parser.y"
+#line 514 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 70:
-#line 509 "parser.y"
+#line 520 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 71:
-#line 513 "parser.y"
+#line 524 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 72:
-#line 519 "parser.y"
+#line 530 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 73:
-#line 523 "parser.y"
+#line 534 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 74:
-#line 527 "parser.y"
+#line 538 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 75:
-#line 531 "parser.y"
+#line 542 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 76:
-#line 535 "parser.y"
+#line 546 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 77:
-#line 539 "parser.y"
+#line 550 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 78:
-#line 546 "parser.y"
+#line 557 "parser.y"
     {
                         /*TODO*/
                     ;}
     break;
 
   case 79:
-#line 550 "parser.y"
+#line 561 "parser.y"
     {
                         (yyval.node) = Allocate(NUL_NODE);
                     ;}
     break;
 
   case 80:
-#line 556 "parser.y"
+#line 567 "parser.y"
     {
                                     /*TODO*/
                                 ;}
     break;
 
   case 81:
-#line 560 "parser.y"
+#line 571 "parser.y"
     {
                                     /*TODO*/
                                 ;}
     break;
 
   case 82:
-#line 566 "parser.y"
+#line 577 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 83:
-#line 570 "parser.y"
+#line 581 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 84:
-#line 576 "parser.y"
+#line 587 "parser.y"
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
                 ;}
     break;
 
   case 85:
-#line 580 "parser.y"
+#line 591 "parser.y"
     {
                     (yyval.node) = makeExprNode(BINARY_OPERATION, BINARY_OP_SUB);
                 ;}
     break;
 
   case 86:
-#line 586 "parser.y"
+#line 597 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 87:
-#line 590 "parser.y"
+#line 601 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 88:
-#line 596 "parser.y"
+#line 607 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 89:
-#line 600 "parser.y"
+#line 611 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 90:
-#line 606 "parser.y"
+#line 617 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 91:
-#line 611 "parser.y"
+#line 622 "parser.y"
     {   
                     /*TODO*/
                 ;}
     break;
 
   case 92:
-#line 615 "parser.y"
+#line 626 "parser.y"
     {
                     (yyval.node) = Allocate(CONST_VALUE_NODE);
                     (yyval.node)->semantic_value.const1=(yyvsp[(1) - (1)].const1);
@@ -2306,63 +2317,63 @@ yyreduce:
     break;
 
   case 93:
-#line 621 "parser.y"
+#line 632 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 94:
-#line 625 "parser.y"
+#line 636 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 95:
-#line 630 "parser.y"
+#line 641 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
   case 96:
-#line 634 "parser.y"
-    {
-                    /*TODO*/
-                ;}
-    break;
-
-  case 97:
-#line 639 "parser.y"
-    {
-                    /*TODO*/
-                ;}
-    break;
-
-  case 98:
 #line 645 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
-  case 99:
-#line 649 "parser.y"
+  case 97:
+#line 650 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
-  case 100:
+  case 98:
 #line 656 "parser.y"
     {
                     /*TODO*/
                 ;}
     break;
 
-  case 101:
+  case 99:
 #line 660 "parser.y"
+    {
+                    /*TODO*/
+                ;}
+    break;
+
+  case 100:
+#line 667 "parser.y"
+    {
+                    /*TODO*/
+                ;}
+    break;
+
+  case 101:
+#line 671 "parser.y"
     {
                     /*TODO*/
                 ;}
@@ -2370,7 +2381,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2374 "parser.tab.c"
+#line 2385 "parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2584,7 +2595,7 @@ yyreturn:
 }
 
 
-#line 666 "parser.y"
+#line 677 "parser.y"
 
 
 #include "lex.yy.c"
@@ -2604,5 +2615,6 @@ char *mesg;
   {
   printf("%s\t%d\t%s\t%s\n", "Error found in Line ", linenumber, "next token: ", yytext );
   exit(1);
+  }
  
 
