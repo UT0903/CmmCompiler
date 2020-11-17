@@ -197,6 +197,10 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                 | VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
                     {
                         /*TODO*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
+                        makeChild(parameterList, $4);
+                        makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
                     }
                 | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
@@ -207,6 +211,9 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                 | VOID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
                         /*TODO*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
+                        makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
                     } 
                 ;
 
@@ -217,6 +224,8 @@ param_list	: param_list MK_COMMA  param
             | param	
                 {
                     /*TODO*/
+                    $$= makeChild(Allocate(PARAM_LIST_NODE), $1);
+                    
                 }
             ;
 
