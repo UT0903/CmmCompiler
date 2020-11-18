@@ -470,7 +470,8 @@ stmt_list	: stmt_list stmt
 
 stmt		: MK_LBRACE block MK_RBRACE 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $2;
                 }
             /*TODO: | While Statement */
             | FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
@@ -526,11 +527,13 @@ test		: assign_expr
 
 assign_expr     : ID OP_ASSIGN relop_expr 
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                     }
                 | relop_expr
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = $1;
                     }
 		;
 
@@ -547,21 +550,25 @@ relop_expr	: relop_term
 
 relop_term	: relop_factor 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             | relop_term OP_AND relop_factor
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    makeFamily(makeExprNode(BINARY_OPERATION, BINARY_OP_AND), 2, $1, $3);
                 }
             ;
 
 relop_factor	: expr
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = $1;
                     }
                 | expr rel_op expr 
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        makeFamily(makeExprNode(BINARY_OPERATION, BINARY_OP_OR), 2, $1, $3);
                     }
                 ;
 
