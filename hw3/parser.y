@@ -201,14 +201,6 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                         makeChild(parameterList, $4);
                         makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
                     }
-                | ID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
-                    {
-                        /*FINISH*/
-                        $$ = makeDeclNode(FUNCTION_DECL);
-                        AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
-                        makeChild(parameterList, $4);
-                        makeFamily($$, 4, makeIDNode($1, NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
-                    }
                 | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
@@ -221,13 +213,6 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
                         makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
-                    } 
-                | ID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
-                    {
-                        /*FINISH*/
-                        $$ = makeDeclNode(FUNCTION_DECL);
-                        AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
-                        makeFamily($$, 4, makeIDNode($1, NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
                     } 
                 ;
 
@@ -332,6 +317,12 @@ type_decl 	: TYPEDEF type id_list MK_SEMICOLON
                     $$ = makeDeclNode(TYPE_DECL);
                     makeFamily($$, 2, makeIDNode("void", NORMAL_ID), $3);
                 }
+            | TYPEDEF ID id_list MK_SEMICOLON  
+                {
+                    /*FINISH*/
+                    $$ = makeDeclNode(TYPE_DECL);
+                    makeFamily($$, 2, $2, $3);
+                }
             ;
 
 var_decl	: type init_id_list MK_SEMICOLON 
@@ -355,6 +346,10 @@ type		: INT
             | FLOAT 
                 {
                     $$ = makeIDNode("float", NORMAL_ID);
+                }
+            | ID
+                {
+                    $$ = makeIDNode($1, NORMAL_ID);
                 }
             ;
 
