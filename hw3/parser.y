@@ -485,7 +485,7 @@ stmt		: MK_LBRACE block MK_RBRACE
             | var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
                     /*FINISH*/
-                    $$ = makeChild(makeStmtNode(ASSIGN_STMT), $3);
+                    $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, $1, $3);
                 }
             /*FINISH: | If Statement */
             | IF MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt
