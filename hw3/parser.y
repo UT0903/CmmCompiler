@@ -632,7 +632,7 @@ rel_op		: OP_EQ
 relop_expr_list	: nonempty_relop_expr_list 
                     {
                         /*FINISH*/
-                        $$ = makeChild(Allocate(NONEMPTY_ASSIGN_EXPR_LIST_NODE), $1);
+                        $$ = makeChild(Allocate(NONEMPTY_RELOP_EXPR_LIST_NODE), $1);
                     }
                 | 
                     {
