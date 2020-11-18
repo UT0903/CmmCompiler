@@ -244,7 +244,7 @@ dim_fn		: MK_LB expr_null MK_RB
                 {
                     $$ = $2;
                 }
-            | MK_LB expr MK_RB dim_fn
+            | dim_fn MK_LB expr MK_RB 
                 {
                     $$ = makeSibling($1, $3);
                 }
