@@ -244,7 +244,7 @@ dim_fn		: MK_LB expr_null MK_RB
                 {
                     $$ = $2;
                 }
-            | dim_fn MK_LB expr MK_RB
+            | MK_LB expr MK_RB dim_fn
                 {
                     $$ = makeSibling($1, $3);
                 }
@@ -418,10 +418,21 @@ cfactor:	CONST
                     $$ = Allocate(CONST_VALUE_NODE);
                     $$->semantic_value.const1=$1;
                 }
+            | unary_op CONST
+                {
+                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
+                    const_node->semantic_value.const1=$2;
+                    $$ = makeChild($1, const_node);
+                }
             | MK_LPAREN cexpr MK_RPAREN 
                 {
                     /*FINISH*/
                     $$ = $2;
+                }
+            | unary_op MK_LPAREN cexpr MK_RPAREN 
+                {
+                    /*FINISH*/
+                    $$ = makeChild($1, $3);
                 }
             ;
 
