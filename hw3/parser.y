@@ -499,9 +499,9 @@ stmt		: MK_LBRACE block MK_RBRACE
                     $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5, $7);
                 } 
             /*FINISH: | function call */
-            | var_ref MK_LPAREN relop_expr_list MK_RPAREN
+            | var_ref MK_LPAREN relop_expr_list MK_RPAREN MK_SEMICOLON
                 {
-                    $$ = makeChild(makeStmtNode(FUNCTION_CALL_STMT), $3);
+                    $$ = makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, $1, $3);
                 }
             | MK_SEMICOLON 
                 {
@@ -694,7 +694,7 @@ mul_op		: OP_TIMES
             | OP_DIVIDE 
                 {
                     /*FINISH*/
-                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_);
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
                 }
             ;
 
@@ -717,20 +717,20 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
             /*FINISH: | -<constant> e.g. -4 */
             | OP_MINUS CONST
                 {
-                    AST* const_node = Allocate(CONST_VALUE_NODE);
+                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
                     const_node->semantic_value.const1=$2;
                     $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE), const_node);
                 }
             | OP_PLUS CONST
                 {
-                    AST* const_node = Allocate(CONST_VALUE_NODE);
+                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
                     const_node->semantic_value.const1=$2;
                     $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_POSITIVE), const_node);
                 }
             | OP_NOT CONST
                 {
                     /*FINISH*/
-                    AST* const_node = Allocate(CONST_VALUE_NODE);
+                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
                     const_node->semantic_value.const1=$2;
                     $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), const_node);
                 }
@@ -753,12 +753,13 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
             /*FINISH: | -<var_ref> e.g. -var */
             | OP_MINUS var_ref
                 {
-                    $$ = makeChild(makeExprNode(UNARY_OPERATOR, UNARY_OP_NEGATIVE), $2);
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+                    makeChild($$, $2);
                 }
             | OP_NOT var_ref 
                 {
                     /*FINISH*/
-                    $$ = makeChild(makeExprNode(UNARY_OPERATOR, UNARY_OP_LOGICAL_NEGATION), $2);
+                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $2);
                 }
             ;
 
