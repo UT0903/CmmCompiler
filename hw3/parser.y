@@ -567,27 +567,33 @@ relop_factor	: expr
 
 rel_op		: OP_EQ
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_EQ);
                 }
             | OP_GE 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_GE);
                 }
             | OP_LE 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_LE);
                 }
             | OP_NE 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_NE);
                 }
             | OP_GT 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_GT);
                 }
             | OP_LT 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_LT);
                 }
             ;
 
@@ -614,11 +620,13 @@ nonempty_relop_expr_list	: nonempty_relop_expr_list MK_COMMA relop_expr
 
 expr		: expr add_op term 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    makeFamily($2, 2, $1, $3);
                 }
             | term 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             ;
 
@@ -634,27 +642,32 @@ add_op		: OP_PLUS
 
 term		: term mul_op factor
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    makeFamily($2, 2, $1, $3);
                 }
             | factor
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             ;
 
 mul_op		: OP_TIMES
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
                 }
             | OP_DIVIDE 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_);
                 }
             ;
 
 factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $2;
                 }
             /*TODO: | -(<relop_expr>) e.g. -(4) */
             | OP_NOT MK_LPAREN relop_expr MK_RPAREN
@@ -682,33 +695,39 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                 }
             | var_ref 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             /*TODO: | -<var_ref> e.g. -var */
             | OP_NOT var_ref 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    makeChild(makeExprNode(UNARY_OPERATOR, UNARY_OP_LOGICAL_NEGATION), $2);
                 }
             ;
 
 var_ref		: ID 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeIDNode($1, NORMAL_ID);
                 }
             | ID dim_list 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    makeChild(makeIDNode($1, ARRAY_ID),$2);
                 }
             ;
 
 
 dim_list	: dim_list MK_LB expr MK_RB 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                   $$ = makeSibling($1, $3); 
                 }
             | MK_LB expr MK_RB
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $2;
                 }
 		;
 
