@@ -201,6 +201,14 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                         makeChild(parameterList, $4);
                         makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
                     }
+                | ID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
+                    {
+                        /*FINISH*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
+                        makeChild(parameterList, $4);
+                        makeFamily($$, 4, makeIDNode($1, NORMAL_ID), makeIDNode($2, NORMAL_ID), parameterList, $7);
+                    }
                 | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
@@ -213,6 +221,13 @@ function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
                         makeFamily($$, 4, makeIDNode("void", NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
+                    } 
+                | ID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
+                    {
+                        /*FINISH*/
+                        $$ = makeDeclNode(FUNCTION_DECL);
+                        AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
+                        makeFamily($$, 4, makeIDNode($1, NORMAL_ID), makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
                     } 
                 ;
 
