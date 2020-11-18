@@ -366,11 +366,16 @@ id_list		: ID
 		;
 dim_decl	: MK_LB cexpr MK_RB 
                 {
-                    /*TODO*/
+                    /*FINSH*/
+                    $$ = $2;
                 } 
-            /*TODO: Try if you can define a recursive production rule
+            /*FINISH: Try if you can define a recursive production rule
             | .......
             */
+            | dim_decl MK_LB cexpr MK_RB
+                {
+                    $$ = makeSibling($1, $3);
+                }
             ;
 cexpr		: cexpr OP_PLUS mcexpr 
                 {
@@ -379,44 +384,57 @@ cexpr		: cexpr OP_PLUS mcexpr
                 } /* This is for array declarations */ 
             | cexpr OP_MINUS mcexpr
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_SUB);
+                    makeFamily($$, 2, $1, $3);
                 } 
             | mcexpr 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             ;  
 mcexpr		: mcexpr OP_TIMES cfactor 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
+                    makeFamily($$, 2, $1, $3);
                 }
             | mcexpr OP_DIVIDE cfactor 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_DIV);
+                    makeFamily($$, 2, $1, $3);
                 }
             | cfactor 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $1;
                 }
             ;
         
 cfactor:	CONST 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = Allocate(CONST_VALUE_NODE);
+                    $$->semantic_value.const1=$1;
                 }
             | MK_LPAREN cexpr MK_RPAREN 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = $2;
                 }
             ;
 
 init_id_list	: init_id 
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = $1;
                     }
                 | init_id_list MK_COMMA init_id 
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = makeSibling($1, $3);
                     }
                 ;
 
@@ -426,21 +444,25 @@ init_id		: ID
                 }
             | ID dim_decl 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeChild(makeIDNode($1, ARRAY_ID), $2);
                 }
             | ID OP_ASSIGN relop_expr 
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeChild(makeIDNode($1, WITH_INIT_ID), $3);
                 }
             ;
 
 stmt_list	: stmt_list stmt 
                 {
                     /*TODO*/
+                    $$ = makeSibling($1, $2);
                 }
             | stmt
                 {
                     /*TODO*/
+                    $$ = $1;
                 }
             ;
 
