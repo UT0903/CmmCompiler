@@ -473,7 +473,7 @@ stmt		: MK_LBRACE block MK_RBRACE
                     $$ = $2;
                 }
             /*FINISH: | While Statement */
-            | WHILE MK_LPAREN relop_expr_list  MK_RPAREN stmt
+            | WHILE MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt
                 {
                     $$ = makeFamily(makeStmtNode(WHILE_STMT),2 , $3, $5);
                 }
@@ -488,12 +488,12 @@ stmt		: MK_LBRACE block MK_RBRACE
                     $$ = makeChild(makeStmtNode(ASSIGN_STMT), $3);
                 }
             /*FINISH: | If Statement */
-            | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt
+            | IF MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt
                 {
                     $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5,  Allocate(NUL_NODE));
                 }
             /*FINISH: | If then else */
-            | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt ELSE stmt
+            | IF MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt ELSE stmt
                 {
                     $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5, $7);
                 } 
