@@ -490,7 +490,7 @@ stmt		: MK_LBRACE block MK_RBRACE
             /*FINISH: | If Statement */
             | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt
                 {
-                    $$ = makeFamily(makeStmtNode(IF_STMT), 2, $3, $5);
+                    $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5,  Allocate(NUL_NODE));
                 }
             /*FINISH: | If then else */
             | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt ELSE stmt
