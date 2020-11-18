@@ -474,28 +474,49 @@ stmt		: MK_LBRACE block MK_RBRACE
                     $$ = $2;
                 }
             /*TODO: | While Statement */
+            | WHILE MK_LPAREN relop_expr_list  MK_RPAREN stmt
+                {
+                    $$ = makeFamily(makeStmtNode(WHILE_STMT),2 , $3, $5);
+                }
             | FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
                 {
                     /*TODO*/
+                    $$ = makeFamily(makeStmtNode(FOR_STMT), 4, $3, $5, $7, $9);
                 }
             | var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
                     /*TODO*/
+                    $$ = makeChild(makeStmtNode(ASSIGN_STMT), $3);
                 }
             /*TODO: | If Statement */
+            | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt
+                {
+                    $$ = makeFamily(makeStmtNode(IF_STMT), 2, $3, $5);
+                }
             /*TODO: | If then else */
+            | IF MK_LPAREN relop_expr_list  MK_RPAREN stmt ELSE stmt
+                {
+                    $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5, $7);
+                } 
             /*TODO: | function call */
+            | var_ref MK_LPAREN relop_expr_list MK_RPAREN
+                {
+                    $$ = makeChild(makeStmtNode(FUNCTION_CALL_STMT), $3);
+                }
             | MK_SEMICOLON 
                 {
                     /*TODO*/
+                    $$ = Allocate(NUL_NODE);
                 }
             | RETURN MK_SEMICOLON  
                 {
                     /*TODO*/
+                    $$ = makeChild(makeStmtNode(RETURN_STMT), Allocate(NUL_NODE));
                 }
             | RETURN relop_expr MK_SEMICOLON
                 {
                     /*TODO*/
+                    $$ = makeChild(makeStmtNode(RETURN_STMT), $2);
                 }
             ;
 
