@@ -591,7 +591,7 @@ relop_factor	: expr
                 | expr rel_op expr 
                     {
                         /*FINISH*/
-                        $$ = makeFamily(makeExprNode(BINARY_OPERATION, BINARY_OP_OR), 2, $1, $3);
+                        $$ = makeFamily($2, 2, $1, $3);
                     }
                 ;
 
