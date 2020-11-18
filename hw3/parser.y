@@ -703,7 +703,7 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     /*FINISH*/
                     $$ = $2;
                 }
-            /*TODO: | -(<relop_expr>) e.g. -(4) */
+            /*FINISH: | -(<relop_expr>) e.g. -(4) */
             | OP_NOT MK_LPAREN relop_expr MK_RPAREN
                 {   
                     /*FINISH*/
@@ -739,10 +739,11 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     /*FINISH*/
                     $$ = makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                 }
-            /*TODO: | -<function call> e.g. -f(4) */ 
+            /*FINISH: | -<function call> e.g. -f(4) */ 
             | OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
-                    /*TODO*/
+                    /*FINISH*/
+                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($2, NORMAL_ID), $4));
                 }
             | var_ref 
                 {
