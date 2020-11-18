@@ -501,7 +501,8 @@ stmt		: MK_LBRACE block MK_RBRACE
 
 assign_expr_list : nonempty_assign_expr_list 
                      {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = makeChild(Allocate(NONEMPTY_ASSIGN_EXPR_LIST_NODE), $1);
                      }
                  |  
                      {
@@ -511,11 +512,13 @@ assign_expr_list : nonempty_assign_expr_list
 
 nonempty_assign_expr_list        : nonempty_assign_expr_list MK_COMMA assign_expr 
                                     {
-                                        /*TODO*/
+                                        /*FINISH*/
+                                        $$ = makeSibling($1, $3);
                                     }
                                  | assign_expr
                                     {
-                                        /*TODO*/
+                                        /*FINISH*/
+                                        $$ = $1;
                                     }
                                  ;
 
@@ -607,7 +610,8 @@ rel_op		: OP_EQ
 
 relop_expr_list	: nonempty_relop_expr_list 
                     {
-                        /*TODO*/
+                        /*FINISH*/
+                        $$ = makeChild(Allocate(NONEMPTY_ASSIGN_EXPR_LIST_NODE), $1);
                     }
                 | 
                     {
@@ -617,11 +621,13 @@ relop_expr_list	: nonempty_relop_expr_list
 
 nonempty_relop_expr_list	: nonempty_relop_expr_list MK_COMMA relop_expr
                                 {
-                                    /*TODO*/
+                                    /*FINISH*/
+                                    $$ = makeSibling($1, $3);
                                 }
                             | relop_expr 
                                 {
-                                    /*TODO*/
+                                    /*FINISH*/
+                                    $$ = $1;
                                 }
                             ;
 
@@ -687,20 +693,32 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     $$ = Allocate(CONST_VALUE_NODE);
                     $$->semantic_value.const1=$1;
                 }
-            /*TODO: | -<constant> e.g. -4 */
+            /*FINISH: | -<constant> e.g. -4 */
+            | OP_MINUS CONST
+                {
+                    AST* const_node = Allocate(CONST_VALUE_NODE);
+                    const_node->semantic_value.const1=$2;
+                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE), const_node);
+                }
+            | OP_PLUS CONST
+                {
+                    AST* const_node = Allocate(CONST_VALUE_NODE);
+                    const_node->semantic_value.const1=$2;
+                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_POSITIVE), const_node);
+                }
             | OP_NOT CONST
                 {
                     /*FINISH*/
                     AST* const_node = Allocate(CONST_VALUE_NODE);
                     const_node->semantic_value.const1=$2;
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE), const_node);
+                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), const_node);
                 }
             | ID MK_LPAREN relop_expr_list MK_RPAREN 
                 {
                     /*FINISH*/
                     $$ = makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                 }
-            /*TODO: | -<function call> e.g. -f(4) */
+            /*TODO: | -<function call> e.g. -f(4) */ 
             | OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
                     /*TODO*/
@@ -710,7 +728,11 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     /*FINISH*/
                     $$ = $1;
                 }
-            /*TODO: | -<var_ref> e.g. -var */
+            /*FINISH: | -<var_ref> e.g. -var */
+            | OP_MINUS var_ref
+                {
+                    $$ = makeChild(makeExprNode(UNARY_OPERATOR, UNARY_OP_NEGATIVE), $2);
+                }
             | OP_NOT var_ref 
                 {
                     /*FINISH*/
