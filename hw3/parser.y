@@ -456,12 +456,12 @@ init_id		: ID
 
 stmt_list	: stmt_list stmt 
                 {
-                    /*TODO*/
+                    /*FINISH*/
                     $$ = makeSibling($1, $2);
                 }
             | stmt
                 {
-                    /*TODO*/
+                    /*FINSH*/
                     $$ = $1;
                 }
             ;
