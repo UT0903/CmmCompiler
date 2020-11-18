@@ -153,8 +153,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
 %type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
-%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list
-
+%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op
 
 %start program
 
@@ -704,10 +703,10 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     $$ = $2;
                 }
             /*FINISH: | -(<relop_expr>) e.g. -(4) */
-            | OP_NOT MK_LPAREN relop_expr MK_RPAREN
+            | unary_op MK_LPAREN relop_expr MK_RPAREN
                 {   
                     /*FINISH*/
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $3);
+                    $$ = makeChild($1, $3);
                 }
             | CONST 
                 {
@@ -715,24 +714,11 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     $$->semantic_value.const1=$1;
                 }
             /*FINISH: | -<constant> e.g. -4 */
-            | OP_MINUS CONST
+            | unary_op CONST
                 {
                     AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
                     const_node->semantic_value.const1=$2;
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE), const_node);
-                }
-            | OP_PLUS CONST
-                {
-                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
-                    const_node->semantic_value.const1=$2;
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_POSITIVE), const_node);
-                }
-            | OP_NOT CONST
-                {
-                    /*FINISH*/
-                    AST_NODE* const_node = Allocate(CONST_VALUE_NODE);
-                    const_node->semantic_value.const1=$2;
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), const_node);
+                    $$ = makeChild($1, const_node);
                 }
             | ID MK_LPAREN relop_expr_list MK_RPAREN 
                 {
@@ -740,10 +726,10 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     $$ = makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                 }
             /*FINISH: | -<function call> e.g. -f(4) */ 
-            | OP_NOT ID MK_LPAREN relop_expr_list MK_RPAREN
+            | unary_op ID MK_LPAREN relop_expr_list MK_RPAREN
                 {
                     /*FINISH*/
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($2, NORMAL_ID), $4));
+                    $$ = makeChild($1, makeFamily(makeStmtNode(FUNCTION_CALL_STMT), 2, makeIDNode($2, NORMAL_ID), $4));
                 }
             | var_ref 
                 {
@@ -751,17 +737,27 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                     $$ = $1;
                 }
             /*FINISH: | -<var_ref> e.g. -var */
-            | OP_MINUS var_ref
+            | unary_op var_ref
                 {
-                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
+                    $$ = makeChild($1, $2)
                     makeChild($$, $2);
                 }
-            | OP_NOT var_ref 
+            ;
+
+unary_op    : OP_NOT
                 {
-                    /*FINISH*/
-                    $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION), $2);
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_LOGICAL_NEGATION);
+                }
+            | OP_PLUS
+                {
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_POSITIVE);
+                }
+            | OP_MINUS
+                {
+                    $$ = makeExprNode(UNARY_OPERATION, UNARY_OP_NEGATIVE);
                 }
             ;
+
 
 var_ref		: ID 
                 {
