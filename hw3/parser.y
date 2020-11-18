@@ -739,7 +739,7 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
             /*FINISH: | -<var_ref> e.g. -var */
             | unary_op var_ref
                 {
-                    $$ = makeChild($1, $2)
+                    $$ = makeChild($1, $2);
                     makeChild($$, $2);
                 }
             ;
