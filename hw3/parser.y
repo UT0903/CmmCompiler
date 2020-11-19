@@ -136,7 +136,9 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 %token OP_GE   
 %token OP_LE   
 %token OP_PLUS 
-%token OP_MINUS        
+%token OP_PP
+%token OP_MINUS   
+%token OP_MM    
 %token OP_TIMES        
 %token OP_DIVIDE       
 %token MK_LB 
@@ -153,7 +155,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
 %type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
-%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op
+%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op double_add_id
 
 %start program
 
@@ -526,6 +528,10 @@ stmt		: MK_LBRACE block MK_RBRACE
                     /*FINISH*/
                     $$ = makeChild(makeStmtNode(RETURN_STMT), $2);
                 }
+            | double_add_id MK_SEMICOLON
+                {
+                    $$ = makeChild(makeStmtNode(DOUBLE_ADD_STMT), $1);
+                }
             ;
 
 assign_expr_list : nonempty_assign_expr_list 
@@ -750,7 +756,29 @@ factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
                     $$ = makeChild($1, $2);
                 }
+            | double_add_id
+                {
+                    $$ = $1;
+                }
             ;
+
+double_add_id   : OP_PP ID
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_PP_ID), makeIDNode($2, NORMAL_ID));
+                    }
+                | ID OP_PP
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_ID_PP), makeIDNode($1, NORMAL_ID));
+                    }
+                | OP_MM ID
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_MM_ID), makeIDNode($2, NORMAL_ID));
+                    }
+                | ID OP_MM
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_ID_MM), makeIDNode($1, NORMAL_ID));
+                    }
+                ;
 
 unary_op    : OP_NOT
                 {

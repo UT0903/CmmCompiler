@@ -32,7 +32,11 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
     char *unaryOpString[] = {
         "+",
         "-",
-        "!"
+        "!",
+        "i++",
+        "++i",
+        "i--",
+        "--i"
     };
 //    fprintf(fp, "%d ", astNode->linenumber);
     switch (astNode->nodeType) {
@@ -106,6 +110,9 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
                     break;
                 case RETURN_STMT:
                     fprintf(fp, "RETURN_STMT");
+                    break;
+                case DOUBLE_ADD_STMT:
+                    fprintf(fp, "DOUBLE_ADD_STMT");
                     break;
             }
             break;

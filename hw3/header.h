@@ -40,13 +40,14 @@ typedef enum BINARY_OPERATOR
 
 typedef enum UNARY_OPERATOR
 {
+    UNARY_TEST,
     UNARY_OP_POSITIVE,
     UNARY_OP_NEGATIVE,
     UNARY_OP_LOGICAL_NEGATION,
-    UNART_OP_ID_PP,
-    UNART_OP_PP_ID,
-    UNART_OP_ID_MM,
-    UNART_OP_MM_ID
+    UNARY_OP_ID_PP,
+    UNARY_OP_PP_ID,
+    UNARY_OP_ID_MM,
+    UNARY_OP_MM_ID
 } UNARY_OPERATOR;
 
 //C_type= type of constant ex: 1, 3.3, "const string"
@@ -61,6 +62,7 @@ typedef enum STMT_KIND
     IF_STMT,
     FUNCTION_CALL_STMT,
     RETURN_STMT,
+    DOUBLE_ADD_STMT,
 } STMT_KIND;
 
 typedef enum EXPR_KIND

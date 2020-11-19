@@ -3,6 +3,7 @@ int g() { return 0; }
 int main() {
   int a, b, c, d;
   int A[2];
+  a ++;
   while (1 < 2) {}
   while (2 > 1);
 

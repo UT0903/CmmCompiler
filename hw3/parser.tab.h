@@ -60,20 +60,22 @@
      OP_GE = 276,
      OP_LE = 277,
      OP_PLUS = 278,
-     OP_MINUS = 279,
-     OP_TIMES = 280,
-     OP_DIVIDE = 281,
-     MK_LB = 282,
-     MK_RB = 283,
-     MK_LPAREN = 284,
-     MK_RPAREN = 285,
-     MK_LBRACE = 286,
-     MK_RBRACE = 287,
-     MK_COMMA = 288,
-     MK_SEMICOLON = 289,
-     MK_DOT = 290,
-     ERROR = 291,
-     RETURN = 292
+     OP_PP = 279,
+     OP_MINUS = 280,
+     OP_MM = 281,
+     OP_TIMES = 282,
+     OP_DIVIDE = 283,
+     MK_LB = 284,
+     MK_RB = 285,
+     MK_LPAREN = 286,
+     MK_RPAREN = 287,
+     MK_LBRACE = 288,
+     MK_RBRACE = 289,
+     MK_COMMA = 290,
+     MK_SEMICOLON = 291,
+     MK_DOT = 292,
+     ERROR = 293,
+     RETURN = 294
    };
 #endif
 /* Tokens.  */
@@ -98,20 +100,22 @@
 #define OP_GE 276
 #define OP_LE 277
 #define OP_PLUS 278
-#define OP_MINUS 279
-#define OP_TIMES 280
-#define OP_DIVIDE 281
-#define MK_LB 282
-#define MK_RB 283
-#define MK_LPAREN 284
-#define MK_RPAREN 285
-#define MK_LBRACE 286
-#define MK_RBRACE 287
-#define MK_COMMA 288
-#define MK_SEMICOLON 289
-#define MK_DOT 290
-#define ERROR 291
-#define RETURN 292
+#define OP_PP 279
+#define OP_MINUS 280
+#define OP_MM 281
+#define OP_TIMES 282
+#define OP_DIVIDE 283
+#define MK_LB 284
+#define MK_RB 285
+#define MK_LPAREN 286
+#define MK_RPAREN 287
+#define MK_LBRACE 288
+#define MK_RBRACE 289
+#define MK_COMMA 290
+#define MK_SEMICOLON 291
+#define MK_DOT 292
+#define ERROR 293
+#define RETURN 294
 
 
 
@@ -125,7 +129,7 @@ typedef union YYSTYPE
 	AST_NODE  *node;
 }
 /* Line 1529 of yacc.c.  */
-#line 129 "parser.tab.h"
+#line 133 "parser.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
