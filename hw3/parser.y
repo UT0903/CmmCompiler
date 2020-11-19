@@ -546,15 +546,15 @@ assign_expr_list : nonempty_assign_expr_list
                  ;
 
 nonempty_assign_expr_list        : nonempty_assign_expr_list MK_COMMA assign_expr 
-                                    {
-                                        /*FINISH*/
-                                        $$ = makeSibling($1, $3);
-                                    }
-                                 | assign_expr
-                                    {
-                                        /*FINISH*/
-                                        $$ = $1;
-                                    }
+                                {
+                                    /*FINISH*/
+                                    $$ = makeSibling($1, $3);
+                                }
+                                | assign_expr
+                                {
+                                    /*FINISH*/
+                                    $$ = $1;
+                                }
                                  ;
 
 test		: assign_expr
@@ -568,14 +568,14 @@ assign_expr     : ID OP_ASSIGN relop_expr
                         /*FINISH*/
                         $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                     }
-                | MK_LPAREN ID OP_ASSIGN relop_expr MK_RPAREN
-                    {
-                        $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($2, NORMAL_ID), $4);
-                    }
                 | relop_expr
                     {
                         /*FINISH*/
                         $$ = $1;
+                    }
+                | MK_LPAREN nonempty_assign_expr_list MK_RPAREN
+                    {
+                        $$ = $2;
                     }
 		;
 

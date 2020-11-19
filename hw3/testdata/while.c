@@ -5,7 +5,6 @@ int main() {
   int A[2];
   while (1 < 2) {}
   while (2 > 1);
-
   while ((a == b) && (c == d)) {
     while (a > 1) {
       a = a - 1;
