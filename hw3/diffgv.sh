@@ -43,3 +43,7 @@ diff gv_file/typedef.gv AST_Graph.gv
 echo 'while'
 ./parser testdata/while.c
 diff gv_file/while.gv AST_Graph.gv
+
+echo 'plusplus'
+./parser testdata/plusplus.c
+#diff gv_file/plusplus.gv AST_Graph.gv
