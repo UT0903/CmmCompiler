@@ -11,13 +11,16 @@
 
 規則在文法中無用
 
-  113 test: assign_expr
+  116 test: assign_expr
 
 
 狀態 1 衝突：1 項偏移/縮減
 狀態 18 衝突：1 項偏移/縮減
 狀態 121 衝突：1 項偏移/縮減
-狀態 205 衝突：1 項偏移/縮減
+狀態 144 衝突：5 項縮減/縮減
+狀態 203 衝突：1 項偏移/縮減
+狀態 214 衝突：1 項偏移/縮減
+狀態 220 衝突：1 項偏移/縮減
 
 
 文法
@@ -119,70 +122,73 @@
 
    70 nonempty_assign_expr_list: nonempty_assign_expr_list MK_COMMA assign_expr
    71                          | assign_expr
+   72                          | MK_LPAREN nonempty_assign_expr_list MK_RPAREN
 
-   72 assign_expr: ID OP_ASSIGN relop_expr
-   73            | relop_expr
+   73 assign_expr: ID OP_ASSIGN relop_expr
+   74            | MK_LPAREN ID OP_ASSIGN relop_expr MK_RPAREN
+   75            | relop_expr
 
-   74 relop_expr: relop_term
-   75           | relop_expr OP_OR relop_term
+   76 relop_expr: relop_term
+   77           | relop_expr OP_OR relop_term
 
-   76 relop_term: relop_factor
-   77           | relop_term OP_AND relop_factor
+   78 relop_term: relop_factor
+   79           | relop_term OP_AND relop_factor
 
-   78 relop_factor: expr
-   79             | expr rel_op expr
+   80 relop_factor: expr
+   81             | expr rel_op expr
+   82             | MK_LPAREN relop_expr MK_RPAREN
 
-   80 rel_op: OP_EQ
-   81       | OP_GE
-   82       | OP_LE
-   83       | OP_NE
-   84       | OP_GT
-   85       | OP_LT
+   83 rel_op: OP_EQ
+   84       | OP_GE
+   85       | OP_LE
+   86       | OP_NE
+   87       | OP_GT
+   88       | OP_LT
 
-   86 relop_expr_list: nonempty_relop_expr_list
-   87                | %empty
+   89 relop_expr_list: nonempty_relop_expr_list
+   90                | %empty
 
-   88 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA relop_expr
-   89                         | relop_expr
+   91 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA relop_expr
+   92                         | relop_expr
 
-   90 expr: expr add_op term
-   91     | term
+   93 expr: expr add_op term
+   94     | term
 
-   92 add_op: OP_PLUS
-   93       | OP_MINUS
+   95 add_op: OP_PLUS
+   96       | OP_MINUS
 
-   94 term: term mul_op factor
-   95     | factor
+   97 term: term mul_op factor
+   98     | factor
 
-   96 mul_op: OP_TIMES
-   97       | OP_DIVIDE
+   99 mul_op: OP_TIMES
+  100       | OP_DIVIDE
 
-   98 factor: MK_LPAREN relop_expr MK_RPAREN
-   99       | unary_op MK_LPAREN relop_expr MK_RPAREN
-  100       | CONST
-  101       | unary_op CONST
-  102       | ID MK_LPAREN relop_expr_list MK_RPAREN
-  103       | unary_op ID MK_LPAREN relop_expr_list MK_RPAREN
-  104       | var_ref
-  105       | unary_op var_ref
+  101 factor: MK_LPAREN relop_expr MK_RPAREN
+  102       | unary_op MK_LPAREN relop_expr MK_RPAREN
+  103       | CONST
+  104       | unary_op CONST
+  105       | ID MK_LPAREN relop_expr_list MK_RPAREN
+  106       | unary_op ID MK_LPAREN relop_expr_list MK_RPAREN
+  107       | var_ref
+  108       | unary_op var_ref
 
-  106 unary_op: OP_NOT
-  107         | OP_PLUS
-  108         | OP_MINUS
+  109 unary_op: OP_NOT
+  110         | OP_PLUS
+  111         | OP_MINUS
 
-  109 var_ref: ID
-  110        | ID dim_list
+  112 var_ref: ID
+  113        | ID dim_list
 
-  111 dim_list: dim_list MK_LB expr MK_RB
-  112         | MK_LB expr MK_RB
+  114 dim_list: dim_list MK_LB expr MK_RB
+  115         | MK_LB expr MK_RB
 
 
 終結語詞，附有它們出現處的規則
 
     $end (0) 0
     error (256)
-    ID <lexeme> (258) 7 8 9 10 13 14 29 31 34 35 36 37 38 53 54 55 72 102 103 109 110
-    CONST <const1> (259) 47 48 100 101
+    ID <lexeme> (258) 7 8 9 10 13 14 29 31 34 35 36 37 38 53 54 55 73 74 105 106 112 113
+    CONST <const1> (259) 47 48 103 104
     VOID (260) 8 10 28
     INT (261) 32
     FLOAT (262) 33
@@ -191,27 +197,27 @@
     WHILE (265) 59
     FOR (266) 60
     TYPEDEF (267) 27 28 29
-    OP_ASSIGN (268) 55 61 72
-    OP_OR (269) 75
-    OP_AND (270) 77
-    OP_NOT (271) 106
-    OP_EQ (272) 80
-    OP_NE (273) 83
-    OP_GT (274) 84
-    OP_LT (275) 85
-    OP_GE (276) 81
-    OP_LE (277) 82
-    OP_PLUS (278) 41 92 107
-    OP_MINUS (279) 42 93 108
-    OP_TIMES (280) 44 96
-    OP_DIVIDE (281) 45 97
-    MK_LB (282) 15 16 39 40 111 112
-    MK_RB (283) 15 16 39 40 111 112
-    MK_LPAREN (284) 7 8 9 10 49 50 59 60 62 63 64 98 99 102 103
-    MK_RPAREN (285) 7 8 9 10 49 50 59 60 62 63 64 98 99 102 103
+    OP_ASSIGN (268) 55 61 73 74
+    OP_OR (269) 77
+    OP_AND (270) 79
+    OP_NOT (271) 109
+    OP_EQ (272) 83
+    OP_NE (273) 86
+    OP_GT (274) 87
+    OP_LT (275) 88
+    OP_GE (276) 84
+    OP_LE (277) 85
+    OP_PLUS (278) 41 95 110
+    OP_MINUS (279) 42 96 111
+    OP_TIMES (280) 44 99
+    OP_DIVIDE (281) 45 100
+    MK_LB (282) 15 16 39 40 114 115
+    MK_RB (283) 15 16 39 40 114 115
+    MK_LPAREN (284) 7 8 9 10 49 50 59 60 62 63 64 72 74 82 101 102 105 106
+    MK_RPAREN (285) 7 8 9 10 49 50 59 60 62 63 64 72 74 82 101 102 105 106
     MK_LBRACE (286) 7 8 9 10 58
     MK_RBRACE (287) 7 8 9 10 58
-    MK_COMMA (288) 11 36 37 52 70 88
+    MK_COMMA (288) 11 36 37 52 70 91
     MK_SEMICOLON (289) 27 28 29 30 31 60 61 64 65 66 67
     MK_DOT (290)
     ERROR (291)
@@ -295,53 +301,53 @@
         於左側： 68 69
         於右側： 60
     nonempty_assign_expr_list <node> (63)
-        於左側： 70 71
-        於右側： 59 62 63 68 70
+        於左側： 70 71 72
+        於右側： 59 62 63 68 70 72
     assign_expr <node> (64)
-        於左側： 72 73
+        於左側： 73 74 75
         於右側： 70 71
     relop_expr <node> (65)
-        於左側： 74 75
-        於右側： 55 61 67 72 73 75 88 89 98 99
-    relop_term <node> (66)
         於左側： 76 77
-        於右側： 74 75 77
-    relop_factor <node> (67)
+        於右側： 55 61 67 73 74 75 77 82 91 92 101 102
+    relop_term <node> (66)
         於左側： 78 79
-        於右側： 76 77
+        於右側： 76 77 79
+    relop_factor <node> (67)
+        於左側： 80 81 82
+        於右側： 78 79
     rel_op <node> (68)
-        於左側： 80 81 82 83 84 85
-        於右側： 79
+        於左側： 83 84 85 86 87 88
+        於右側： 81
     relop_expr_list <node> (69)
-        於左側： 86 87
-        於右側： 60 64 102 103
+        於左側： 89 90
+        於右側： 60 64 105 106
     nonempty_relop_expr_list <node> (70)
-        於左側： 88 89
-        於右側： 86 88
+        於左側： 91 92
+        於右側： 89 91
     expr <node> (71)
-        於左側： 90 91
-        於右側： 16 17 78 79 90 111 112
+        於左側： 93 94
+        於右側： 16 17 80 81 93 114 115
     add_op <node> (72)
-        於左側： 92 93
-        於右側： 90
+        於左側： 95 96
+        於右側： 93
     term <node> (73)
-        於左側： 94 95
-        於右側： 90 91 94
+        於左側： 97 98
+        於右側： 93 94 97
     mul_op <node> (74)
-        於左側： 96 97
-        於右側： 94
+        於左側： 99 100
+        於右側： 97
     factor <node> (75)
-        於左側： 98 99 100 101 102 103 104 105
-        於右側： 94 95
+        於左側： 101 102 103 104 105 106 107 108
+        於右側： 97 98
     unary_op <node> (76)
-        於左側： 106 107 108
-        於右側： 48 50 99 101 103 105
+        於左側： 109 110 111
+        於右側： 48 50 102 104 106 108
     var_ref <node> (77)
-        於左側： 109 110
-        於右側： 61 64 104 105
+        於左側： 112 113
+        於右側： 61 64 107 108
     dim_list <node> (78)
-        於左側： 111 112
-        於右側： 110 111
+        於左側： 114 115
+        於右側： 113 114
 
 
 狀態 0
@@ -787,23 +793,23 @@
 
 狀態 42
 
-  106 unary_op: OP_NOT .
+  109 unary_op: OP_NOT .
 
-    $default  使用規則 106 以縮減 (unary_op)
+    $default  使用規則 109 以縮減 (unary_op)
 
 
 狀態 43
 
-  107 unary_op: OP_PLUS .
+  110 unary_op: OP_PLUS .
 
-    $default  使用規則 107 以縮減 (unary_op)
+    $default  使用規則 110 以縮減 (unary_op)
 
 
 狀態 44
 
-  108 unary_op: OP_MINUS .
+  111 unary_op: OP_MINUS .
 
-    $default  使用規則 108 以縮減 (unary_op)
+    $default  使用規則 111 以縮減 (unary_op)
 
 
 狀態 45
@@ -950,28 +956,29 @@
 
 狀態 60
 
-  102 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
-  109 var_ref: ID .
-  110        | ID . dim_list
+  105 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
+  112 var_ref: ID .
+  113        | ID . dim_list
 
     MK_LB      偏移，並進入狀態 89
     MK_LPAREN  偏移，並進入狀態 90
 
-    $default  使用規則 109 以縮減 (var_ref)
+    $default  使用規則 112 以縮減 (var_ref)
 
     dim_list  進入狀態 91
 
 
 狀態 61
 
-  100 factor: CONST .
+  103 factor: CONST .
 
-    $default  使用規則 100 以縮減 (factor)
+    $default  使用規則 103 以縮減 (factor)
 
 
 狀態 62
 
-   98 factor: MK_LPAREN . relop_expr MK_RPAREN
+   82 relop_factor: MK_LPAREN . relop_expr MK_RPAREN
+  101 factor: MK_LPAREN . relop_expr MK_RPAREN
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -993,7 +1000,7 @@
 狀態 63
 
    55 init_id: ID OP_ASSIGN relop_expr .
-   75 relop_expr: relop_expr . OP_OR relop_term
+   77 relop_expr: relop_expr . OP_OR relop_term
 
     OP_OR  偏移，並進入狀態 93
 
@@ -1002,26 +1009,26 @@
 
 狀態 64
 
-   74 relop_expr: relop_term .
-   77 relop_term: relop_term . OP_AND relop_factor
+   76 relop_expr: relop_term .
+   79 relop_term: relop_term . OP_AND relop_factor
 
     OP_AND  偏移，並進入狀態 94
 
-    $default  使用規則 74 以縮減 (relop_expr)
+    $default  使用規則 76 以縮減 (relop_expr)
 
 
 狀態 65
 
-   76 relop_term: relop_factor .
+   78 relop_term: relop_factor .
 
-    $default  使用規則 76 以縮減 (relop_term)
+    $default  使用規則 78 以縮減 (relop_term)
 
 
 狀態 66
 
-   78 relop_factor: expr .
-   79             | expr . rel_op expr
-   90 expr: expr . add_op term
+   80 relop_factor: expr .
+   81             | expr . rel_op expr
+   93 expr: expr . add_op term
 
     OP_EQ     偏移，並進入狀態 95
     OP_NE     偏移，並進入狀態 96
@@ -1032,7 +1039,7 @@
     OP_PLUS   偏移，並進入狀態 101
     OP_MINUS  偏移，並進入狀態 102
 
-    $default  使用規則 78 以縮減 (relop_factor)
+    $default  使用規則 80 以縮減 (relop_factor)
 
     rel_op  進入狀態 103
     add_op  進入狀態 104
@@ -1040,30 +1047,30 @@
 
 狀態 67
 
-   91 expr: term .
-   94 term: term . mul_op factor
+   94 expr: term .
+   97 term: term . mul_op factor
 
     OP_TIMES   偏移，並進入狀態 105
     OP_DIVIDE  偏移，並進入狀態 106
 
-    $default  使用規則 91 以縮減 (expr)
+    $default  使用規則 94 以縮減 (expr)
 
     mul_op  進入狀態 107
 
 
 狀態 68
 
-   95 term: factor .
+   98 term: factor .
 
-    $default  使用規則 95 以縮減 (term)
+    $default  使用規則 98 以縮減 (term)
 
 
 狀態 69
 
-   99 factor: unary_op . MK_LPAREN relop_expr MK_RPAREN
-  101       | unary_op . CONST
-  103       | unary_op . ID MK_LPAREN relop_expr_list MK_RPAREN
-  105       | unary_op . var_ref
+  102 factor: unary_op . MK_LPAREN relop_expr MK_RPAREN
+  104       | unary_op . CONST
+  106       | unary_op . ID MK_LPAREN relop_expr_list MK_RPAREN
+  108       | unary_op . var_ref
 
     ID         偏移，並進入狀態 108
     CONST      偏移，並進入狀態 109
@@ -1074,9 +1081,9 @@
 
 狀態 70
 
-  104 factor: var_ref .
+  107 factor: var_ref .
 
-    $default  使用規則 104 以縮減 (factor)
+    $default  使用規則 107 以縮減 (factor)
 
 
 狀態 71
@@ -1297,16 +1304,16 @@
 
 狀態 89
 
-  112 dim_list: MK_LB . expr MK_RB
+  115 dim_list: MK_LB . expr MK_RB
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
-    expr      進入狀態 138
+    expr      進入狀態 139
     term      進入狀態 67
     factor    進入狀態 68
     unary_op  進入狀態 69
@@ -1315,7 +1322,7 @@
 
 狀態 90
 
-  102 factor: ID MK_LPAREN . relop_expr_list MK_RPAREN
+  105 factor: ID MK_LPAREN . relop_expr_list MK_RPAREN
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -1324,13 +1331,13 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    $default  使用規則 87 以縮減 (relop_expr_list)
+    $default  使用規則 90 以縮減 (relop_expr_list)
 
-    relop_expr                進入狀態 139
+    relop_expr                進入狀態 140
     relop_term                進入狀態 64
     relop_factor              進入狀態 65
-    relop_expr_list           進入狀態 140
-    nonempty_relop_expr_list  進入狀態 141
+    relop_expr_list           進入狀態 141
+    nonempty_relop_expr_list  進入狀態 142
     expr                      進入狀態 66
     term                      進入狀態 67
     factor                    進入狀態 68
@@ -1340,26 +1347,27 @@
 
 狀態 91
 
-  110 var_ref: ID dim_list .
-  111 dim_list: dim_list . MK_LB expr MK_RB
+  113 var_ref: ID dim_list .
+  114 dim_list: dim_list . MK_LB expr MK_RB
 
-    MK_LB  偏移，並進入狀態 142
+    MK_LB  偏移，並進入狀態 143
 
-    $default  使用規則 110 以縮減 (var_ref)
+    $default  使用規則 113 以縮減 (var_ref)
 
 
 狀態 92
 
-   75 relop_expr: relop_expr . OP_OR relop_term
-   98 factor: MK_LPAREN relop_expr . MK_RPAREN
+   77 relop_expr: relop_expr . OP_OR relop_term
+   82 relop_factor: MK_LPAREN relop_expr . MK_RPAREN
+  101 factor: MK_LPAREN relop_expr . MK_RPAREN
 
     OP_OR      偏移，並進入狀態 93
-    MK_RPAREN  偏移，並進入狀態 143
+    MK_RPAREN  偏移，並進入狀態 144
 
 
 狀態 93
 
-   75 relop_expr: relop_expr OP_OR . relop_term
+   77 relop_expr: relop_expr OP_OR . relop_term
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -1368,7 +1376,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_term    進入狀態 144
+    relop_term    進入狀態 145
     relop_factor  進入狀態 65
     expr          進入狀態 66
     term          進入狀態 67
@@ -1379,7 +1387,7 @@
 
 狀態 94
 
-   77 relop_term: relop_term OP_AND . relop_factor
+   79 relop_term: relop_term OP_AND . relop_factor
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -1388,7 +1396,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_factor  進入狀態 145
+    relop_factor  進入狀態 146
     expr          進入狀態 66
     term          進入狀態 67
     factor        進入狀態 68
@@ -1398,72 +1406,72 @@
 
 狀態 95
 
-   80 rel_op: OP_EQ .
-
-    $default  使用規則 80 以縮減 (rel_op)
-
-
-狀態 96
-
-   83 rel_op: OP_NE .
+   83 rel_op: OP_EQ .
 
     $default  使用規則 83 以縮減 (rel_op)
 
 
+狀態 96
+
+   86 rel_op: OP_NE .
+
+    $default  使用規則 86 以縮減 (rel_op)
+
+
 狀態 97
 
-   84 rel_op: OP_GT .
+   87 rel_op: OP_GT .
 
-    $default  使用規則 84 以縮減 (rel_op)
+    $default  使用規則 87 以縮減 (rel_op)
 
 
 狀態 98
 
-   85 rel_op: OP_LT .
+   88 rel_op: OP_LT .
 
-    $default  使用規則 85 以縮減 (rel_op)
+    $default  使用規則 88 以縮減 (rel_op)
 
 
 狀態 99
 
-   81 rel_op: OP_GE .
+   84 rel_op: OP_GE .
 
-    $default  使用規則 81 以縮減 (rel_op)
+    $default  使用規則 84 以縮減 (rel_op)
 
 
 狀態 100
 
-   82 rel_op: OP_LE .
+   85 rel_op: OP_LE .
 
-    $default  使用規則 82 以縮減 (rel_op)
+    $default  使用規則 85 以縮減 (rel_op)
 
 
 狀態 101
 
-   92 add_op: OP_PLUS .
+   95 add_op: OP_PLUS .
 
-    $default  使用規則 92 以縮減 (add_op)
+    $default  使用規則 95 以縮減 (add_op)
 
 
 狀態 102
 
-   93 add_op: OP_MINUS .
+   96 add_op: OP_MINUS .
 
-    $default  使用規則 93 以縮減 (add_op)
+    $default  使用規則 96 以縮減 (add_op)
 
 
 狀態 103
 
-   79 relop_factor: expr rel_op . expr
+   81 relop_factor: expr rel_op . expr
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
-    expr      進入狀態 146
+    expr      進入狀態 147
     term      進入狀態 67
     factor    進入狀態 68
     unary_op  進入狀態 69
@@ -1472,16 +1480,16 @@
 
 狀態 104
 
-   90 expr: expr add_op . term
+   93 expr: expr add_op . term
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
-    term      進入狀態 147
+    term      進入狀態 148
     factor    進入狀態 68
     unary_op  進入狀態 69
     var_ref   進入狀態 70
@@ -1489,58 +1497,58 @@
 
 狀態 105
 
-   96 mul_op: OP_TIMES .
+   99 mul_op: OP_TIMES .
 
-    $default  使用規則 96 以縮減 (mul_op)
+    $default  使用規則 99 以縮減 (mul_op)
 
 
 狀態 106
 
-   97 mul_op: OP_DIVIDE .
+  100 mul_op: OP_DIVIDE .
 
-    $default  使用規則 97 以縮減 (mul_op)
+    $default  使用規則 100 以縮減 (mul_op)
 
 
 狀態 107
 
-   94 term: term mul_op . factor
+   97 term: term mul_op . factor
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
-    factor    進入狀態 148
+    factor    進入狀態 149
     unary_op  進入狀態 69
     var_ref   進入狀態 70
 
 
 狀態 108
 
-  103 factor: unary_op ID . MK_LPAREN relop_expr_list MK_RPAREN
-  109 var_ref: ID .
-  110        | ID . dim_list
+  106 factor: unary_op ID . MK_LPAREN relop_expr_list MK_RPAREN
+  112 var_ref: ID .
+  113        | ID . dim_list
 
     MK_LB      偏移，並進入狀態 89
-    MK_LPAREN  偏移，並進入狀態 149
+    MK_LPAREN  偏移，並進入狀態 150
 
-    $default  使用規則 109 以縮減 (var_ref)
+    $default  使用規則 112 以縮減 (var_ref)
 
     dim_list  進入狀態 91
 
 
 狀態 109
 
-  101 factor: unary_op CONST .
+  104 factor: unary_op CONST .
 
-    $default  使用規則 101 以縮減 (factor)
+    $default  使用規則 104 以縮減 (factor)
 
 
 狀態 110
 
-   99 factor: unary_op MK_LPAREN . relop_expr MK_RPAREN
+  102 factor: unary_op MK_LPAREN . relop_expr MK_RPAREN
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -1549,7 +1557,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_expr    進入狀態 150
+    relop_expr    進入狀態 151
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -1561,9 +1569,9 @@
 
 狀態 111
 
-  105 factor: unary_op var_ref .
+  108 factor: unary_op var_ref .
 
-    $default  使用規則 105 以縮減 (factor)
+    $default  使用規則 108 以縮減 (factor)
 
 
 狀態 112
@@ -1583,7 +1591,7 @@
 
     $default  使用規則 22 以縮減 (block)
 
-    block      進入狀態 151
+    block      進入狀態 152
     decl_list  進入狀態 129
     decl       進入狀態 11
     type_decl  進入狀態 12
@@ -1598,7 +1606,7 @@
 
     7 function_decl: type ID MK_LPAREN param_list MK_RPAREN . MK_LBRACE block MK_RBRACE
 
-    MK_LBRACE  偏移，並進入狀態 152
+    MK_LBRACE  偏移，並進入狀態 153
 
 
 狀態 114
@@ -1654,7 +1662,7 @@
 
     OP_PLUS    偏移，並進入狀態 76
     OP_MINUS   偏移，並進入狀態 77
-    MK_RPAREN  偏移，並進入狀態 153
+    MK_RPAREN  偏移，並進入狀態 154
 
 
 狀態 120
@@ -1668,14 +1676,14 @@
 
    31 var_decl: ID . id_list MK_SEMICOLON
    34 type: ID .
-  109 var_ref: ID .
-  110        | ID . dim_list
+  112 var_ref: ID .
+  113        | ID . dim_list
 
     ID     偏移，並進入狀態 15
     MK_LB  偏移，並進入狀態 89
 
     ID        [使用規則 34 以縮減 (type)]
-    $default  使用規則 109 以縮減 (var_ref)
+    $default  使用規則 112 以縮減 (var_ref)
 
     id_list   進入狀態 16
     dim_list  進入狀態 91
@@ -1686,21 +1694,21 @@
    62 stmt: IF . MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt
    63     | IF . MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt ELSE stmt
 
-    MK_LPAREN  偏移，並進入狀態 154
+    MK_LPAREN  偏移，並進入狀態 155
 
 
 狀態 123
 
    59 stmt: WHILE . MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt
 
-    MK_LPAREN  偏移，並進入狀態 155
+    MK_LPAREN  偏移，並進入狀態 156
 
 
 狀態 124
 
    60 stmt: FOR . MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
 
-    MK_LPAREN  偏移，並進入狀態 156
+    MK_LPAREN  偏移，並進入狀態 157
 
 
 狀態 125
@@ -1720,7 +1728,7 @@
 
     $default  使用規則 22 以縮減 (block)
 
-    block      進入狀態 157
+    block      進入狀態 158
     decl_list  進入狀態 129
     decl       進入狀態 11
     type_decl  進入狀態 12
@@ -1749,9 +1757,9 @@
     OP_PLUS       偏移，並進入狀態 43
     OP_MINUS      偏移，並進入狀態 44
     MK_LPAREN     偏移，並進入狀態 62
-    MK_SEMICOLON  偏移，並進入狀態 158
+    MK_SEMICOLON  偏移，並進入狀態 159
 
-    relop_expr    進入狀態 159
+    relop_expr    進入狀態 160
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -1765,7 +1773,7 @@
 
    10 function_decl: VOID ID MK_LPAREN MK_RPAREN MK_LBRACE block . MK_RBRACE
 
-    MK_RBRACE  偏移，並進入狀態 160
+    MK_RBRACE  偏移，並進入狀態 161
 
 
 狀態 129
@@ -1791,7 +1799,7 @@
     type_decl  進入狀態 12
     var_decl   進入狀態 13
     type       進入狀態 130
-    stmt_list  進入狀態 161
+    stmt_list  進入狀態 162
     stmt       進入狀態 132
     var_ref    進入狀態 133
 
@@ -1811,7 +1819,7 @@
    20 block: stmt_list .
    56 stmt_list: stmt_list . stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -1821,7 +1829,7 @@
 
     $default  使用規則 20 以縮減 (block)
 
-    stmt     進入狀態 163
+    stmt     進入狀態 164
     var_ref  進入狀態 133
 
 
@@ -1837,8 +1845,8 @@
    61 stmt: var_ref . OP_ASSIGN relop_expr MK_SEMICOLON
    64     | var_ref . MK_LPAREN relop_expr_list MK_RPAREN MK_SEMICOLON
 
-    OP_ASSIGN  偏移，並進入狀態 164
-    MK_LPAREN  偏移，並進入狀態 165
+    OP_ASSIGN  偏移，並進入狀態 165
+    MK_LPAREN  偏移，並進入狀態 166
 
 
 狀態 134
@@ -1858,7 +1866,7 @@
 
     $default  使用規則 22 以縮減 (block)
 
-    block      進入狀態 166
+    block      進入狀態 167
     decl_list  進入狀態 129
     decl       進入狀態 11
     type_decl  進入狀態 12
@@ -1885,12 +1893,12 @@
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
     $default  使用規則 18 以縮減 (expr_null)
 
-    expr_null  進入狀態 167
-    expr       進入狀態 168
+    expr_null  進入狀態 168
+    expr       進入狀態 169
     term       進入狀態 67
     factor     進入狀態 68
     unary_op   進入狀態 69
@@ -1902,53 +1910,14 @@
    14 param: type ID dim_fn .
    16 dim_fn: dim_fn . MK_LB expr MK_RB
 
-    MK_LB  偏移，並進入狀態 169
+    MK_LB  偏移，並進入狀態 170
 
     $default  使用規則 14 以縮減 (param)
 
 
 狀態 138
 
-   90 expr: expr . add_op term
-  112 dim_list: MK_LB expr . MK_RB
-
-    OP_PLUS   偏移，並進入狀態 101
-    OP_MINUS  偏移，並進入狀態 102
-    MK_RB     偏移，並進入狀態 170
-
-    add_op  進入狀態 104
-
-
-狀態 139
-
-   75 relop_expr: relop_expr . OP_OR relop_term
-   89 nonempty_relop_expr_list: relop_expr .
-
-    OP_OR  偏移，並進入狀態 93
-
-    $default  使用規則 89 以縮減 (nonempty_relop_expr_list)
-
-
-狀態 140
-
-  102 factor: ID MK_LPAREN relop_expr_list . MK_RPAREN
-
-    MK_RPAREN  偏移，並進入狀態 171
-
-
-狀態 141
-
-   86 relop_expr_list: nonempty_relop_expr_list .
-   88 nonempty_relop_expr_list: nonempty_relop_expr_list . MK_COMMA relop_expr
-
-    MK_COMMA  偏移，並進入狀態 172
-
-    $default  使用規則 86 以縮減 (relop_expr_list)
-
-
-狀態 142
-
-  111 dim_list: dim_list MK_LB . expr MK_RB
+  101 factor: MK_LPAREN . relop_expr MK_RPAREN
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -1957,73 +1926,144 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    expr      進入狀態 173
+    relop_expr    進入狀態 171
+    relop_term    進入狀態 64
+    relop_factor  進入狀態 65
+    expr          進入狀態 66
+    term          進入狀態 67
+    factor        進入狀態 68
+    unary_op      進入狀態 69
+    var_ref       進入狀態 70
+
+
+狀態 139
+
+   93 expr: expr . add_op term
+  115 dim_list: MK_LB expr . MK_RB
+
+    OP_PLUS   偏移，並進入狀態 101
+    OP_MINUS  偏移，並進入狀態 102
+    MK_RB     偏移，並進入狀態 172
+
+    add_op  進入狀態 104
+
+
+狀態 140
+
+   77 relop_expr: relop_expr . OP_OR relop_term
+   92 nonempty_relop_expr_list: relop_expr .
+
+    OP_OR  偏移，並進入狀態 93
+
+    $default  使用規則 92 以縮減 (nonempty_relop_expr_list)
+
+
+狀態 141
+
+  105 factor: ID MK_LPAREN relop_expr_list . MK_RPAREN
+
+    MK_RPAREN  偏移，並進入狀態 173
+
+
+狀態 142
+
+   89 relop_expr_list: nonempty_relop_expr_list .
+   91 nonempty_relop_expr_list: nonempty_relop_expr_list . MK_COMMA relop_expr
+
+    MK_COMMA  偏移，並進入狀態 174
+
+    $default  使用規則 89 以縮減 (relop_expr_list)
+
+
+狀態 143
+
+  114 dim_list: dim_list MK_LB . expr MK_RB
+
+    ID         偏移，並進入狀態 60
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 138
+
+    expr      進入狀態 175
     term      進入狀態 67
     factor    進入狀態 68
     unary_op  進入狀態 69
     var_ref   進入狀態 70
 
 
-狀態 143
-
-   98 factor: MK_LPAREN relop_expr MK_RPAREN .
-
-    $default  使用規則 98 以縮減 (factor)
-
-
 狀態 144
 
-   75 relop_expr: relop_expr OP_OR relop_term .
-   77 relop_term: relop_term . OP_AND relop_factor
+   82 relop_factor: MK_LPAREN relop_expr MK_RPAREN .
+  101 factor: MK_LPAREN relop_expr MK_RPAREN .
 
-    OP_AND  偏移，並進入狀態 94
-
-    $default  使用規則 75 以縮減 (relop_expr)
+    OP_OR         使用規則 82 以縮減 (relop_factor)
+    OP_OR         [使用規則 101 以縮減 (factor)]
+    OP_AND        使用規則 82 以縮減 (relop_factor)
+    OP_AND        [使用規則 101 以縮減 (factor)]
+    MK_RPAREN     使用規則 82 以縮減 (relop_factor)
+    MK_RPAREN     [使用規則 101 以縮減 (factor)]
+    MK_COMMA      使用規則 82 以縮減 (relop_factor)
+    MK_COMMA      [使用規則 101 以縮減 (factor)]
+    MK_SEMICOLON  使用規則 82 以縮減 (relop_factor)
+    MK_SEMICOLON  [使用規則 101 以縮減 (factor)]
+    $default      使用規則 101 以縮減 (factor)
 
 
 狀態 145
 
-   77 relop_term: relop_term OP_AND relop_factor .
+   77 relop_expr: relop_expr OP_OR relop_term .
+   79 relop_term: relop_term . OP_AND relop_factor
 
-    $default  使用規則 77 以縮減 (relop_term)
+    OP_AND  偏移，並進入狀態 94
+
+    $default  使用規則 77 以縮減 (relop_expr)
 
 
 狀態 146
 
-   79 relop_factor: expr rel_op expr .
-   90 expr: expr . add_op term
+   79 relop_term: relop_term OP_AND relop_factor .
 
-    OP_PLUS   偏移，並進入狀態 101
-    OP_MINUS  偏移，並進入狀態 102
-
-    $default  使用規則 79 以縮減 (relop_factor)
-
-    add_op  進入狀態 104
+    $default  使用規則 79 以縮減 (relop_term)
 
 
 狀態 147
 
-   90 expr: expr add_op term .
-   94 term: term . mul_op factor
+   81 relop_factor: expr rel_op expr .
+   93 expr: expr . add_op term
 
-    OP_TIMES   偏移，並進入狀態 105
-    OP_DIVIDE  偏移，並進入狀態 106
+    OP_PLUS   偏移，並進入狀態 101
+    OP_MINUS  偏移，並進入狀態 102
 
-    $default  使用規則 90 以縮減 (expr)
+    $default  使用規則 81 以縮減 (relop_factor)
 
-    mul_op  進入狀態 107
+    add_op  進入狀態 104
 
 
 狀態 148
 
-   94 term: term mul_op factor .
+   93 expr: expr add_op term .
+   97 term: term . mul_op factor
 
-    $default  使用規則 94 以縮減 (term)
+    OP_TIMES   偏移，並進入狀態 105
+    OP_DIVIDE  偏移，並進入狀態 106
+
+    $default  使用規則 93 以縮減 (expr)
+
+    mul_op  進入狀態 107
 
 
 狀態 149
 
-  103 factor: unary_op ID MK_LPAREN . relop_expr_list MK_RPAREN
+   97 term: term mul_op factor .
+
+    $default  使用規則 97 以縮減 (term)
+
+
+狀態 150
+
+  106 factor: unary_op ID MK_LPAREN . relop_expr_list MK_RPAREN
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -2032,13 +2072,13 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    $default  使用規則 87 以縮減 (relop_expr_list)
+    $default  使用規則 90 以縮減 (relop_expr_list)
 
-    relop_expr                進入狀態 139
+    relop_expr                進入狀態 140
     relop_term                進入狀態 64
     relop_factor              進入狀態 65
-    relop_expr_list           進入狀態 174
-    nonempty_relop_expr_list  進入狀態 141
+    relop_expr_list           進入狀態 176
+    nonempty_relop_expr_list  進入狀態 142
     expr                      進入狀態 66
     term                      進入狀態 67
     factor                    進入狀態 68
@@ -2046,23 +2086,23 @@
     var_ref                   進入狀態 70
 
 
-狀態 150
-
-   75 relop_expr: relop_expr . OP_OR relop_term
-   99 factor: unary_op MK_LPAREN relop_expr . MK_RPAREN
-
-    OP_OR      偏移，並進入狀態 93
-    MK_RPAREN  偏移，並進入狀態 175
-
-
 狀態 151
 
-    9 function_decl: type ID MK_LPAREN MK_RPAREN MK_LBRACE block . MK_RBRACE
+   77 relop_expr: relop_expr . OP_OR relop_term
+  102 factor: unary_op MK_LPAREN relop_expr . MK_RPAREN
 
-    MK_RBRACE  偏移，並進入狀態 176
+    OP_OR      偏移，並進入狀態 93
+    MK_RPAREN  偏移，並進入狀態 177
 
 
 狀態 152
+
+    9 function_decl: type ID MK_LPAREN MK_RPAREN MK_LBRACE block . MK_RBRACE
+
+    MK_RBRACE  偏移，並進入狀態 178
+
+
+狀態 153
 
     7 function_decl: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE . block MK_RBRACE
 
@@ -2079,7 +2119,7 @@
 
     $default  使用規則 22 以縮減 (block)
 
-    block      進入狀態 177
+    block      進入狀態 179
     decl_list  進入狀態 129
     decl       進入狀態 11
     type_decl  進入狀態 12
@@ -2090,51 +2130,28 @@
     var_ref    進入狀態 133
 
 
-狀態 153
+狀態 154
 
    50 cfactor: unary_op MK_LPAREN cexpr MK_RPAREN .
 
     $default  使用規則 50 以縮減 (cfactor)
 
 
-狀態 154
+狀態 155
 
    62 stmt: IF MK_LPAREN . nonempty_assign_expr_list MK_RPAREN stmt
    63     | IF MK_LPAREN . nonempty_assign_expr_list MK_RPAREN stmt ELSE stmt
 
-    ID         偏移，並進入狀態 178
+    ID         偏移，並進入狀態 180
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
-
-    nonempty_assign_expr_list  進入狀態 179
-    assign_expr                進入狀態 180
-    relop_expr                 進入狀態 181
-    relop_term                 進入狀態 64
-    relop_factor               進入狀態 65
-    expr                       進入狀態 66
-    term                       進入狀態 67
-    factor                     進入狀態 68
-    unary_op                   進入狀態 69
-    var_ref                    進入狀態 70
-
-
-狀態 155
-
-   59 stmt: WHILE MK_LPAREN . nonempty_assign_expr_list MK_RPAREN stmt
-
-    ID         偏移，並進入狀態 178
-    CONST      偏移，並進入狀態 61
-    OP_NOT     偏移，並進入狀態 42
-    OP_PLUS    偏移，並進入狀態 43
-    OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 181
 
     nonempty_assign_expr_list  進入狀態 182
-    assign_expr                進入狀態 180
-    relop_expr                 進入狀態 181
+    assign_expr                進入狀態 183
+    relop_expr                 進入狀態 184
     relop_term                 進入狀態 64
     relop_factor               進入狀態 65
     expr                       進入狀態 66
@@ -2146,21 +2163,18 @@
 
 狀態 156
 
-   60 stmt: FOR MK_LPAREN . assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
+   59 stmt: WHILE MK_LPAREN . nonempty_assign_expr_list MK_RPAREN stmt
 
-    ID         偏移，並進入狀態 178
+    ID         偏移，並進入狀態 180
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 181
 
-    $default  使用規則 69 以縮減 (assign_expr_list)
-
-    assign_expr_list           進入狀態 183
-    nonempty_assign_expr_list  進入狀態 184
-    assign_expr                進入狀態 180
-    relop_expr                 進入狀態 181
+    nonempty_assign_expr_list  進入狀態 185
+    assign_expr                進入狀態 183
+    relop_expr                 進入狀態 184
     relop_term                 進入狀態 64
     relop_factor               進入狀態 65
     expr                       進入狀態 66
@@ -2172,40 +2186,66 @@
 
 狀態 157
 
-   58 stmt: MK_LBRACE block . MK_RBRACE
+   60 stmt: FOR MK_LPAREN . assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
 
-    MK_RBRACE  偏移，並進入狀態 185
+    ID         偏移，並進入狀態 180
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 181
+
+    $default  使用規則 69 以縮減 (assign_expr_list)
+
+    assign_expr_list           進入狀態 186
+    nonempty_assign_expr_list  進入狀態 187
+    assign_expr                進入狀態 183
+    relop_expr                 進入狀態 184
+    relop_term                 進入狀態 64
+    relop_factor               進入狀態 65
+    expr                       進入狀態 66
+    term                       進入狀態 67
+    factor                     進入狀態 68
+    unary_op                   進入狀態 69
+    var_ref                    進入狀態 70
 
 
 狀態 158
+
+   58 stmt: MK_LBRACE block . MK_RBRACE
+
+    MK_RBRACE  偏移，並進入狀態 188
+
+
+狀態 159
 
    66 stmt: RETURN MK_SEMICOLON .
 
     $default  使用規則 66 以縮減 (stmt)
 
 
-狀態 159
+狀態 160
 
    67 stmt: RETURN relop_expr . MK_SEMICOLON
-   75 relop_expr: relop_expr . OP_OR relop_term
+   77 relop_expr: relop_expr . OP_OR relop_term
 
     OP_OR         偏移，並進入狀態 93
-    MK_SEMICOLON  偏移，並進入狀態 186
+    MK_SEMICOLON  偏移，並進入狀態 189
 
 
-狀態 160
+狀態 161
 
    10 function_decl: VOID ID MK_LPAREN MK_RPAREN MK_LBRACE block MK_RBRACE .
 
     $default  使用規則 10 以縮減 (function_decl)
 
 
-狀態 161
+狀態 162
 
    19 block: decl_list stmt_list .
    56 stmt_list: stmt_list . stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -2215,30 +2255,30 @@
 
     $default  使用規則 19 以縮減 (block)
 
-    stmt     進入狀態 163
+    stmt     進入狀態 164
     var_ref  進入狀態 133
 
 
-狀態 162
+狀態 163
 
-  109 var_ref: ID .
-  110        | ID . dim_list
+  112 var_ref: ID .
+  113        | ID . dim_list
 
     MK_LB  偏移，並進入狀態 89
 
-    $default  使用規則 109 以縮減 (var_ref)
+    $default  使用規則 112 以縮減 (var_ref)
 
     dim_list  進入狀態 91
 
 
-狀態 163
+狀態 164
 
    56 stmt_list: stmt_list stmt .
 
     $default  使用規則 56 以縮減 (stmt_list)
 
 
-狀態 164
+狀態 165
 
    61 stmt: var_ref OP_ASSIGN . relop_expr MK_SEMICOLON
 
@@ -2249,7 +2289,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_expr    進入狀態 187
+    relop_expr    進入狀態 190
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -2259,7 +2299,7 @@
     var_ref       進入狀態 70
 
 
-狀態 165
+狀態 166
 
    64 stmt: var_ref MK_LPAREN . relop_expr_list MK_RPAREN MK_SEMICOLON
 
@@ -2270,13 +2310,13 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    $default  使用規則 87 以縮減 (relop_expr_list)
+    $default  使用規則 90 以縮減 (relop_expr_list)
 
-    relop_expr                進入狀態 139
+    relop_expr                進入狀態 140
     relop_term                進入狀態 64
     relop_factor              進入狀態 65
-    relop_expr_list           進入狀態 188
-    nonempty_relop_expr_list  進入狀態 141
+    relop_expr_list           進入狀態 191
+    nonempty_relop_expr_list  進入狀態 142
     expr                      進入狀態 66
     term                      進入狀態 67
     factor                    進入狀態 68
@@ -2284,24 +2324,24 @@
     var_ref                   進入狀態 70
 
 
-狀態 166
+狀態 167
 
     8 function_decl: VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block . MK_RBRACE
 
-    MK_RBRACE  偏移，並進入狀態 189
-
-
-狀態 167
-
-   15 dim_fn: MK_LB expr_null . MK_RB
-
-    MK_RB  偏移，並進入狀態 190
+    MK_RBRACE  偏移，並進入狀態 192
 
 
 狀態 168
 
+   15 dim_fn: MK_LB expr_null . MK_RB
+
+    MK_RB  偏移，並進入狀態 193
+
+
+狀態 169
+
    17 expr_null: expr .
-   90 expr: expr . add_op term
+   93 expr: expr . add_op term
 
     OP_PLUS   偏移，並進入狀態 101
     OP_MINUS  偏移，並進入狀態 102
@@ -2311,7 +2351,7 @@
     add_op  進入狀態 104
 
 
-狀態 169
+狀態 170
 
    16 dim_fn: dim_fn MK_LB . expr MK_RB
 
@@ -2320,32 +2360,41 @@
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 138
 
-    expr      進入狀態 191
+    expr      進入狀態 194
     term      進入狀態 67
     factor    進入狀態 68
     unary_op  進入狀態 69
     var_ref   進入狀態 70
 
 
-狀態 170
-
-  112 dim_list: MK_LB expr MK_RB .
-
-    $default  使用規則 112 以縮減 (dim_list)
-
-
 狀態 171
 
-  102 factor: ID MK_LPAREN relop_expr_list MK_RPAREN .
+   77 relop_expr: relop_expr . OP_OR relop_term
+  101 factor: MK_LPAREN relop_expr . MK_RPAREN
 
-    $default  使用規則 102 以縮減 (factor)
+    OP_OR      偏移，並進入狀態 93
+    MK_RPAREN  偏移，並進入狀態 195
 
 
 狀態 172
 
-   88 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA . relop_expr
+  115 dim_list: MK_LB expr MK_RB .
+
+    $default  使用規則 115 以縮減 (dim_list)
+
+
+狀態 173
+
+  105 factor: ID MK_LPAREN relop_expr_list MK_RPAREN .
+
+    $default  使用規則 105 以縮減 (factor)
+
+
+狀態 174
+
+   91 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA . relop_expr
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -2354,7 +2403,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_expr    進入狀態 192
+    relop_expr    進入狀態 196
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -2364,205 +2413,238 @@
     var_ref       進入狀態 70
 
 
-狀態 173
+狀態 175
 
-   90 expr: expr . add_op term
-  111 dim_list: dim_list MK_LB expr . MK_RB
+   93 expr: expr . add_op term
+  114 dim_list: dim_list MK_LB expr . MK_RB
 
     OP_PLUS   偏移，並進入狀態 101
     OP_MINUS  偏移，並進入狀態 102
-    MK_RB     偏移，並進入狀態 193
+    MK_RB     偏移，並進入狀態 197
 
     add_op  進入狀態 104
 
 
-狀態 174
-
-  103 factor: unary_op ID MK_LPAREN relop_expr_list . MK_RPAREN
-
-    MK_RPAREN  偏移，並進入狀態 194
-
-
-狀態 175
-
-   99 factor: unary_op MK_LPAREN relop_expr MK_RPAREN .
-
-    $default  使用規則 99 以縮減 (factor)
-
-
 狀態 176
+
+  106 factor: unary_op ID MK_LPAREN relop_expr_list . MK_RPAREN
+
+    MK_RPAREN  偏移，並進入狀態 198
+
+
+狀態 177
+
+  102 factor: unary_op MK_LPAREN relop_expr MK_RPAREN .
+
+    $default  使用規則 102 以縮減 (factor)
+
+
+狀態 178
 
     9 function_decl: type ID MK_LPAREN MK_RPAREN MK_LBRACE block MK_RBRACE .
 
     $default  使用規則 9 以縮減 (function_decl)
 
 
-狀態 177
+狀態 179
 
     7 function_decl: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block . MK_RBRACE
 
-    MK_RBRACE  偏移，並進入狀態 195
+    MK_RBRACE  偏移，並進入狀態 199
 
 
-狀態 178
+狀態 180
 
-   72 assign_expr: ID . OP_ASSIGN relop_expr
-  102 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
-  109 var_ref: ID .
-  110        | ID . dim_list
+   73 assign_expr: ID . OP_ASSIGN relop_expr
+  105 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
+  112 var_ref: ID .
+  113        | ID . dim_list
 
-    OP_ASSIGN  偏移，並進入狀態 196
+    OP_ASSIGN  偏移，並進入狀態 200
     MK_LB      偏移，並進入狀態 89
     MK_LPAREN  偏移，並進入狀態 90
 
-    $default  使用規則 109 以縮減 (var_ref)
+    $default  使用規則 112 以縮減 (var_ref)
 
     dim_list  進入狀態 91
 
 
-狀態 179
+狀態 181
+
+   72 nonempty_assign_expr_list: MK_LPAREN . nonempty_assign_expr_list MK_RPAREN
+   74 assign_expr: MK_LPAREN . ID OP_ASSIGN relop_expr MK_RPAREN
+   82 relop_factor: MK_LPAREN . relop_expr MK_RPAREN
+  101 factor: MK_LPAREN . relop_expr MK_RPAREN
+
+    ID         偏移，並進入狀態 201
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 181
+
+    nonempty_assign_expr_list  進入狀態 202
+    assign_expr                進入狀態 183
+    relop_expr                 進入狀態 203
+    relop_term                 進入狀態 64
+    relop_factor               進入狀態 65
+    expr                       進入狀態 66
+    term                       進入狀態 67
+    factor                     進入狀態 68
+    unary_op                   進入狀態 69
+    var_ref                    進入狀態 70
+
+
+狀態 182
 
    62 stmt: IF MK_LPAREN nonempty_assign_expr_list . MK_RPAREN stmt
    63     | IF MK_LPAREN nonempty_assign_expr_list . MK_RPAREN stmt ELSE stmt
    70 nonempty_assign_expr_list: nonempty_assign_expr_list . MK_COMMA assign_expr
 
-    MK_RPAREN  偏移，並進入狀態 197
-    MK_COMMA   偏移，並進入狀態 198
+    MK_RPAREN  偏移，並進入狀態 204
+    MK_COMMA   偏移，並進入狀態 205
 
 
-狀態 180
+狀態 183
 
    71 nonempty_assign_expr_list: assign_expr .
 
     $default  使用規則 71 以縮減 (nonempty_assign_expr_list)
 
 
-狀態 181
+狀態 184
 
-   73 assign_expr: relop_expr .
-   75 relop_expr: relop_expr . OP_OR relop_term
+   75 assign_expr: relop_expr .
+   77 relop_expr: relop_expr . OP_OR relop_term
 
     OP_OR  偏移，並進入狀態 93
 
-    $default  使用規則 73 以縮減 (assign_expr)
+    $default  使用規則 75 以縮減 (assign_expr)
 
 
-狀態 182
+狀態 185
 
    59 stmt: WHILE MK_LPAREN nonempty_assign_expr_list . MK_RPAREN stmt
    70 nonempty_assign_expr_list: nonempty_assign_expr_list . MK_COMMA assign_expr
 
-    MK_RPAREN  偏移，並進入狀態 199
-    MK_COMMA   偏移，並進入狀態 198
+    MK_RPAREN  偏移，並進入狀態 206
+    MK_COMMA   偏移，並進入狀態 205
 
 
-狀態 183
+狀態 186
 
    60 stmt: FOR MK_LPAREN assign_expr_list . MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
 
-    MK_SEMICOLON  偏移，並進入狀態 200
+    MK_SEMICOLON  偏移，並進入狀態 207
 
 
-狀態 184
+狀態 187
 
    68 assign_expr_list: nonempty_assign_expr_list .
    70 nonempty_assign_expr_list: nonempty_assign_expr_list . MK_COMMA assign_expr
 
-    MK_COMMA  偏移，並進入狀態 198
+    MK_COMMA  偏移，並進入狀態 205
 
     $default  使用規則 68 以縮減 (assign_expr_list)
 
 
-狀態 185
+狀態 188
 
    58 stmt: MK_LBRACE block MK_RBRACE .
 
     $default  使用規則 58 以縮減 (stmt)
 
 
-狀態 186
+狀態 189
 
    67 stmt: RETURN relop_expr MK_SEMICOLON .
 
     $default  使用規則 67 以縮減 (stmt)
 
 
-狀態 187
+狀態 190
 
    61 stmt: var_ref OP_ASSIGN relop_expr . MK_SEMICOLON
-   75 relop_expr: relop_expr . OP_OR relop_term
+   77 relop_expr: relop_expr . OP_OR relop_term
 
     OP_OR         偏移，並進入狀態 93
-    MK_SEMICOLON  偏移，並進入狀態 201
+    MK_SEMICOLON  偏移，並進入狀態 208
 
 
-狀態 188
+狀態 191
 
    64 stmt: var_ref MK_LPAREN relop_expr_list . MK_RPAREN MK_SEMICOLON
 
-    MK_RPAREN  偏移，並進入狀態 202
+    MK_RPAREN  偏移，並進入狀態 209
 
 
-狀態 189
+狀態 192
 
     8 function_decl: VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE .
 
     $default  使用規則 8 以縮減 (function_decl)
 
 
-狀態 190
+狀態 193
 
    15 dim_fn: MK_LB expr_null MK_RB .
 
     $default  使用規則 15 以縮減 (dim_fn)
 
 
-狀態 191
+狀態 194
 
    16 dim_fn: dim_fn MK_LB expr . MK_RB
-   90 expr: expr . add_op term
+   93 expr: expr . add_op term
 
     OP_PLUS   偏移，並進入狀態 101
     OP_MINUS  偏移，並進入狀態 102
-    MK_RB     偏移，並進入狀態 203
+    MK_RB     偏移，並進入狀態 210
 
     add_op  進入狀態 104
 
 
-狀態 192
+狀態 195
 
-   75 relop_expr: relop_expr . OP_OR relop_term
-   88 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA relop_expr .
+  101 factor: MK_LPAREN relop_expr MK_RPAREN .
+
+    $default  使用規則 101 以縮減 (factor)
+
+
+狀態 196
+
+   77 relop_expr: relop_expr . OP_OR relop_term
+   91 nonempty_relop_expr_list: nonempty_relop_expr_list MK_COMMA relop_expr .
 
     OP_OR  偏移，並進入狀態 93
 
-    $default  使用規則 88 以縮減 (nonempty_relop_expr_list)
+    $default  使用規則 91 以縮減 (nonempty_relop_expr_list)
 
 
-狀態 193
+狀態 197
 
-  111 dim_list: dim_list MK_LB expr MK_RB .
+  114 dim_list: dim_list MK_LB expr MK_RB .
 
-    $default  使用規則 111 以縮減 (dim_list)
-
-
-狀態 194
-
-  103 factor: unary_op ID MK_LPAREN relop_expr_list MK_RPAREN .
-
-    $default  使用規則 103 以縮減 (factor)
+    $default  使用規則 114 以縮減 (dim_list)
 
 
-狀態 195
+狀態 198
+
+  106 factor: unary_op ID MK_LPAREN relop_expr_list MK_RPAREN .
+
+    $default  使用規則 106 以縮減 (factor)
+
+
+狀態 199
 
     7 function_decl: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE .
 
     $default  使用規則 7 以縮減 (function_decl)
 
 
-狀態 196
+狀態 200
 
-   72 assign_expr: ID OP_ASSIGN . relop_expr
+   73 assign_expr: ID OP_ASSIGN . relop_expr
 
     ID         偏移，並進入狀態 60
     CONST      偏移，並進入狀態 61
@@ -2571,7 +2653,7 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    relop_expr    進入狀態 204
+    relop_expr    進入狀態 211
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -2581,12 +2663,52 @@
     var_ref       進入狀態 70
 
 
-狀態 197
+狀態 201
+
+   73 assign_expr: ID . OP_ASSIGN relop_expr
+   74            | MK_LPAREN ID . OP_ASSIGN relop_expr MK_RPAREN
+  105 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
+  112 var_ref: ID .
+  113        | ID . dim_list
+
+    OP_ASSIGN  偏移，並進入狀態 212
+    MK_LB      偏移，並進入狀態 89
+    MK_LPAREN  偏移，並進入狀態 90
+
+    $default  使用規則 112 以縮減 (var_ref)
+
+    dim_list  進入狀態 91
+
+
+狀態 202
+
+   70 nonempty_assign_expr_list: nonempty_assign_expr_list . MK_COMMA assign_expr
+   72                          | MK_LPAREN nonempty_assign_expr_list . MK_RPAREN
+
+    MK_RPAREN  偏移，並進入狀態 213
+    MK_COMMA   偏移，並進入狀態 205
+
+
+狀態 203
+
+   75 assign_expr: relop_expr .
+   77 relop_expr: relop_expr . OP_OR relop_term
+   82 relop_factor: MK_LPAREN relop_expr . MK_RPAREN
+  101 factor: MK_LPAREN relop_expr . MK_RPAREN
+
+    OP_OR      偏移，並進入狀態 93
+    MK_RPAREN  偏移，並進入狀態 144
+
+    MK_RPAREN  [使用規則 75 以縮減 (assign_expr)]
+    $default   使用規則 75 以縮減 (assign_expr)
+
+
+狀態 204
 
    62 stmt: IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN . stmt
    63     | IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN . stmt ELSE stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -2594,23 +2716,23 @@
     MK_SEMICOLON  偏移，並進入狀態 126
     RETURN        偏移，並進入狀態 127
 
-    stmt     進入狀態 205
+    stmt     進入狀態 214
     var_ref  進入狀態 133
 
 
-狀態 198
+狀態 205
 
    70 nonempty_assign_expr_list: nonempty_assign_expr_list MK_COMMA . assign_expr
 
-    ID         偏移，並進入狀態 178
+    ID         偏移，並進入狀態 180
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 215
 
-    assign_expr   進入狀態 206
-    relop_expr    進入狀態 181
+    assign_expr   進入狀態 216
+    relop_expr    進入狀態 184
     relop_term    進入狀態 64
     relop_factor  進入狀態 65
     expr          進入狀態 66
@@ -2620,11 +2742,11 @@
     var_ref       進入狀態 70
 
 
-狀態 199
+狀態 206
 
    59 stmt: WHILE MK_LPAREN nonempty_assign_expr_list MK_RPAREN . stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -2632,11 +2754,11 @@
     MK_SEMICOLON  偏移，並進入狀態 126
     RETURN        偏移，並進入狀態 127
 
-    stmt     進入狀態 207
+    stmt     進入狀態 217
     var_ref  進入狀態 133
 
 
-狀態 200
+狀態 207
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON . relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
 
@@ -2647,13 +2769,13 @@
     OP_MINUS   偏移，並進入狀態 44
     MK_LPAREN  偏移，並進入狀態 62
 
-    $default  使用規則 87 以縮減 (relop_expr_list)
+    $default  使用規則 90 以縮減 (relop_expr_list)
 
-    relop_expr                進入狀態 139
+    relop_expr                進入狀態 140
     relop_term                進入狀態 64
     relop_factor              進入狀態 65
-    relop_expr_list           進入狀態 208
-    nonempty_relop_expr_list  進入狀態 141
+    relop_expr_list           進入狀態 218
+    nonempty_relop_expr_list  進入狀態 142
     expr                      進入狀態 66
     term                      進入狀態 67
     factor                    進入狀態 68
@@ -2661,81 +2783,146 @@
     var_ref                   進入狀態 70
 
 
-狀態 201
+狀態 208
 
    61 stmt: var_ref OP_ASSIGN relop_expr MK_SEMICOLON .
 
     $default  使用規則 61 以縮減 (stmt)
 
 
-狀態 202
+狀態 209
 
    64 stmt: var_ref MK_LPAREN relop_expr_list MK_RPAREN . MK_SEMICOLON
 
-    MK_SEMICOLON  偏移，並進入狀態 209
+    MK_SEMICOLON  偏移，並進入狀態 219
 
 
-狀態 203
+狀態 210
 
    16 dim_fn: dim_fn MK_LB expr MK_RB .
 
     $default  使用規則 16 以縮減 (dim_fn)
 
 
-狀態 204
+狀態 211
 
-   72 assign_expr: ID OP_ASSIGN relop_expr .
-   75 relop_expr: relop_expr . OP_OR relop_term
+   73 assign_expr: ID OP_ASSIGN relop_expr .
+   77 relop_expr: relop_expr . OP_OR relop_term
 
     OP_OR  偏移，並進入狀態 93
 
-    $default  使用規則 72 以縮減 (assign_expr)
+    $default  使用規則 73 以縮減 (assign_expr)
 
 
-狀態 205
+狀態 212
+
+   73 assign_expr: ID OP_ASSIGN . relop_expr
+   74            | MK_LPAREN ID OP_ASSIGN . relop_expr MK_RPAREN
+
+    ID         偏移，並進入狀態 60
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 62
+
+    relop_expr    進入狀態 220
+    relop_term    進入狀態 64
+    relop_factor  進入狀態 65
+    expr          進入狀態 66
+    term          進入狀態 67
+    factor        進入狀態 68
+    unary_op      進入狀態 69
+    var_ref       進入狀態 70
+
+
+狀態 213
+
+   72 nonempty_assign_expr_list: MK_LPAREN nonempty_assign_expr_list MK_RPAREN .
+
+    $default  使用規則 72 以縮減 (nonempty_assign_expr_list)
+
+
+狀態 214
 
    62 stmt: IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt .
    63     | IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt . ELSE stmt
 
-    ELSE  偏移，並進入狀態 210
+    ELSE  偏移，並進入狀態 221
 
     ELSE      [使用規則 62 以縮減 (stmt)]
     $default  使用規則 62 以縮減 (stmt)
 
 
-狀態 206
+狀態 215
+
+   74 assign_expr: MK_LPAREN . ID OP_ASSIGN relop_expr MK_RPAREN
+   82 relop_factor: MK_LPAREN . relop_expr MK_RPAREN
+  101 factor: MK_LPAREN . relop_expr MK_RPAREN
+
+    ID         偏移，並進入狀態 222
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 62
+
+    relop_expr    進入狀態 92
+    relop_term    進入狀態 64
+    relop_factor  進入狀態 65
+    expr          進入狀態 66
+    term          進入狀態 67
+    factor        進入狀態 68
+    unary_op      進入狀態 69
+    var_ref       進入狀態 70
+
+
+狀態 216
 
    70 nonempty_assign_expr_list: nonempty_assign_expr_list MK_COMMA assign_expr .
 
     $default  使用規則 70 以縮減 (nonempty_assign_expr_list)
 
 
-狀態 207
+狀態 217
 
    59 stmt: WHILE MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt .
 
     $default  使用規則 59 以縮減 (stmt)
 
 
-狀態 208
+狀態 218
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list . MK_SEMICOLON assign_expr_list MK_RPAREN stmt
 
-    MK_SEMICOLON  偏移，並進入狀態 211
+    MK_SEMICOLON  偏移，並進入狀態 223
 
 
-狀態 209
+狀態 219
 
    64 stmt: var_ref MK_LPAREN relop_expr_list MK_RPAREN MK_SEMICOLON .
 
     $default  使用規則 64 以縮減 (stmt)
 
 
-狀態 210
+狀態 220
+
+   73 assign_expr: ID OP_ASSIGN relop_expr .
+   74            | MK_LPAREN ID OP_ASSIGN relop_expr . MK_RPAREN
+   77 relop_expr: relop_expr . OP_OR relop_term
+
+    OP_OR      偏移，並進入狀態 93
+    MK_RPAREN  偏移，並進入狀態 224
+
+    MK_RPAREN  [使用規則 73 以縮減 (assign_expr)]
+    $default   使用規則 73 以縮減 (assign_expr)
+
+
+狀態 221
 
    63 stmt: IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt ELSE . stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -2743,27 +2930,43 @@
     MK_SEMICOLON  偏移，並進入狀態 126
     RETURN        偏移，並進入狀態 127
 
-    stmt     進入狀態 212
+    stmt     進入狀態 225
     var_ref  進入狀態 133
 
 
-狀態 211
+狀態 222
+
+   74 assign_expr: MK_LPAREN ID . OP_ASSIGN relop_expr MK_RPAREN
+  105 factor: ID . MK_LPAREN relop_expr_list MK_RPAREN
+  112 var_ref: ID .
+  113        | ID . dim_list
+
+    OP_ASSIGN  偏移，並進入狀態 226
+    MK_LB      偏移，並進入狀態 89
+    MK_LPAREN  偏移，並進入狀態 90
+
+    $default  使用規則 112 以縮減 (var_ref)
+
+    dim_list  進入狀態 91
+
+
+狀態 223
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON . assign_expr_list MK_RPAREN stmt
 
-    ID         偏移，並進入狀態 178
+    ID         偏移，並進入狀態 180
     CONST      偏移，並進入狀態 61
     OP_NOT     偏移，並進入狀態 42
     OP_PLUS    偏移，並進入狀態 43
     OP_MINUS   偏移，並進入狀態 44
-    MK_LPAREN  偏移，並進入狀態 62
+    MK_LPAREN  偏移，並進入狀態 181
 
     $default  使用規則 69 以縮減 (assign_expr_list)
 
-    assign_expr_list           進入狀態 213
-    nonempty_assign_expr_list  進入狀態 184
-    assign_expr                進入狀態 180
-    relop_expr                 進入狀態 181
+    assign_expr_list           進入狀態 227
+    nonempty_assign_expr_list  進入狀態 187
+    assign_expr                進入狀態 183
+    relop_expr                 進入狀態 184
     relop_term                 進入狀態 64
     relop_factor               進入狀態 65
     expr                       進入狀態 66
@@ -2773,25 +2976,62 @@
     var_ref                    進入狀態 70
 
 
-狀態 212
+狀態 224
+
+   74 assign_expr: MK_LPAREN ID OP_ASSIGN relop_expr MK_RPAREN .
+
+    $default  使用規則 74 以縮減 (assign_expr)
+
+
+狀態 225
 
    63 stmt: IF MK_LPAREN nonempty_assign_expr_list MK_RPAREN stmt ELSE stmt .
 
     $default  使用規則 63 以縮減 (stmt)
 
 
-狀態 213
+狀態 226
+
+   74 assign_expr: MK_LPAREN ID OP_ASSIGN . relop_expr MK_RPAREN
+
+    ID         偏移，並進入狀態 60
+    CONST      偏移，並進入狀態 61
+    OP_NOT     偏移，並進入狀態 42
+    OP_PLUS    偏移，並進入狀態 43
+    OP_MINUS   偏移，並進入狀態 44
+    MK_LPAREN  偏移，並進入狀態 62
+
+    relop_expr    進入狀態 228
+    relop_term    進入狀態 64
+    relop_factor  進入狀態 65
+    expr          進入狀態 66
+    term          進入狀態 67
+    factor        進入狀態 68
+    unary_op      進入狀態 69
+    var_ref       進入狀態 70
+
+
+狀態 227
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list . MK_RPAREN stmt
 
-    MK_RPAREN  偏移，並進入狀態 214
+    MK_RPAREN  偏移，並進入狀態 229
 
 
-狀態 214
+狀態 228
+
+   74 assign_expr: MK_LPAREN ID OP_ASSIGN relop_expr . MK_RPAREN
+   77 relop_expr: relop_expr . OP_OR relop_term
+
+    OP_OR      偏移，並進入狀態 93
+    MK_RPAREN  偏移，並進入狀態 224
+
+
+狀態 229
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN . stmt
 
-    ID            偏移，並進入狀態 162
+    ID            偏移，並進入狀態 163
     IF            偏移，並進入狀態 122
     WHILE         偏移，並進入狀態 123
     FOR           偏移，並進入狀態 124
@@ -2799,11 +3039,11 @@
     MK_SEMICOLON  偏移，並進入狀態 126
     RETURN        偏移，並進入狀態 127
 
-    stmt     進入狀態 215
+    stmt     進入狀態 230
     var_ref  進入狀態 133
 
 
-狀態 215
+狀態 230
 
    60 stmt: FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt .
 
