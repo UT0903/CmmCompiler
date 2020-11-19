@@ -317,12 +317,6 @@ type_decl 	: TYPEDEF type id_list MK_SEMICOLON
                     $$ = makeDeclNode(TYPE_DECL);
                     makeFamily($$, 2, makeIDNode("void", NORMAL_ID), $3);
                 }
-            | TYPEDEF ID id_list MK_SEMICOLON  
-                {
-                    /*FINISH*/
-                    $$ = makeDeclNode(TYPE_DECL);
-                    makeFamily($$, 2, $2, $3);
-                }
             ;
 
 var_decl	: type init_id_list MK_SEMICOLON 
@@ -330,12 +324,6 @@ var_decl	: type init_id_list MK_SEMICOLON
                     /*FINISH*/
                     $$ = makeDeclNode(VARIABLE_DECL);
                     makeFamily($$, 2, $1, $2);
-                }
-            | ID id_list MK_SEMICOLON
-                {
-                    /*FINISH*/
-                    $$ = makeDeclNode(VARIABLE_DECL);
-                    makeFamily($$, 2, makeIDNode($1, NORMAL_ID), $2);
                 }
             ;
 
@@ -561,10 +549,6 @@ nonempty_assign_expr_list        : nonempty_assign_expr_list MK_COMMA assign_exp
                                         /*FINISH*/
                                         $$ = $1;
                                     }
-                                | MK_LPAREN nonempty_assign_expr_list MK_RPAREN
-                                    {
-                                        $$ = $2;
-                                    }
                                  ;
 
 test		: assign_expr
@@ -577,10 +561,6 @@ assign_expr     : ID OP_ASSIGN relop_expr
                     {
                         /*FINISH*/
                         $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
-                    }
-                | MK_LPAREN ID OP_ASSIGN relop_expr MK_RPAREN
-                    {
-                        $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($2, NORMAL_ID), $4);
                     }
                 | relop_expr
                     {
@@ -621,10 +601,6 @@ relop_factor	: expr
                     {
                         /*FINISH*/
                         $$ = makeFamily($2, 2, $1, $3);
-                    }
-                | MK_LPAREN relop_expr MK_RPAREN
-                    {
-                        $$ = $2;
                     }
                 ;
 
