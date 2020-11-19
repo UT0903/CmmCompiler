@@ -782,6 +782,22 @@ double_add_id   : OP_PP ID
                     {
                         $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_ID_MM), makeIDNode($1, NORMAL_ID));
                     }
+                | OP_PP ID dim_list
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_PP_ID), makeChild(makeIDNode($2, ARRAY_ID), $3) );
+                    }
+                | ID dim_list OP_PP
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_ID_PP), makeChild(makeIDNode($1, ARRAY_ID), $2) );
+                    }
+                | OP_MM ID dim_list
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_MM_ID), makeChild(makeIDNode($2, ARRAY_ID), $3) );
+                    }
+                | ID dim_list OP_MM
+                    {
+                        $$ = makeChild(makeExprNode(UNARY_OPERATION, UNARY_OP_ID_MM), makeChild(makeIDNode($1, ARRAY_ID), $2) );
+                    }
                 ;
 
 unary_op    : OP_NOT
