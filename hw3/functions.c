@@ -27,7 +27,11 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
         ">",
         "<",
         "&&",
-        "||"
+        "||",
+        "+=",
+        "-=",
+        "*=",
+        "/=",
     };
     char *unaryOpString[] = {
         "+",
