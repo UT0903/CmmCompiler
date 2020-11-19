@@ -4,7 +4,7 @@ CC = gcc -g
 LEX = flex
 YACC = bison -v
 YACCFLAG = -d
-LIBS = -ll 
+LIBS = -lfl 
 
 parser: parser.tab.o alloc.o functions.o
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o $(LIBS)
