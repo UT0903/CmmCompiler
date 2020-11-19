@@ -562,6 +562,10 @@ assign_expr     : ID OP_ASSIGN relop_expr
                         /*FINISH*/
                         $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($1, NORMAL_ID), $3);
                     }
+                | MK_LPAREN ID OP_ASSIGN relop_expr MK_RPAREN
+                    {
+                        $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, makeIDNode($2, NORMAL_ID), $4);
+                    }
                 | relop_expr
                     {
                         /*FINISH*/
