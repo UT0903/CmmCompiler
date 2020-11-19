@@ -42,7 +42,11 @@ typedef enum UNARY_OPERATOR
 {
     UNARY_OP_POSITIVE,
     UNARY_OP_NEGATIVE,
-    UNARY_OP_LOGICAL_NEGATION
+    UNARY_OP_LOGICAL_NEGATION,
+    UNART_OP_ID_PP,
+    UNART_OP_PP_ID,
+    UNART_OP_ID_MM,
+    UNART_OP_MM_ID
 } UNARY_OPERATOR;
 
 //C_type= type of constant ex: 1, 3.3, "const string"

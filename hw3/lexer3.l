@@ -24,7 +24,9 @@ op_gt           ">"
 op_le           "<="
 op_ge           ">="
 op_plus         "+"
+op_plus_plus    "++"
 op_minus        "-"
+op_minus_minus  "--"
 op_times        "*"
 op_divide       "/"
 int_constant    {digit}+
@@ -83,7 +85,9 @@ error            .
 {op_le}         return OP_LE;
 {op_ge}         return OP_GE;
 {op_plus}       return OP_PLUS;
+{op_plus_plus}  return OP_PP;
 {op_minus}      return OP_MINUS;
+{op_minus_minus} return OP_MM;
 {op_times}      return OP_TIMES;
 {op_divide}     return OP_DIVIDE;
 {int_constant}  {
