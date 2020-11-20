@@ -1,3 +1,6 @@
+Bonus:
+
+#1
 新增處理：unary operation ++,ii
 新增一個nonterminal double_add 
 hande ID ++, ID --, ++ ID, -- ID,
@@ -8,9 +11,11 @@ hande ID ++, ID --, ++ ID, -- ID,
 如果是單獨的a++;
 再新增一個stmt的node DOUBLE_ADD_STMT
 
-修改CFG: assign_expr -> ( nonempty_assign_expr_list )
-讓while((a = b, c = d), a = d);這種可以進行編譯
+MORE IN testdata/plusplus.c
 
-FOR ( type ID ; relop_expr_list ; assign_expr_list) stmt
 
+#2
+修改CFG: FOR ( type ID ; relop_expr_list ; assign_expr_list) stmt
 支援for(int i = 0; i < 1; i ++);這種在for開頭宣告變數
+
+MORE IN testdata/forInt.c
