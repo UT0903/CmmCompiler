@@ -493,6 +493,11 @@ stmt		: MK_LBRACE block MK_RBRACE
                     /*FINISH*/
                     $$ = makeFamily(makeStmtNode(FOR_STMT), 4, $3, $5, $7, $9);
                 }
+            | FOR MK_LPAREN type init_id_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
+                {
+                    /*FINISH*/
+                    $$ = makeFamily(makeStmtNode(FOR_STMT), 4, makeFamily(makeDeclNode(VARIABLE_DECL), 2, $3, $4), $6, $8, $10);
+                }
             | var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
                     /*FINISH*/
