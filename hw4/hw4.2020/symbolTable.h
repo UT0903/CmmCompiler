@@ -80,15 +80,17 @@ typedef struct SymbolTableEntry{
 typedef struct SymbolTableStack{
     struct SymbolTableStack* prevStack;
     SymbolTableEntry* hashTable[HASH_TABLE_SIZE];
+    int currentScope;
 } SymbolTableStack;
 
 void initializeSymbolTableStack();
 void symbolTableEnd();
-int enterSymbol(char* symbolName, SymbolAttribute* attribute);
-int removeSymbol(char* symbolName);
+int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope);
+int removeSymbol(char* symbolName, int scope);
 
-SymbolTableEntry* declaredInThisScope(char* symbolName, SymbolTableStack *nowStackEntry);
+SymbolTableEntry* declaredInThisScope(char* symbolName, int scope);
 void openScope();
 void closeScope();
+int getNowScope();
 
 #endif

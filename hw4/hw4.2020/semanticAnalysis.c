@@ -63,8 +63,7 @@ typedef enum ErrorMsgKind
     PASS_SCALAR_TO_ARRAY
 } ErrorMsgKind;
 
-void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind)
-{
+void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
     g_anyErrorOccur = 1;
     printf("Error found in line %d\n", node1->linenumber);
     /*
@@ -98,8 +97,7 @@ void semanticAnalysis(AST_NODE *root)
 }
 
 
-DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2)
-{
+DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2){
     if(dataType1 == FLOAT_TYPE || dataType2 == FLOAT_TYPE) {
         return FLOAT_TYPE;
     } else {
@@ -218,6 +216,5 @@ void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ig
 }
 
 
-void declareFunction(AST_NODE* declarationNode)
-{
+void declareFunction(AST_NODE* declarationNode){
 }
