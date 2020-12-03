@@ -29,16 +29,31 @@ SymbolTableEntry* newSymbolTableEntry(int nestingLevel)
     return symbolTableEntry;
 }
 
-void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry)
-{
+void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){
+    if(entry->prevInHashChain == NULL)
+        symbolTable.hashTable[hashIndex] = entry->nextInHashChain;
+    else
+        entry->nextInHashChain->prevInHashChain = entry->nextInHashChain;
+    if(entry->nextInHashChain == NULL)
+        entry->prevInHashChain->nextInHashChain = ;
+
+
+    free(entry);
 }
 
 void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry)
 {
+
 }
 
 void initializeSymbolTable()
-{
+{   
+    /*symbolTable.currentLevel = 0;
+    symbolTable.scopeDisplayElementCount = ; // WTF is this?
+    for(int i = 0; i < HASH_TABLE_SIZE; i++){
+        symbolTable.hashTable[i] = NULL;
+        symbolTable.scopeDisplay[i] = NULL;
+    }*/
 }
 
 void symbolTableEnd()

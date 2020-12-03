@@ -110,9 +110,9 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 
 %union{
-    char *lexeme;
-    CON_Type  *const1;
-    AST_NODE  *node;
+	char *lexeme;
+	CON_Type  *const1;
+	AST_NODE  *node;
 };
 
 %token <lexeme>ID
@@ -163,21 +163,21 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 /* ==== Grammar Section ==== */
 
 /* Productions */               /* Semantic actions */
-program     : global_decl_list { $$=Allocate(PROGRAM_NODE);  makeChild($$,$1); prog=$$;}
-        | { $$=Allocate(PROGRAM_NODE); prog=$$;}
-        ;
+program		: global_decl_list { $$=Allocate(PROGRAM_NODE);  makeChild($$,$1); prog=$$;}
+		| { $$=Allocate(PROGRAM_NODE); prog=$$;}
+		;
 
 global_decl_list: global_decl_list global_decl 
                     {
                         $$ = makeSibling($1, $2);
-                    }   
+                    }	
                 | global_decl
                     {
                         $$ = $1;
                     }
                 ; 
 
-global_decl : decl_list function_decl
+global_decl	: decl_list function_decl
                 {
                     $$ = makeSibling(makeChild(Allocate(VARIABLE_DECL_LIST_NODE), $1), $2);
                 }
@@ -187,7 +187,7 @@ global_decl : decl_list function_decl
                 }
             ;
 
-function_decl   : type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
+function_decl	: type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
@@ -217,17 +217,17 @@ function_decl   : type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRA
                     }
                 ;
 
-param_list  : param_list MK_COMMA  param 
+param_list	: param_list MK_COMMA  param 
                 {
                     $$ = makeSibling($1, $3);
                 }
-            | param 
+            | param	
                 {
                     $$ = $1; 
                 }
             ;
 
-param       : type ID 
+param		: type ID 
                 {
                     $$ = makeDeclNode(FUNCTION_PARAMETER_DECL);
                     makeFamily($$, 2, $1, makeIDNode($2, NORMAL_ID));
@@ -238,7 +238,7 @@ param       : type ID
                     makeFamily($$, 2, $1, makeChild(makeIDNode($2, ARRAY_ID), $3));
                 }
             ;
-dim_fn      : MK_LB expr_null MK_RB 
+dim_fn		: MK_LB expr_null MK_RB 
                 {
                     $$ = $2;
                 }
@@ -246,9 +246,9 @@ dim_fn      : MK_LB expr_null MK_RB
                 {
                     $$ = makeSibling($1, $3);
                 }
-        ;
+		;
 
-expr_null   :expr 
+expr_null	:expr 
                 {
                     $$ = $1;
                 }
@@ -278,7 +278,7 @@ block           : decl_list stmt_list
                     }
                 ;
  
-decl_list   : decl_list decl 
+decl_list	: decl_list decl 
                 {
                     $$ = makeSibling($1, $2);
                 }
@@ -288,7 +288,7 @@ decl_list   : decl_list decl
                 }
             ;
 
-decl        : type_decl 
+decl		: type_decl 
                 {
                     $$ = $1;
                 }
@@ -298,7 +298,7 @@ decl        : type_decl
                 }
             ;
 
-type_decl   : TYPEDEF type id_list MK_SEMICOLON  
+type_decl 	: TYPEDEF type id_list MK_SEMICOLON  
                 {
                     $$ = makeDeclNode(TYPE_DECL);
                     makeFamily($$, 2, $2, $3);
@@ -311,14 +311,14 @@ type_decl   : TYPEDEF type id_list MK_SEMICOLON
                 }
             ;
 
-var_decl    : type init_id_list MK_SEMICOLON 
+var_decl	: type init_id_list MK_SEMICOLON 
                 {
                     $$ = makeDeclNode(VARIABLE_DECL);
                     makeFamily($$, 2, $1, $2);
                 }
             ;
 
-type        : INT 
+type		: INT 
                 {
                     $$ = makeIDNode("int", NORMAL_ID);  
                 }
@@ -332,7 +332,7 @@ type        : INT
                 }
             ;
 
-id_list     : ID 
+id_list		: ID 
                 {
                     $$ = makeIDNode($1, NORMAL_ID);
                 }
@@ -348,8 +348,8 @@ id_list     : ID
                 {
                     $$ = makeChild(makeIDNode($1, ARRAY_ID), $2);
                 }
-        ;
-dim_decl    : MK_LB cexpr MK_RB 
+		;
+dim_decl	: MK_LB cexpr MK_RB 
                 {
                     $$ = $2;
                 } 
@@ -358,7 +358,7 @@ dim_decl    : MK_LB cexpr MK_RB
                     $$ = makeSibling($1, $3);
                 } 
             ;
-cexpr       : cexpr OP_PLUS mcexpr 
+cexpr		: cexpr OP_PLUS mcexpr 
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
                     makeFamily($$, 2, $1, $3);
@@ -373,7 +373,7 @@ cexpr       : cexpr OP_PLUS mcexpr
                     $$ = $1;
                 }
             ;  
-mcexpr      : mcexpr OP_TIMES cfactor 
+mcexpr		: mcexpr OP_TIMES cfactor 
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
                     makeFamily($$, 2, $1, $3);
@@ -389,7 +389,7 @@ mcexpr      : mcexpr OP_TIMES cfactor
                 }
             ;
         
-cfactor:    CONST 
+cfactor:	CONST 
                 {
                     $$ = Allocate(CONST_VALUE_NODE);
                     $$->semantic_value.const1 = $1;
@@ -400,7 +400,7 @@ cfactor:    CONST
                 }
             ;
 
-init_id_list    : init_id 
+init_id_list	: init_id 
                     {
                         $$ = $1; 
                     }
@@ -410,7 +410,7 @@ init_id_list    : init_id
                     }
                 ;
 
-init_id     : ID 
+init_id		: ID 
                 {
                     $$ = makeIDNode($1, NORMAL_ID);
                 }
@@ -424,7 +424,7 @@ init_id     : ID
                 }
             ;
 
-stmt_list   : stmt_list stmt 
+stmt_list	: stmt_list stmt 
                 {
                     $$ = makeSibling($1, $2);
                 }
@@ -436,7 +436,7 @@ stmt_list   : stmt_list stmt
 
 
 
-stmt        : MK_LBRACE block MK_RBRACE 
+stmt		: MK_LBRACE block MK_RBRACE 
                 {
                     $$ = $2;
                 }
@@ -506,7 +506,7 @@ nonempty_assign_expr_list        : nonempty_assign_expr_list MK_COMMA assign_exp
                                     }
                                  ;
 
-test        : assign_expr
+test		: assign_expr
                 {
                     $$ = $1;
                 }
@@ -522,9 +522,9 @@ assign_expr     : ID OP_ASSIGN relop_expr
                     {
                         $$ = $1;
                     }
-        ;
+		;
 
-relop_expr  : relop_term 
+relop_expr	: relop_term 
                 {
                     $$ = $1;
                 }
@@ -535,7 +535,7 @@ relop_expr  : relop_term
                 }
             ;
 
-relop_term  : relop_factor 
+relop_term	: relop_factor 
                 {
                     $$ = $1;
                 }
@@ -546,7 +546,7 @@ relop_term  : relop_factor
                 }
             ;
 
-relop_factor    : expr
+relop_factor	: expr
                     {
                         $$ = $1;
                     }
@@ -556,7 +556,7 @@ relop_factor    : expr
                     }
                 ;
 
-rel_op      : OP_EQ
+rel_op		: OP_EQ
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_EQ);
                 }
@@ -583,7 +583,7 @@ rel_op      : OP_EQ
             ;
 
 
-relop_expr_list : nonempty_relop_expr_list 
+relop_expr_list	: nonempty_relop_expr_list 
                     {
                         $$ = makeChild(Allocate(NONEMPTY_RELOP_EXPR_LIST_NODE), $1);
                     }
@@ -593,7 +593,7 @@ relop_expr_list : nonempty_relop_expr_list
                     }
                 ;
 
-nonempty_relop_expr_list    : nonempty_relop_expr_list MK_COMMA relop_expr
+nonempty_relop_expr_list	: nonempty_relop_expr_list MK_COMMA relop_expr
                                 {
                                     $$ = makeSibling($1, $3);
                                 }
@@ -603,7 +603,7 @@ nonempty_relop_expr_list    : nonempty_relop_expr_list MK_COMMA relop_expr
                                 }
                             ;
 
-expr        : expr add_op term 
+expr		: expr add_op term 
                 {
                     $$ = makeFamily($2, 2, $1, $3);
                 }
@@ -613,7 +613,7 @@ expr        : expr add_op term
                 }
             ;
 
-add_op      : OP_PLUS
+add_op		: OP_PLUS
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
                 }
@@ -623,7 +623,7 @@ add_op      : OP_PLUS
                 }
             ;
 
-term        : term mul_op factor
+term		: term mul_op factor
                 {
                     $$ = makeFamily($2, 2, $1, $3);
                 }
@@ -633,7 +633,7 @@ term        : term mul_op factor
                 }
             ;
 
-mul_op      : OP_TIMES
+mul_op		: OP_TIMES
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_MUL);
                 }
@@ -643,7 +643,7 @@ mul_op      : OP_TIMES
                 }
             ;
 
-factor      : MK_LPAREN relop_expr MK_RPAREN
+factor		: MK_LPAREN relop_expr MK_RPAREN
                 {
                     $$ = $2;
                 }
@@ -711,7 +711,7 @@ factor      : MK_LPAREN relop_expr MK_RPAREN
                 }
             ;
 
-var_ref     : ID 
+var_ref		: ID 
                 {
                     $$ = makeIDNode($1, NORMAL_ID);
                 }
@@ -723,7 +723,7 @@ var_ref     : ID
             ;
 
 
-dim_list    : dim_list MK_LB expr MK_RB 
+dim_list	: dim_list MK_LB expr MK_RB 
                 {
                     $$ = makeSibling($1, $3);
                 }
@@ -731,7 +731,7 @@ dim_list    : dim_list MK_LB expr MK_RB
                 {
                     $$ = $2;
                 }
-        ;
+		;
 
 
 %%
