@@ -29,7 +29,7 @@ void initializeSymbolTableStack(){
     stackEntry = NULL;
 }
 
-void pushStack(){
+void openScope(){ //push stack
     //new a stack
     SymbolTableStack* newStack = (SymbolTableStack*)malloc(sizeof(SymbolTableStack));
     //init hashTable
@@ -41,7 +41,7 @@ void pushStack(){
     newStack->prevStack = stackEntry; //construct linklist
     stackEntry = newStack;
 }
-void popStack(){
+void closeScope(){ //pop stack
     if(stackEntry == NULL){
         fprintf(stderr, "Stack is null, Can't pop stack\n"); 
         exit(1);
@@ -121,13 +121,5 @@ SymbolTableEntry* declaredInThisScope(char* symbolName, SymbolTableStack *nowSta
         nowEntry = nowEntry->next;
     }
     return NULL;
-}
-
-void openScope(){
-    pushStack();
-}
-
-void closeScope(){
-    popStack();
 }
 
