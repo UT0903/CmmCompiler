@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
 // This file is for reference only, you are not required to follow the implementation. //
 
 int HASH(char * str) {
@@ -14,73 +15,119 @@ int HASH(char * str) {
 	return (idx & (HASH_TABLE_SIZE-1));
 }
 
-SymbolTable symbolTable;
+SymbolTableStack *stackEntry;
 
-SymbolTableEntry* newSymbolTableEntry(int nestingLevel)
-{
+SymbolTableEntry* newSymbolTableEntry(char* symbolName, SymbolAttribute* attribute){
     SymbolTableEntry* symbolTableEntry = (SymbolTableEntry*)malloc(sizeof(SymbolTableEntry));
-    symbolTableEntry->nextInHashChain = NULL;
-    symbolTableEntry->prevInHashChain = NULL;
-    symbolTableEntry->nextInSameLevel = NULL;
-    symbolTableEntry->sameNameInOuterLevel = NULL;
-    symbolTableEntry->attribute = NULL;
-    symbolTableEntry->name = NULL;
-    symbolTableEntry->nestingLevel = nestingLevel;
+    symbolTableEntry->next = NULL;
+    symbolTableEntry->attribute = attribute;
+    symbolTableEntry->name = symbolName;
     return symbolTableEntry;
 }
 
-void removeFromHashTrain(int hashIndex, SymbolTableEntry* entry){
-    if(entry->prevInHashChain == NULL)
-        symbolTable.hashTable[hashIndex] = entry->nextInHashChain;
-    else
-        entry->nextInHashChain->prevInHashChain = entry->nextInHashChain;
-    if(entry->nextInHashChain == NULL)
-        entry->prevInHashChain->nextInHashChain = ;
-
-
-    free(entry);
+void initializeSymbolTableStack(){
+    stackEntry = NULL;
 }
 
-void enterIntoHashTrain(int hashIndex, SymbolTableEntry* entry)
-{
-
-}
-
-void initializeSymbolTable()
-{   
-    /*symbolTable.currentLevel = 0;
-    symbolTable.scopeDisplayElementCount = ; // WTF is this?
+void pushStack(){
+    //new a stack
+    SymbolTableStack* newStack = (SymbolTableStack*)malloc(sizeof(SymbolTableStack));
+    //init hashTable
     for(int i = 0; i < HASH_TABLE_SIZE; i++){
-        symbolTable.hashTable[i] = NULL;
-        symbolTable.scopeDisplay[i] = NULL;
-    }*/
+        newStack->hashTable[i]->next = NULL;
+        newStack->hashTable[i]->name = NULL;
+        newStack->hashTable[i]->attribute = NULL;
+    }
+    newStack->prevStack = stackEntry; //construct linklist
+    stackEntry = newStack;
+}
+void popStack(){
+    if(stackEntry == NULL){
+        fprintf(stderr, "Stack is null, Can't pop stack\n"); 
+        exit(1);
+    }
+    SymbolTableStack* prevStack = stackEntry->prevStack;
+    
+    //free hash table
+    for(int i = 0; i < HASH_TABLE_SIZE; i++){
+        SymbolTableEntry* nowEntry = stackEntry->hashTable[i];
+        while(nowEntry != NULL){
+            SymbolTableEntry* tempEntry = nowEntry;
+            nowEntry = nowEntry->next;
+            free(tempEntry);
+        }
+    }
+    free(stackEntry);
+    stackEntry = prevStack;
+}
+void symbolTableEnd(){}
+
+SymbolTableEntry* retrieveSymbol(char* symbolName){
+    SymbolTableStack *nowStackEntry = stackEntry;
+    while(nowStackEntry != NULL){
+        SymbolTableEntry* targetEntry;
+        if((targetEntry = declaredInThisScope(symbolName, nowStackEntry)) != NULL){
+            return targetEntry;
+        }
+        nowStackEntry = nowStackEntry->prevStack;
+    }
+    fprintf(stderr, "Can't not find symbolName: %s\n", symbolName); 
+    return NULL;
 }
 
-void symbolTableEnd()
-{
-}
-
-SymbolTableEntry* retrieveSymbol(char* symbolName)
-{
-}
-
-SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute)
-{
+int enterSymbol(char* symbolName, SymbolAttribute* attribute){
+    if(declaredInThisScope(symbolName, NULL) != NULL){
+        fprintf(stderr, "Redeclearation of symbolName: [ %s ]\n", symbolName); 
+        return 0;
+    }
+    //insert
+    SymbolTableEntry* newSymbol = newSymbolTableEntry(symbolName, attribute);
+    newSymbol->next = stackEntry->hashTable[HASH(symbolName)]->next;
+    stackEntry->hashTable[HASH(symbolName)] = newSymbol;
+    return 1;
 }
 
 //remove the symbol from the current scope
-void removeSymbol(char* symbolName)
-{
+int removeSymbol(char* symbolName){
+    SymbolTableEntry* nowEntry = stackEntry->hashTable[HASH(symbolName)];
+    SymbolTableEntry* prevEntry = NULL;
+    while(nowEntry != NULL){
+        if(strcmp(nowEntry->name, symbolName) == 0){
+            if(prevEntry == NULL){
+                stackEntry->hashTable[HASH(symbolName)] = nowEntry->next;
+            }
+            else{
+                prevEntry->next = nowEntry->next;
+            }
+            free(nowEntry);
+            return 1;
+        }
+        prevEntry = nowEntry;
+        nowEntry = nowEntry->next;
+    }
+    fprintf(stderr, "No symbolName: [ %s ] in this scope\n", symbolName); 
+    return 0;
 }
 
-int declaredLocally(char* symbolName)
-{
+SymbolTableEntry* declaredInThisScope(char* symbolName, SymbolTableStack *nowStackEntry){
+    if(stackEntry == NULL){
+        fprintf(stderr, "Stack is null\n");
+        return NULL;
+    }
+    if(nowStackEntry == NULL) nowStackEntry = stackEntry;
+    SymbolTableEntry* nowEntry = nowStackEntry->hashTable[HASH(symbolName)];
+    while(nowEntry != NULL){
+        if(strcmp(nowEntry->name, symbolName) == 0) return nowEntry;
+        nowEntry = nowEntry->next;
+    }
+    return NULL;
 }
 
-void openScope()
-{
+void openScope(){
+    pushStack();
 }
 
-void closeScope()
-{
+void closeScope(){
+    popStack();
 }
+

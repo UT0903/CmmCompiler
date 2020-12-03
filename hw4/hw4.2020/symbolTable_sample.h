@@ -71,23 +71,34 @@ typedef struct SymbolAttribute
     } attr;
 } SymbolAttribute;
 
-typedef struct SymbolTableEntry{
-    struct SymbolTableEntry* next;
+typedef struct SymbolTableEntry
+{
+    struct SymbolTableEntry* nextInHashChain;
+    struct SymbolTableEntry* prevInHashChain;
+    struct SymbolTableEntry* nextInSameLevel;
+    struct SymbolTableEntry* sameNameInOuterLevel;
+
     char* name;
     SymbolAttribute* attribute;
+    int nestingLevel;
+
 } SymbolTableEntry;
 
-typedef struct SymbolTableStack{
-    struct SymbolTableStack* prevStack;
+typedef struct SymbolTable
+{
     SymbolTableEntry* hashTable[HASH_TABLE_SIZE];
-} SymbolTableStack;
+    SymbolTableEntry** scopeDisplay;
+    int currentLevel;
+    int scopeDisplayElementCount;
+} SymbolTable;
 
-void initializeSymbolTableStack();
+
+void initializeSymbolTable();
 void symbolTableEnd();
-int enterSymbol(char* symbolName, SymbolAttribute* attribute);
-int removeSymbol(char* symbolName);
-
-SymbolTableEntry* declaredInThisScope(char* symbolName, SymbolTableStack *nowStackEntry);
+SymbolTableEntry* retrieveSymbol(char* symbolName);
+SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute);
+void removeSymbol(char* symbolName);
+int declaredLocally(char* symbolName);
 void openScope();
 void closeScope();
 

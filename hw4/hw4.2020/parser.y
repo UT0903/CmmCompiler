@@ -737,7 +737,7 @@ dim_list    : dim_list MK_LB expr MK_RB
 %%
 
 #include "lex.yy.c"
-main (argc, argv)
+int main (argc, argv)
 int argc;
 char *argv[];
   {
@@ -745,7 +745,7 @@ char *argv[];
      yyparse();
      // printGV(prog, NULL);
      
-     initializeSymbolTable();
+     initializeSymbolTableStack();
      
      semanticAnalysis(prog);
      
