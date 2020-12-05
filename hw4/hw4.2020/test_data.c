@@ -1,3 +1,2 @@
-int main(int argc, char argv){
-
+void fn3(int a, int b[3][4]) {
 }

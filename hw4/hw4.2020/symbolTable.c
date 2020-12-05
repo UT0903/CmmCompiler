@@ -36,7 +36,7 @@ SymbolTableStack* newSymbolTableStackEntry(){
     return newStack;
 }
 
-void initializeSymbolTableStack(){
+void initializeSymbolTable(){
     SymbolTableStack* newStack = newSymbolTableStackEntry();
     newStack->prevStack = NULL; //construct linklist
     newStack->currentScope = 0;
@@ -106,7 +106,7 @@ int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope){
     }
     //insert
     SymbolTableEntry* newSymbol = newSymbolTableEntry(symbolName, attribute);
-    newSymbol->next = nowStackEntry->hashTable[HASH(symbolName)]->next;
+    newSymbol->next = nowStackEntry->hashTable[HASH(symbolName)];
     nowStackEntry->hashTable[HASH(symbolName)] = newSymbol;
     return 1;
 }
@@ -153,6 +153,6 @@ SymbolTableEntry* declaredInThisScope(char* symbolName, int scope){
     }
     return NULL;
 }
-int getNowScope(){
+int getCurrentScope(){
     return TopStackEntry->currentScope;
 }

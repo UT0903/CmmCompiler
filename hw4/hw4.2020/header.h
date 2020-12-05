@@ -8,8 +8,8 @@ typedef enum DATA_TYPE
     INT_TYPE,
     FLOAT_TYPE,
     VOID_TYPE,
-    INT_PTR_TYPE,//for parameter passing
-    FLOAT_PTR_TYPE,//for parameter passing
+    //INT_PTR_TYPE,//for parameter passing
+    //FLOAT_PTR_TYPE,//for parameter passing
     CONST_STRING_TYPE,//for "const string"
     NONE_TYPE,//for nodes like PROGRAM_NODE which has no type
     ERROR_TYPE

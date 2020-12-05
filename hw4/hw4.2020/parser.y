@@ -187,53 +187,33 @@ global_decl : decl_list function_decl
                 }
             ;
 
-function_decl   : type ID MK_LPAREN 
-                    {
-                        openScope();
-                    }
-                    param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
+function_decl   : type ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE     
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
-                        makeChild(parameterList, $5);
-                        makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), parameterList, $8);
-                        closeScope();
+                        makeChild(parameterList, $4);
+                        makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), parameterList, $7);
                     }
-                | VOID ID MK_LPAREN
-                    {
-                        openScope();
-                    }
-                 param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
+                | VOID ID MK_LPAREN param_list MK_RPAREN MK_LBRACE block MK_RBRACE      
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* voidNode = makeIDNode("void", NORMAL_ID);
                         AST_NODE* parameterList = Allocate(PARAM_LIST_NODE);
-                        makeChild(parameterList, $5);
-                        makeFamily($$, 4, voidNode, makeIDNode($2, NORMAL_ID), parameterList, $8);
-                        closeScope();
+                        makeChild(parameterList, $4);
+                        makeFamily($$, 4, voidNode, makeIDNode($2, NORMAL_ID), parameterList, $7);
                     }
-                | type ID MK_LPAREN 
-                    {
-                        openScope();
-                    }
-                MK_RPAREN MK_LBRACE block MK_RBRACE 
+                | type ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
-                        makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), emptyParameterList, $7);
-                        closeScope();
+                        makeFamily($$, 4, $1, makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
                     }
-                | VOID ID MK_LPAREN 
-                    {
-                        openScope();
-                    }
-                MK_RPAREN MK_LBRACE block MK_RBRACE 
+                | VOID ID MK_LPAREN  MK_RPAREN MK_LBRACE block MK_RBRACE 
                     {
                         $$ = makeDeclNode(FUNCTION_DECL);
                         AST_NODE* voidNode = makeIDNode("void", NORMAL_ID);
                         AST_NODE* emptyParameterList = Allocate(PARAM_LIST_NODE);
-                        makeFamily($$, 4, voidNode, makeIDNode($2, NORMAL_ID), emptyParameterList, $7);
-                        closeScope();
+                        makeFamily($$, 4, voidNode, makeIDNode($2, NORMAL_ID), emptyParameterList, $6);
                     }
                 ;
 
@@ -762,11 +742,10 @@ int argc;
 char *argv[];
   {
      yyin = fopen(argv[1],"r");
-     initializeSymbolTableStack();
      yyparse();
      // printGV(prog, NULL);
      
-     
+     initializeSymbolTable();
      
      semanticAnalysis(prog);
      

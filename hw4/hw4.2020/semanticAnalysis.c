@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "header.h"
 #include "symbolTable.h"
 // This file is for reference only, you are not required to follow the implementation. //
@@ -11,7 +12,7 @@ DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2);
 void processProgramNode(AST_NODE *programNode);
 void processDeclarationNode(AST_NODE* declarationNode);
 void declareIdList(AST_NODE* typeNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize);
-void declareFunction(AST_NODE* returnTypeNode);
+void declareFunction(AST_NODE* declarationNode);
 void processDeclDimList(AST_NODE* variableDeclDimList, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize);
 void processTypeNode(AST_NODE* typeNode);
 void processBlockNode(AST_NODE* blockNode);
@@ -26,7 +27,6 @@ void checkWriteFunction(AST_NODE* functionCallNode);
 void checkFunctionCall(AST_NODE* functionCallNode);
 void processExprRelatedNode(AST_NODE* exprRelatedNode);
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter);
-void checkReturnStmt(AST_NODE* returnNode);
 void processExprNode(AST_NODE* exprNode);
 void processVariableLValue(AST_NODE* idNode);
 void processVariableRValue(AST_NODE* idNode);
@@ -34,6 +34,11 @@ void processConstValueNode(AST_NODE* constValueNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 
+
+Parameter* DealWithParam(AST_NODE* paramNode);
+TypeDescriptor* DealWithTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType);
+int ConstantFolding(AST_NODE* dimInfoNode);
+DATA_TYPE getDataType(AST_NODE* Node);
 
 typedef enum ErrorMsgKind
 {
@@ -108,6 +113,7 @@ DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2){
 
 void processProgramNode(AST_NODE *programNode)
 {
+    declareFunction(programNode->child);
 }
 
 void processDeclarationNode(AST_NODE* declarationNode)
@@ -192,11 +198,6 @@ void processConstValueNode(AST_NODE* constValueNode)
 }
 
 
-void checkReturnStmt(AST_NODE* returnNode)
-{
-}
-
-
 void processBlockNode(AST_NODE* blockNode)
 {
 }
@@ -215,6 +216,126 @@ void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ig
 {
 }
 
-
 void declareFunction(AST_NODE* declarationNode){
+    openScope();
+    //new func attr
+    SymbolAttribute *funcAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+    funcAttr->attributeKind = FUNCTION_SIGNATURE;
+    funcAttr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
+    funcAttr->attr.functionSignature->parameterList = NULL;
+
+    FunctionSignature* funcSign = funcAttr->attr.functionSignature;
+
+    AST_NODE* returnTypeNode = declarationNode->child;
+    funcSign->returnType = getDataType(returnTypeNode); //check for return type
+
+    AST_NODE* funcNameNode = returnTypeNode->rightSibling;
+    char *funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;
+    fprintf(stderr, "funcName: %s\n", funcName);
+    //check function 有沒有被declare過
+    if(declaredInThisScope(funcName, 0) != NULL){
+        fprintf(stderr, "redeclaration of function name\n");
+        exit(0);
+    }
+    AST_NODE* paramListNode = funcNameNode->rightSibling;
+    // collect params attr
+    AST_NODE* paramNode = paramListNode->child;
+    while(paramNode != NULL){
+        Parameter* paramStruct = DealWithParam(paramNode->child);
+        funcSign->parametersCount++;
+        paramStruct->next = funcSign->parameterList;
+        funcSign->parameterList = paramStruct;
+        paramNode = paramNode->rightSibling;
+    }
+    //TODO: deal with block node
+    processBlockNode(paramListNode->rightSibling);
+    if(!enterSymbol(funcName, funcAttr, 0)){
+        fprintf(stderr, "Error in declareFunction\n");
+        exit(0);
+    }
+    closeScope();
+
+}
+DATA_TYPE getDataType(AST_NODE* Node){
+    if(Node->nodeType != IDENTIFIER_NODE){
+        fprintf(stderr, "Should not pass node which is not IDENTIFIER_NODE into getDataType function\n");
+        exit(0);
+    }
+    char *type = Node->semantic_value.identifierSemanticValue.identifierName;
+    if(strcmp(type, "int") == 0) return INT_TYPE;
+    else if(strcmp(type, "float") == 0) return FLOAT_TYPE;
+    else if(strcmp(type, "void") == 0) return VOID_TYPE;
+    else{
+        //deal with typedef condition
+        SymbolTableEntry* entry;
+        if((entry = retrieveSymbol(type)) != NULL){
+            if(entry->attribute->attributeKind == TYPE_ATTRIBUTE){
+                TypeDescriptor *type = entry->attribute->attr.typeDescriptor;
+                if(type->kind == SCALAR_TYPE_DESCRIPTOR){
+                    return type->properties.dataType;
+                }   
+            }
+        }
+        fprintf(stderr, "Ilegal type: %s\n", type);
+        exit(0); 
+    }
+}
+Parameter* DealWithParam(AST_NODE* paramNode){
+    AST_NODE* ID = paramNode->rightSibling;
+    char *name = ID->semantic_value.identifierSemanticValue.identifierName;
+    TypeDescriptor* typeDescStruct = DealWithTypeDescriptor(ID, getDataType(paramNode));
+
+    //fill Parameter struct
+    Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
+    paramStruct->parameterName = name;
+    paramStruct->type = typeDescStruct;
+
+    //fill Symbol table in this scope
+    SymbolAttribute *ScopeAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+    ScopeAttr->attributeKind = VARIABLE_ATTRIBUTE;
+    ScopeAttr->attr.typeDescriptor = typeDescStruct;
+    if(declaredInThisScope(name, getCurrentScope()) != NULL){
+        fprintf(stderr, "redeclaration of symbol");
+        exit(0);
+    }
+    if(!enterSymbol(name, ScopeAttr, getCurrentScope())){
+        fprintf(stderr, "Error in DealWithParam\n");
+        exit(0);
+    }
+    return paramStruct;
+}
+
+TypeDescriptor* DealWithTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType){
+    if(elementType != INT_TYPE && elementType != FLOAT_TYPE){
+        fprintf(stderr, "not int or float type\n");
+        exit(0);
+    }
+    TypeDescriptor* typeDescStruct = (TypeDescriptor*)malloc(sizeof(TypeDescriptor));
+    if(ID->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
+        typeDescStruct->kind = SCALAR_TYPE_DESCRIPTOR;
+        typeDescStruct->properties.dataType = elementType;
+    }
+    else if(ID->semantic_value.identifierSemanticValue.kind == ARRAY_ID){
+        typeDescStruct->kind = ARRAY_TYPE_DESCRIPTOR;
+        
+        AST_NODE *dimInfo = ID->child;
+        while(dimInfo != NULL){
+            //TODO: do constant folding
+            int res = ConstantFolding(dimInfo);
+            typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
+                = res;
+            dimInfo = dimInfo->rightSibling;
+        }
+        typeDescStruct->properties.arrayProperties.elementType = elementType;
+    }
+    else{
+        fprintf(stderr, "Error in DealWithTypeDescriptor\n");
+        exit(0);
+    }
+    return typeDescStruct;
+}
+
+int ConstantFolding(AST_NODE* dimInfoNode){
+    //TODO
+    return 1;
 }

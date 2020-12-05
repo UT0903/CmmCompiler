@@ -83,14 +83,14 @@ typedef struct SymbolTableStack{
     int currentScope;
 } SymbolTableStack;
 
-void initializeSymbolTableStack();
+void initializeSymbolTable();
 void symbolTableEnd();
 int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope);
 int removeSymbol(char* symbolName, int scope);
-
+SymbolTableEntry* retrieveSymbol(char* symbolName);
 SymbolTableEntry* declaredInThisScope(char* symbolName, int scope);
 void openScope();
 void closeScope();
-int getNowScope();
+int getCurrentScope();
 
 #endif
