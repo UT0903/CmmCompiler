@@ -1,0 +1,15 @@
+Digraph AST
+{
+label = "AST_Graph.gv"
+node0 [label ="PROGRAM_NODE"]
+node1 [label ="DECLARATION_NODE FUNCTION_DECL"]
+node2 [label ="IDENTIFIER_NODE void NORMAL_ID"]
+node3 [label ="IDENTIFIER_NODE fn2 NORMAL_ID"]
+node4 [label ="PARAM_LIST_NODE"]
+node5 [label ="BLOCK_NODE"]
+node4 -> node5 [style = dashed]
+node3 -> node4 [style = dashed]
+node2 -> node3 [style = dashed]
+node1 -> node2 [style = bold]
+node0 -> node1 [style = bold]
+}
