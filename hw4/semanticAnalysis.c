@@ -38,8 +38,9 @@ void evaluateExprValue(AST_NODE* exprNode);
 Parameter* makeParameter(AST_NODE* paramNode);
 TypeDescriptor* makeTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType);
 int ConstantFolding(AST_NODE* dimInfoNode);
-DATA_TYPE getDataType(AST_NODE* Node);
+DATA_TYPE getDataType(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode);
+void FillVariableInSymbolTable(char *name, TypeDescriptor* typeDescStruct);
 
 typedef enum ErrorMsgKind
 {
@@ -242,19 +243,8 @@ void declareVariable(AST_NODE* TypeNode){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
-        //check variable 有沒有被declare過
-        if(declaredInThisScope(varName, getCurrentScope()) != NULL){
-            fprintf(stderr, "redeclaration of Variable name\n");
-            exit(0);
-        }
-        //fill Symbol table in this scope
-        SymbolAttribute *ScopeAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
-        ScopeAttr->attributeKind = VARIABLE_ATTRIBUTE;
-        ScopeAttr->attr.typeDescriptor = makeTypeDescriptor(IDNode, dataType);
-        if(!enterSymbol(varName, ScopeAttr, getCurrentScope())){
-            fprintf(stderr, "Error in declareVariable\n");
-            exit(0);
-        }
+        TypeDescriptor* typeDescStruct = makeTypeDescriptor(IDNode, dataType);
+        FillVariableInSymbolTable(varName, typeDescStruct);
         IDNode = IDNode->rightSibling;
     }
 }
@@ -286,22 +276,19 @@ void declareFunction(AST_NODE* returnTypeNode){
         paramNode = paramNode->rightSibling;
     }
     //TODO: deal with block node
-    processBlockNode(paramListNode->rightSibling);
+    processBlockNode(paramListNode->rightSibling); //TODO: check return type is equal or not 
     if(!enterSymbol(funcName, funcAttr, 0)){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
-    }
-
-
-    //TODO: check return type is equal or not 
+    }    
     closeScope();
 }
-DATA_TYPE getDataType(AST_NODE* Node){
-    if(Node->nodeType != IDENTIFIER_NODE){
+DATA_TYPE getDataType(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
+    if(IDNode->nodeType != IDENTIFIER_NODE){
         fprintf(stderr, "Should not pass node which is not IDENTIFIER_NODE into getDataType function\n");
         exit(0);
     }
-    char *type = Node->semantic_value.identifierSemanticValue.identifierName;
+    char *type = IDNode->semantic_value.identifierSemanticValue.identifierName;
     if(strcmp(type, "int") == 0) return INT_TYPE;
     else if(strcmp(type, "float") == 0) return FLOAT_TYPE;
     else if(strcmp(type, "void") == 0) return VOID_TYPE;
@@ -320,18 +307,7 @@ DATA_TYPE getDataType(AST_NODE* Node){
         exit(0); 
     }
 }
-Parameter* makeParameter(AST_NODE* typeNode){
-    AST_NODE* ID = typeNode->rightSibling;
-
-    char *name = ID->semantic_value.identifierSemanticValue.identifierName;
-    TypeDescriptor* typeDescStruct = makeTypeDescriptor(ID, getDataType(typeNode));
-
-    //fill Parameter struct
-    Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
-    paramStruct->parameterName = name;
-    paramStruct->type = typeDescStruct;
-
-    //fill Symbol table in this scope
+void FillVariableInSymbolTable(char *name, TypeDescriptor* typeDescStruct){ //fill Var in Symbol table
     SymbolAttribute *ScopeAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     ScopeAttr->attributeKind = VARIABLE_ATTRIBUTE;
     ScopeAttr->attr.typeDescriptor = typeDescStruct;
@@ -343,6 +319,19 @@ Parameter* makeParameter(AST_NODE* typeNode){
         fprintf(stderr, "Error in makeParameter\n");
         exit(0);
     }
+}
+Parameter* makeParameter(AST_NODE* typeNode){
+    AST_NODE* ID = typeNode->rightSibling;
+
+    char *name = ID->semantic_value.identifierSemanticValue.identifierName;
+    TypeDescriptor* typeDescStruct = makeTypeDescriptor(ID, getDataType(typeNode));
+
+    //fill Parameter struct
+    Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
+    paramStruct->parameterName = name;
+    paramStruct->type = typeDescStruct;
+
+    FillVariableInSymbolTable(name, typeDescStruct);
     return paramStruct;
 }
 
