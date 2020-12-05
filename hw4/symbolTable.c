@@ -239,5 +239,5 @@ void PrintSymbolTable(){
         }
         nowStackEntry = nowStackEntry->prevStack;
     }
-    fprintf(stderr, "========================\n");
+    fprintf(stderr, "========================\n\n");
 }

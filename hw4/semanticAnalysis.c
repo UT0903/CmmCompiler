@@ -258,7 +258,6 @@ void declareTypedef(AST_NODE* TypeNode){
         FillInSymbolTable(varName, typeDescStruct, TYPE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
-    PrintSymbolTable();
 }
 void declareVariable(AST_NODE* TypeNode){
     AST_NODE* IDNode = TypeNode->rightSibling;
@@ -268,7 +267,6 @@ void declareVariable(AST_NODE* TypeNode){
         FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
-    PrintSymbolTable();
 }
 void declareFunction(AST_NODE* returnTypeNode){
     openScope();
@@ -279,6 +277,7 @@ void declareFunction(AST_NODE* returnTypeNode){
     funcAttr->attr.functionSignature->parameterList = NULL;
 
     FunctionSignature* funcSign = funcAttr->attr.functionSignature;
+    funcSign->parametersCount = 0;
     
     TypeDescriptor* typeDescStruct = getTypeDescriptor(returnTypeNode); //check for return type
     if(typeDescStruct->kind != SCALAR_TYPE_DESCRIPTOR){
