@@ -25,5 +25,5 @@ functions.o: functions.c
 	$(CC) -c functions.c
 
 clean:
-	rm -f $(TARGET) $(OBJECT) 
+	rm -f $(TARGET) $(OBJECT) AST_Graph.gv parser.output
 
