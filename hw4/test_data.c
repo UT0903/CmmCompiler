@@ -1,6 +1,10 @@
-int a, b, c;
-typedef int ll[5][4][4][6];
-typedef ll llll[2][3];
-int main(){
-
+int ABC;
+float ABCD, AAA = 4.0, KKK = 5.5;
+int main() {
+    typedef int INT, INT2, INT3;
+    typedef float FLOAT;
+    typedef void VOID;
+    typedef void VOID2, VOID3;
+    INT f[3][3*3-(4+2)/2];
+    FLOAT f2;
 }

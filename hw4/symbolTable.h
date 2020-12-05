@@ -92,5 +92,5 @@ SymbolTableEntry* declaredInThisScope(char* symbolName, int scope);
 void openScope();
 void closeScope();
 int getCurrentScope();
-
+void PrintSymbolTable();
 #endif

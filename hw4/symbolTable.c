@@ -156,3 +156,88 @@ SymbolTableEntry* declaredInThisScope(char* symbolName, int scope){
 int getCurrentScope(){
     return TopStackEntry->currentScope;
 }
+
+void PrintTypeDescriptor(TypeDescriptor* type){
+    if(type->kind == ARRAY_TYPE_DESCRIPTOR){
+        if(type->properties.arrayProperties.elementType == INT_TYPE){
+            fprintf(stderr, "Int Array with dim: %d (", type->properties.arrayProperties.dimension);
+        }
+        else if(type->properties.arrayProperties.elementType == FLOAT_TYPE){
+            fprintf(stderr, "Float Array with dim: %d (", type->properties.arrayProperties.dimension);
+        }
+        else{
+            fprintf(stderr, "ERROR in printTable, This should not happen1\n");
+            exit(0);
+        }
+        for(int i = 0; i < type->properties.arrayProperties.dimension; i++){
+            fprintf(stderr, "%d%s", type->properties.arrayProperties.sizeInEachDimension[i], (i == type->properties.arrayProperties.dimension - 1)? ")\n":", ");
+        }
+    }
+    else if(type->kind == SCALAR_TYPE_DESCRIPTOR){
+        if(type->properties.dataType == INT_TYPE){
+            fprintf(stderr, "Int\n");
+        }
+        else if(type->properties.dataType == FLOAT_TYPE){
+            fprintf(stderr, "Float\n");
+        }
+        else{
+            fprintf(stderr, "ERROR in printTable, This should not happen2\n");
+            fprintf(stderr, "%d\n", type->properties.dataType);
+            exit(0);
+        }
+    }
+    else{
+        fprintf(stderr, "ERROR in printTable, This should not happen3\n");
+        exit(0);
+    }
+}
+void PrintSymbolTable(){
+    SymbolTableStack *nowStackEntry = TopStackEntry;
+    while(nowStackEntry != NULL){
+        fprintf(stderr, "========================\n");
+        fprintf(stderr, "Scope: %d\n", nowStackEntry->currentScope);
+        for(int i = 0; i < HASH_TABLE_SIZE; i++){
+            SymbolTableEntry* nowEntry = nowStackEntry->hashTable[i];
+            while(nowEntry != NULL){
+                fprintf(stderr, "----------------\n");
+                fprintf(stderr, "Name: %s ", nowEntry->name);
+                SymbolAttribute* attr = nowEntry->attribute;
+                if(attr->attributeKind == VARIABLE_ATTRIBUTE){
+                    fprintf(stderr, "AttrKind: VARIABLE\n");
+                    PrintTypeDescriptor(attr->attr.typeDescriptor);
+                }
+                else if(attr->attributeKind == TYPE_ATTRIBUTE){
+                    fprintf(stderr, "AttrKind: TYPEDEF\n");
+                    PrintTypeDescriptor(attr->attr.typeDescriptor);   
+                }
+                else if(attr->attributeKind == FUNCTION_SIGNATURE){
+                    fprintf(stderr, "AttrKind: FUNCTION\n");
+                    FunctionSignature* func = attr->attr.functionSignature;
+                    if(func->returnType == INT_TYPE){
+                        fprintf(stderr, "ReturnType: Int\n");
+                    }
+                    else if(func->returnType == FLOAT_TYPE){
+                        fprintf(stderr, "ReturnType: Float\n");
+                    }
+                    else if(func->returnType == VOID_TYPE){
+                        fprintf(stderr, "ReturnType: Void\n");
+                    }
+                    else{
+                        fprintf(stderr, "ERROR in printTable, This should not happen4\n");
+                        exit(0);
+                    }
+                    fprintf(stderr, "Parameter num: %d\n", func->parametersCount);
+                    Parameter* param = func->parameterList;
+                    while(param != NULL){
+                        fprintf(stderr, "%s: ", param->parameterName);
+                        PrintTypeDescriptor(param->type);
+                        param = param->next;
+                    }
+                }
+                nowEntry = nowEntry->next;
+            }
+        }
+        nowStackEntry = nowStackEntry->prevStack;
+    }
+    fprintf(stderr, "========================\n");
+}
