@@ -1,2 +1,4 @@
-void fn3(int a, int b[3][4]) {
+int a, b, c;
+int main(){
+	
 }

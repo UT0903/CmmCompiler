@@ -35,10 +35,11 @@ void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 
 
-Parameter* DealWithParam(AST_NODE* paramNode);
-TypeDescriptor* DealWithTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType);
+Parameter* makeParameter(AST_NODE* paramNode);
+TypeDescriptor* makeTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType);
 int ConstantFolding(AST_NODE* dimInfoNode);
 DATA_TYPE getDataType(AST_NODE* Node);
+void declareVariable(AST_NODE* TypeNode);
 
 typedef enum ErrorMsgKind
 {
@@ -113,11 +114,33 @@ DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2){
 
 void processProgramNode(AST_NODE *programNode)
 {
-    declareFunction(programNode->child);
+    processDeclarationNode(programNode->child->child);
 }
 
-void processDeclarationNode(AST_NODE* declarationNode)
-{
+void processDeclarationNode(AST_NODE* declarationNode){
+    if(declarationNode->nodeType != DECLARATION_NODE){
+        fprintf(stderr, "Should not pass non-DECLARATION_NODE into processDeclarationNode()\n");
+        exit(0);
+    }
+    DECL_KIND declKind =  declarationNode->semantic_value.declSemanticValue.kind;
+    if(declKind == VARIABLE_DECL){
+        declareVariable(declarationNode->child);
+    }
+    else if(declKind == TYPE_DECL){
+        fprintf(stderr, "TODO\n");
+        exit(0);
+    }
+    else if(declKind == FUNCTION_DECL){
+        declareFunction(declarationNode->child);
+    }
+    else if(declKind == FUNCTION_PARAMETER_DECL){
+        fprintf(stderr, "Should be finish in declareFunction()\n");
+        exit(0);
+    }
+    else{
+        fprintf(stderr, "Error in processDeclarationNode\n");
+        exit(0);
+    }
 }
 
 
@@ -125,10 +148,6 @@ void processTypeNode(AST_NODE* idNodeAsType)
 {
 }
 
-
-void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize)
-{
-}
 
 void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 {
@@ -183,7 +202,9 @@ void processExprNode(AST_NODE* exprNode)
 {
 }
 
+void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize){
 
+}
 void processVariableLValue(AST_NODE* idNode)
 {
 }
@@ -216,7 +237,28 @@ void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ig
 {
 }
 
-void declareFunction(AST_NODE* declarationNode){
+void declareVariable(AST_NODE* TypeNode){
+    DATA_TYPE dataType = getDataType(TypeNode);
+    AST_NODE* IDNode = TypeNode->rightSibling;
+    while(IDNode != NULL){
+        char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
+        //check variable 有沒有被declare過
+        if(declaredInThisScope(varName, getCurrentScope()) != NULL){
+            fprintf(stderr, "redeclaration of Variable name\n");
+            exit(0);
+        }
+        //fill Symbol table in this scope
+        SymbolAttribute *ScopeAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
+        ScopeAttr->attributeKind = VARIABLE_ATTRIBUTE;
+        ScopeAttr->attr.typeDescriptor = makeTypeDescriptor(IDNode, dataType);
+        if(!enterSymbol(varName, ScopeAttr, getCurrentScope())){
+            fprintf(stderr, "Error in declareVariable\n");
+            exit(0);
+        }
+        IDNode = IDNode->rightSibling;
+    }
+}
+void declareFunction(AST_NODE* returnTypeNode){
     openScope();
     //new func attr
     SymbolAttribute *funcAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
@@ -225,13 +267,9 @@ void declareFunction(AST_NODE* declarationNode){
     funcAttr->attr.functionSignature->parameterList = NULL;
 
     FunctionSignature* funcSign = funcAttr->attr.functionSignature;
-
-    AST_NODE* returnTypeNode = declarationNode->child;
     funcSign->returnType = getDataType(returnTypeNode); //check for return type
-
     AST_NODE* funcNameNode = returnTypeNode->rightSibling;
     char *funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;
-    fprintf(stderr, "funcName: %s\n", funcName);
     //check function 有沒有被declare過
     if(declaredInThisScope(funcName, 0) != NULL){
         fprintf(stderr, "redeclaration of function name\n");
@@ -241,7 +279,7 @@ void declareFunction(AST_NODE* declarationNode){
     // collect params attr
     AST_NODE* paramNode = paramListNode->child;
     while(paramNode != NULL){
-        Parameter* paramStruct = DealWithParam(paramNode->child);
+        Parameter* paramStruct = makeParameter(paramNode->child);
         funcSign->parametersCount++;
         paramStruct->next = funcSign->parameterList;
         funcSign->parameterList = paramStruct;
@@ -253,8 +291,10 @@ void declareFunction(AST_NODE* declarationNode){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
     }
-    closeScope();
 
+
+    //TODO: check return type is equal or not 
+    closeScope();
 }
 DATA_TYPE getDataType(AST_NODE* Node){
     if(Node->nodeType != IDENTIFIER_NODE){
@@ -280,10 +320,11 @@ DATA_TYPE getDataType(AST_NODE* Node){
         exit(0); 
     }
 }
-Parameter* DealWithParam(AST_NODE* paramNode){
-    AST_NODE* ID = paramNode->rightSibling;
+Parameter* makeParameter(AST_NODE* typeNode){
+    AST_NODE* ID = typeNode->rightSibling;
+
     char *name = ID->semantic_value.identifierSemanticValue.identifierName;
-    TypeDescriptor* typeDescStruct = DealWithTypeDescriptor(ID, getDataType(paramNode));
+    TypeDescriptor* typeDescStruct = makeTypeDescriptor(ID, getDataType(typeNode));
 
     //fill Parameter struct
     Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
@@ -299,13 +340,13 @@ Parameter* DealWithParam(AST_NODE* paramNode){
         exit(0);
     }
     if(!enterSymbol(name, ScopeAttr, getCurrentScope())){
-        fprintf(stderr, "Error in DealWithParam\n");
+        fprintf(stderr, "Error in makeParameter\n");
         exit(0);
     }
     return paramStruct;
 }
 
-TypeDescriptor* DealWithTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType){
+TypeDescriptor* makeTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType){
     if(elementType != INT_TYPE && elementType != FLOAT_TYPE){
         fprintf(stderr, "not int or float type\n");
         exit(0);
@@ -329,7 +370,7 @@ TypeDescriptor* DealWithTypeDescriptor(AST_NODE* ID, DATA_TYPE elementType){
         typeDescStruct->properties.arrayProperties.elementType = elementType;
     }
     else{
-        fprintf(stderr, "Error in DealWithTypeDescriptor\n");
+        fprintf(stderr, "Error in makeTypeDescriptor\n");
         exit(0);
     }
     return typeDescStruct;
