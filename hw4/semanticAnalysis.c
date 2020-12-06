@@ -371,13 +371,14 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){ //TODO: typeDescStruct from SCALAR to ARRAY type
             //TODO: do constant folding
-            CON_Type ct = ConstantFolding(dimInfo);
-            if(ct.const_type != INTEGERC){
-                fprintf(stderr, "Cannot have float in array dimension declaration\n");
+            AST_NODE* exprNode = ConstantFolding(dimInfo);
+            assert(exprNode != NULL);
+            if(exprNode->semantic_value.exprSemanticValue.isConstEval != 1){
+                fprintf(stderr, "Cannot have non-int in array dimension declaration\n");
                 exit(0);
             }
             typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
-                = ct.const_u.intval;
+                = exprNode->semantic_value.exprSemanticValue.constEvalValue.iValue;
             dimInfo = dimInfo->rightSibling;
         }
         typeDescStruct->properties.arrayProperties.elementType = newDataType;
@@ -389,8 +390,13 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        CON_Type ct = ConstantFolding(ID->child);
-        if(ct.const_type == FLOATC){
+        AST_NODE* exprNode = ConstantFolding(ID->child);
+        assert(exprNode != NULL);
+        if(exprNode->semantic_value.exprSemanticValue.isConstEval == 0){
+            fprintf(stderr, "Not support for dynamic declaration in global\n");
+            exit(0);
+        }
+        else if(exprNode->semantic_value.exprSemanticValue.isConstEval == 2 && typeDescStruct->properties.dataType == INT_TYPE){
             fprintf(stderr, "Cannot assign float to int\n");
             exit(0);
         }
