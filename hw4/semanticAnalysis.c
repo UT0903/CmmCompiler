@@ -37,11 +37,16 @@ void evaluateExprValue(AST_NODE* exprNode);
 
 Parameter* makeParameter(AST_NODE* paramNode);
 TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType);
-CON_Type ConstantFolding(AST_NODE* ExprNode);
+AST_NODE* ConstantFolding(AST_NODE* ExprNode);
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode);
 void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind);
 void declareTypedef(AST_NODE* TypeNode);
+float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
+float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
+int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
+int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
+
 
 typedef enum ErrorMsgKind
 {
