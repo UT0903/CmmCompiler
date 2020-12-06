@@ -45,59 +45,36 @@ void declareTypedef(AST_NODE* TypeNode);
 
 typedef enum ErrorMsgKind
 {
-    SYMBOL_IS_NOT_TYPE,
-    SYMBOL_REDECLARE,
-    SYMBOL_UNDECLARED,
-    NOT_FUNCTION_NAME,
-    TRY_TO_INIT_ARRAY,
-    EXCESSIVE_ARRAY_DIM_DECLARATION,
-    RETURN_ARRAY,
-    VOID_VARIABLE,
-    TYPEDEF_VOID_ARRAY,
-    PARAMETER_TYPE_UNMATCH,
-    TOO_FEW_ARGUMENTS,
-    TOO_MANY_ARGUMENTS,
-    RETURN_TYPE_UNMATCH,
-    INCOMPATIBLE_ARRAY_DIMENSION,
-    NOT_ASSIGNABLE,
-    NOT_ARRAY,
-    IS_TYPE_NOT_VARIABLE,
-    IS_FUNCTION_NOT_VARIABLE,
-    STRING_OPERATION,
-    ARRAY_SIZE_NOT_INT,
-    ARRAY_SIZE_NEGATIVE,
-    ARRAY_SUBSCRIPT_NOT_INT,
-    PASS_ARRAY_TO_SCALAR,
-    PASS_SCALAR_TO_ARRAY
+    NOT_DECLARED_IN_THIS_SCOPE, // ‘<name>’ was not declared in this scope
+    REDECLARATION, //redeclaration of ‘<type> <name>’
+    TOO_FEW_ARGUMENTS_TO_FUNCTION, //too few arguments to function ‘<function signature>’
+    TOO_MANY_ARGUMENTS_TO_FUNCTION,  //too many arguments to function ‘<function signature>’
+    //subscripted value is neither array nor pointer nor vector
 } ErrorMsgKind;
 
-void printErrorMsgSpecial(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
+void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
     g_anyErrorOccur = 1;
     printf("Error found in line %d\n", node1->linenumber);
-    /*
-    switch(errorMsgKind)
-    {
+    
+    /*switch(errorMsgKind){
+    case(NOT_DECLARED_IN_THIS_SCOPE):
+        printf("%s was not declared in this scope\n",  node1->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case(REDECLARATION):
+        printf("redeclaration of ‘%s %s’\n", , node1->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case(TOO_FEW_ARGUMENTS_TO_FUNCTION):
+        printf("too few arguments to function ‘%s’\n", );
+        break;
+    case(TOO_FEW_ARGUMENTS_TO_FUNCTION):
+        break;
     default:
         printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
         break;
-    }
-    */
+    }*/
+    
+    exit(0);
 }
-
-
-void printErrorMsg(AST_NODE* node, ErrorMsgKind errorMsgKind)
-{
-    g_anyErrorOccur = 1;
-    printf("Error found in line %d\n", node->linenumber);
-    /*
-    switch(errorMsgKind)
-    {
-        printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
-        break;
-    }
-    */
-}
-
 
 void semanticAnalysis(AST_NODE *root)
 {
