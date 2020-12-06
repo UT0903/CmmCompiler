@@ -236,6 +236,40 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
+void handleReturnNode(AST_NODE* returnNode, char* funcName){
+    if(returnNode->nodeType != STMT_NODE || returnNode->semantic_value.stmtSemanticValue.kind != RETURN_STMT){
+        fprintf(stderr, "Should not pass non-RETURN_STMT node into handleReturnNode()\n");
+        exit(0);
+    }
+    SymbolTableEntry* entry = retrieveSymbol(funcName);
+    if(entry == NULL){
+        fprintf(stderr, "Cannot find funcName: %s in symbol table\n", funcName);
+        exit(0);
+    }
+    if(entry->attribute->attributeKind != FUNCTION_SIGNATURE){
+        fprintf(stderr, "%s is not a function\n", funcName);
+        exit(0);
+    }
+    DATA_TYPE returnType = entry->attribute->attr.functionSignature->returnType;
+    if(returnNode->child->nodeType == NUL_NODE){ //void
+        if(returnType != VOID_TYPE){
+            fprintf(stderr, "Wrong return type\n");
+            exit(0);
+        }
+    }
+    else{ //non-void
+        AST_NODE* exprNode = ExprNodeFolding(returnNode->child);
+        int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
+        if(isConstEval == 0){
+            fprintf(stderr, "Error in ExprNodeFolding()\n");
+            exit(0);
+        }
+        if((isConstEval == 2 || isConstEval == 4) && returnType == INT_TYPE){
+            fprintf(stderr, "Cannot assign float to int\n");
+            exit(0);
+        }
+    }
+}
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
