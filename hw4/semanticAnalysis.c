@@ -311,7 +311,7 @@ TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Nod
         else if(strcmp(type, "float") == 0) typeDescStruct->properties.dataType = FLOAT_TYPE;
         else if(strcmp(type, "void") == 0) typeDescStruct->properties.dataType = VOID_TYPE;
         else{
-            fprintf(stderr, "Error in getTypeDescriptor()\n");
+            fprintf(stderr, "Error in getTypeDescriptor(), Unknown dataType\n");
             exit(0);
         }
         return typeDescStruct;
@@ -362,36 +362,47 @@ Parameter* makeParameter(AST_NODE* typeNode){
 }
 
 TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruct, int LocalOrGlobalDecl){
+    DATA_TYPE tempDataType;
+    if(typeDescStruct->kind == ARRAY_TYPE_DESCRIPTOR){
+        tempDataType = typeDescStruct->properties.arrayProperties.elementType;
+    }
+    else if(typeDescStruct->kind == SCALAR_TYPE_DESCRIPTOR){
+        tempDataType = typeDescStruct->properties.dataType;
+    }
+    else{
+        fprintf(stderr, "Error in extendTypeDescriptor1\n");
+        exit(0);
+    }
+    if(tempDataType == VOID_TYPE){
+        fprintf(stderr, "No void type declaration\n");
+        exit(0);
+    }
+
     if(ID->semantic_value.identifierSemanticValue.kind == NORMAL_ID){} //No need to change
     else if(ID->semantic_value.identifierSemanticValue.kind == ARRAY_ID){
-        DATA_TYPE newDataType;
         if(typeDescStruct->kind == SCALAR_TYPE_DESCRIPTOR){
             //fprintf(stderr, "Extend SCALAR_TYPE to ARRAY_TYPE\n");
-            newDataType = typeDescStruct->properties.dataType;
             typeDescStruct->properties.arrayProperties.dimension = 0;
         }
-        else if(typeDescStruct->kind == ARRAY_TYPE_DESCRIPTOR){
-            newDataType = typeDescStruct->properties.arrayProperties.elementType;
-        }
+        else if(typeDescStruct->kind == ARRAY_TYPE_DESCRIPTOR){}
         else{
-            fprintf(stderr, "Error in extendTypeDescriptor1\n");
+            fprintf(stderr, "Error in extendTypeDescriptor2\n");
             exit(0);
         }
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){
-            
             AST_NODE* exprNode = ExprNodeFolding(dimInfo);
             assert(exprNode != NULL);
             //TODO: rewrite isConstEval
             if(exprNode->semantic_value.exprSemanticValue.isConstEval != 1){
-                fprintf(stderr, "Cannot have non-int in array dimension declaration\n");
+                fprintf(stderr, "Cannot have non-ConstInt in array dimension declaration\n");
                 exit(0);
             }
             typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
                 = exprNode->semantic_value.exprSemanticValue.constEvalValue.iValue;
             dimInfo = dimInfo->rightSibling;
         }
-        typeDescStruct->properties.arrayProperties.elementType = newDataType;
+        typeDescStruct->properties.arrayProperties.elementType = tempDataType;
         typeDescStruct->kind = ARRAY_TYPE_DESCRIPTOR;
     }
     else if(ID->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
@@ -401,31 +412,34 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         }
         AST_NODE* exprNode = ExprNodeFolding(ID->child);
         assert(exprNode != NULL);
-        if(LocalOrGlobalDecl == 0){
-            //TODO:type check for init value
-            if(exprNode->semantic_value.exprSemanticValue.isConstEval == 0){
+        int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
+        if(isConstEval == 0){
+            fprintf(stderr, "Error occur in ExprNodeFolding\n");
+            exit(0);
+        }
+        if(LocalOrGlobalDecl == 0){ //global decl
+            if(isConstEval == 3 || isConstEval == 4){
                 fprintf(stderr, "Not support for dynamic declaration in global\n");
                 exit(0);
             }
-            else if(exprNode->semantic_value.exprSemanticValue.isConstEval == 2 && typeDescStruct->properties.dataType == INT_TYPE){
+            else if(isConstEval == 2 && typeDescStruct->properties.dataType == INT_TYPE){
                 fprintf(stderr, "Cannot assign float to int\n");
                 exit(0);
             }
         }
-        else if(LocalOrGlobalDecl == 1){
-            //TODO:type check for init value
-            if(exprNode->semantic_value.exprSemanticValue.isConstEval == 2 && typeDescStruct->properties.dataType == INT_TYPE){
+        else if(LocalOrGlobalDecl == 1){ //local decl
+            if((isConstEval == 2 || isConstEval == 4) && typeDescStruct->properties.dataType == INT_TYPE){
                 fprintf(stderr, "Cannot assign float to int\n");
                 exit(0);
             }
         }
         else{
-            fprintf(stderr, "LocalOrGlobalDecl param can be only 1 or 2\n");
+            fprintf(stderr, "LocalOrGlobalDecl param can be only 0 or 1\n");
             exit(0);
         }
     }
     else{
-        fprintf(stderr, "Error in extendTypeDescriptor2\n");
+        fprintf(stderr, "Error in extendTypeDescriptor3\n");
         //fprintf(stderr, "kind: %d\n", ID->semantic_value.identifierSemanticValue.kind);
         exit(0);
     }
