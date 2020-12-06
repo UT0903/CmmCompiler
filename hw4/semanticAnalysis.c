@@ -403,7 +403,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
     }
     else{
         fprintf(stderr, "Error in extendTypeDescriptor2\n");
-        fprintf(stderr, "kind: %d\n", ID->semantic_value.identifierSemanticValue.kind);
+        //fprintf(stderr, "kind: %d\n", ID->semantic_value.identifierSemanticValue.kind);
         exit(0);
     }
     return typeDescStruct;
