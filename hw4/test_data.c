@@ -22,7 +22,7 @@ int main() {
   typedef int INT;
 
   INT x = 0;
-  TNI y = x;
+  TNI y = 0;
   INTINT z = 0;
   FLOAT f = 0;
 

@@ -10,7 +10,7 @@ int g_anyErrorOccur = 0;
 
 DATA_TYPE getBiggerType(DATA_TYPE dataType1, DATA_TYPE dataType2);
 void processProgramNode(AST_NODE *programNode);
-void processDeclarationNode(AST_NODE* declarationNode);
+void processDeclarationNode(AST_NODE* declarationNode, int LocalOrGlobalDecl);
 void declareIdList(AST_NODE* typeNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize);
 void declareFunction(AST_NODE* declarationNode);
 void processDeclDimList(AST_NODE* variableDeclDimList, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize);
@@ -36,17 +36,16 @@ void evaluateExprValue(AST_NODE* exprNode);
 
 
 Parameter* makeParameter(AST_NODE* paramNode);
-TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType);
-AST_NODE* ConstantFolding(AST_NODE* ExprNode);
+TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, int LocalOrGlobalDecl);
+AST_NODE* ExprNodeFolding(AST_NODE* ExprNode);
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
-void declareVariable(AST_NODE* TypeNode);
+void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl);
 void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind);
-void declareTypedef(AST_NODE* TypeNode);
+void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl);
 float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
 int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
 int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
-
 
 typedef enum ErrorMsgKind
 {
@@ -103,34 +102,39 @@ void processProgramNode(AST_NODE *programNode)
         if(declaNode->nodeType == VARIABLE_DECL_LIST_NODE){ //variable declaration
             AST_NODE *varDeclNode = declaNode->child;
             while(varDeclNode != NULL){
-                processDeclarationNode(varDeclNode);
+                processDeclarationNode(varDeclNode, 0);
                 varDeclNode = varDeclNode->rightSibling;
             }
         }
         else if(declaNode->nodeType == DECLARATION_NODE){ //function declaration
-            processDeclarationNode(declaNode);
+            processDeclarationNode(declaNode, 0);
         }
         declaNode = declaNode->rightSibling;
     }
 }
 
-void processDeclarationNode(AST_NODE* declarationNode){
+void processDeclarationNode(AST_NODE* declarationNode, int LocalOrGlobalDecl){
     if(declarationNode->nodeType != DECLARATION_NODE){
         fprintf(stderr, "Should not pass non-DECLARATION_NODE into processDeclarationNode()\n");
         exit(0);
     }
+
     DECL_KIND declKind =  declarationNode->semantic_value.declSemanticValue.kind;
     if(declKind == VARIABLE_DECL){
-        declareVariable(declarationNode->child);
+        declareVariable(declarationNode->child, LocalOrGlobalDecl);
     }
     else if(declKind == TYPE_DECL){
-        declareTypedef(declarationNode->child);
+        declareTypedef(declarationNode->child, LocalOrGlobalDecl);
     }
     else if(declKind == FUNCTION_DECL){
+        if(LocalOrGlobalDecl == 1){
+            fprintf(stderr, "No loacl declaration of function\n");
+            exit(0);
+        }
         declareFunction(declarationNode->child);
     }
     else if(declKind == FUNCTION_PARAMETER_DECL){
-        fprintf(stderr, "Should be finish in declareFunction()\n");
+        fprintf(stderr, "Should be handled in declareFunction()\n");
         exit(0);
     }
     else{
@@ -232,20 +236,20 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
-void declareTypedef(AST_NODE* TypeNode){
+void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
-        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode));
+        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl);
         FillInSymbolTable(varName, typeDescStruct, TYPE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
 }
-void declareVariable(AST_NODE* TypeNode){
+void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
-        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode));
+        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl);
         FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
@@ -346,7 +350,7 @@ Parameter* makeParameter(AST_NODE* typeNode){
     AST_NODE* ID = typeNode->rightSibling;
 
     char *name = ID->semantic_value.identifierSemanticValue.identifierName;
-    TypeDescriptor* typeDescStruct = extendTypeDescriptor(ID, getTypeDescriptor(typeNode));
+    TypeDescriptor* typeDescStruct = extendTypeDescriptor(ID, getTypeDescriptor(typeNode), 0);
 
     //fill Parameter struct
     Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
@@ -357,7 +361,7 @@ Parameter* makeParameter(AST_NODE* typeNode){
     return paramStruct;
 }
 
-TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruct){
+TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruct, int LocalOrGlobalDecl){
     if(ID->semantic_value.identifierSemanticValue.kind == NORMAL_ID){} //No need to change
     else if(ID->semantic_value.identifierSemanticValue.kind == ARRAY_ID){
         DATA_TYPE newDataType;
@@ -376,7 +380,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){ //TODO: typeDescStruct from SCALAR to ARRAY type
             //TODO: do constant folding
-            AST_NODE* exprNode = ConstantFolding(dimInfo);
+            AST_NODE* exprNode = ExprNodeFolding(dimInfo);
             assert(exprNode != NULL);
             if(exprNode->semantic_value.exprSemanticValue.isConstEval != 1){
                 fprintf(stderr, "Cannot have non-int in array dimension declaration\n");
@@ -395,7 +399,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        AST_NODE* exprNode = ConstantFolding(ID->child);
+        AST_NODE* exprNode = ExprNodeFolding(ID->child);
         assert(exprNode != NULL);
         if(exprNode->semantic_value.exprSemanticValue.isConstEval == 0){
             fprintf(stderr, "Not support for dynamic declaration in global\n");
@@ -414,7 +418,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
     return typeDescStruct;
 }
 
-AST_NODE* ConstantFolding(AST_NODE* Node){
+AST_NODE* ExprNodeFolding(AST_NODE* Node){
     if(Node->nodeType != EXPR_NODE)
         return NULL;
     EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
@@ -447,11 +451,11 @@ AST_NODE* ConstantFolding(AST_NODE* Node){
             AST_NODE *C_Node, *E_Node;
             if(r->nodeType == CONST_VALUE_NODE){
                 C_Node = r;
-                E_Node = ConstantFolding(l);
+                E_Node = ExprNodeFolding(l);
             }
             else{
                 C_Node = l;
-                E_Node = ConstantFolding(r);
+                E_Node = ExprNodeFolding(r);
             }
             EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
             if(e->isConstEval == 0)
@@ -479,8 +483,8 @@ AST_NODE* ConstantFolding(AST_NODE* Node){
             return Node;
         }
         else if(r->nodeType == EXPR_NODE && l->nodeType == EXPR_NODE){
-            ConstantFolding(r);
-            ConstantFolding(l);
+            ExprNodeFolding(r);
+            ExprNodeFolding(l);
             EXPRSemanticValue *e1 = &r->semantic_value.exprSemanticValue, *e2 = &l->semantic_value.exprSemanticValue;
             if(e1->isConstEval == 1 && e2->isConstEval == 1){
                 expr->isConstEval = 1;
