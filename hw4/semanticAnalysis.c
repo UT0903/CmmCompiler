@@ -296,6 +296,8 @@ void processConstValueNode(AST_NODE* constValueNode)
 void processBlockNode(AST_NODE* blockNode)
 {
     AST_NODE *Stmt = NULL, *Decl = NULL;
+    if(blockNode->child == NULL)
+        return;
     if(blockNode->child->nodeType == VARIABLE_DECL_LIST_NODE){
         Decl = blockNode->child->child;
         Stmt = Decl->rightSibling->child;
