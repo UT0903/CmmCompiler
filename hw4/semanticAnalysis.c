@@ -295,16 +295,21 @@ void processConstValueNode(AST_NODE* constValueNode)
 
 void processBlockNode(AST_NODE* blockNode)
 {
+    AST_NODE *Stmts = NULL, *Decls = NULL;
     AST_NODE *Stmt = NULL, *Decl = NULL;
     if(blockNode->child == NULL)
         return;
     if(blockNode->child->nodeType == VARIABLE_DECL_LIST_NODE){
-        Decl = blockNode->child->child;
-        if(Decl->child->rightSibling->nodeType == STMT_LIST_NODE)
-            Stmt = Decl->rightSibling->child->child;
+        Decls = blockNode->child;
+        Decl = Decls->child;
+        if(Decls->rightSibling->nodeType == STMT_LIST_NODE){
+            Stmts = Decls->rightSibling->child;
+            Stmt = Stmts->child;
+        }
     }
     else if(blockNode->child->nodeType == STMT_LIST_NODE){
-        Stmt = blockNode->child->child;
+        Stmts = blockNode->child;
+        Stmt = Stmts->child;
     }
     while (Decl)
     {   
