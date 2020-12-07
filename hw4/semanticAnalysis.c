@@ -157,7 +157,6 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 void checkWhileStmt(AST_NODE* whileNode)
 {
     AST_NODE *test = whileNode->child;
-    AST_NODE *stmt = test->rightSibling;
     if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
         checkAssignmentStmt(test);
     }
@@ -168,6 +167,7 @@ void checkWhileStmt(AST_NODE* whileNode)
         perror("wrong node in while");
         exit(0);
     }
+    AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
 }
 
@@ -221,6 +221,27 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
 
 void checkIfStmt(AST_NODE* ifNode)
 {
+    AST_NODE *test = ifNode->child;
+    if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+        checkAssignmentStmt(test);
+    }
+    else if(test->nodeType == EXPR_NODE)
+        processExprRelatedNode(test);
+    else{
+        //error
+        perror("wrong node in while");
+        exit(0);
+    }
+    AST_NODE *stmt = test->rightSibling;
+    processStmtNode(stmt);
+    AST_NODE *ELSE = stmt->rightSibling;
+    if(ELSE->nodeType == STMT_NODE)
+        processStmtNode(ELSE);
+    else if(ELSE->dataType != NUL_NODE){
+        perror("wrong node in if");
+        exit(0);
+    }
+    return;
 }
 
 void checkWriteFunction(AST_NODE* functionCallNode)
