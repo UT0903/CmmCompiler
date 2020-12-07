@@ -47,6 +47,8 @@ float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
 int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
 int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
 SymbolTableEntry* getSymbol(AST_NODE* Node);
+AST_NODE* NodeFolding(AST_NODE* Node);
+DATA_TYPE checkType(AST_NODE *Node);
 
 typedef enum ErrorMsgKind
 {
@@ -294,11 +296,11 @@ void processConstValueNode(AST_NODE* constValueNode)
 void processBlockNode(AST_NODE* blockNode)
 {
     AST_NODE *Stmt = NULL, *Decl = NULL;
-    if(blockNode->child->dataType == VARIABLE_DECL_LIST_NODE){
+    if(blockNode->child->nodeType == VARIABLE_DECL_LIST_NODE){
         Decl = blockNode->child->child;
         Stmt = Decl->rightSibling->child;
     }
-    else if(blockNode->child->dataType == Stmt){
+    else if(blockNode->child->nodeType == STMT_NODE){
         Stmt = blockNode->child->child;
     }
     while (Decl)
@@ -757,6 +759,8 @@ DATA_TYPE checkType(AST_NODE *Node){
             return attribute->attr.functionSignature->returnType;
         }
     }
+    perror("wrong check");
+    exit(0);
 }
 
 AST_NODE* ExprNodeFolding(AST_NODE* Node){
