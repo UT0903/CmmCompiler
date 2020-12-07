@@ -46,6 +46,7 @@ float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
 int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
 int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
+SymbolTableEntry* getSymbol(AST_NODE* Node);
 
 typedef enum ErrorMsgKind
 {
@@ -155,16 +156,66 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 
 void checkWhileStmt(AST_NODE* whileNode)
 {
+    AST_NODE *test = whileNode->child;
+    AST_NODE *stmt = test->rightSibling;
+    if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+        checkAssignmentStmt(test);
+    }
+    else if(test->nodeType == EXPR_NODE)
+        processExprRelatedNode(test);
+    else{
+        //error
+        perror("wrong node in while");
+        exit(0);
+    }
+    processStmtNode(stmt);
 }
 
 
 void checkForStmt(AST_NODE* forNode)
 {
+    AST_NODE *assign_expr_list = forNode->child;
+    if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
+        AST_NODE *assign_expr = assign_expr_list->child;
+        while(assign_expr){
+            if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+                checkAssignmentStmt(assign_expr);
+            }
+            else if(assign_expr->nodeType == EXPR_NODE){
+                processExprRelatedNode(assign_expr);
+            }
+            else{
+                //error
+                perror("wrong node in for");
+                exit(0);
+            }
+            assign_expr = assign_expr->rightSibling;
+        }
+    }
 }
 
 
 void checkAssignmentStmt(AST_NODE* assignmentNode)
 {
+    AST_NODE *l = assignmentNode->child;
+    AST_NODE *r = l->rightSibling;
+    if(l->nodeType != IDENTIFIER_NODE){
+        perror("it need id node");
+        exit(0);
+    }
+    else{
+        NodeFolding(r);
+        DATA_TYPE type = checkType(l);
+        if(type == INT_TYPE && r->dataType != INT_TYPE){
+            perror("rhs need to be int");
+            exit(0);
+        }
+        else if(type == FLOAT_TYPE && (r->dataType != INT_TYPE || r->dataType != FLOAT_TYPE)){
+            perror("rhs need to be int or float");
+            exit(0);
+        }
+    }
+    return;
 }
 
 
@@ -671,7 +722,7 @@ DATA_TYPE checkType(AST_NODE *Node){
         }
     }
     else if(Node->nodeType == IDENTIFIER_NODE){
-        SymbolTableEntry *symbol = retrieveSymbol(Node->semantic_value.identifierSemanticValue.identifierName);
+        SymbolTableEntry *symbol = getSymbol(Node);
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
         SymbolAttribute *attribute = symbol->attribute;
         if(attribute->attributeKind == VARIABLE_ATTRIBUTE || attribute->attributeKind == TYPE_ATTRIBUTE){
@@ -829,4 +880,13 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         return Node;
     }
     return NULL;
+}
+
+SymbolTableEntry* getSymbol(AST_NODE* Node){
+    if(Node->nodeType != IDENTIFIER_NODE)
+        return NULL;
+    if(Node->semantic_value.identifierSemanticValue.symbolTableEntry == NULL){
+        Node->semantic_value.identifierSemanticValue.symbolTableEntry = retrieveSymbol(Node->semantic_value.identifierSemanticValue.identifierName);
+    }
+    return Node->semantic_value.identifierSemanticValue.symbolTableEntry;
 }
