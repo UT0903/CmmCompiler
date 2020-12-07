@@ -480,112 +480,24 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
     return typeDescStruct;
 }
 
-AST_NODE* ExprNodeFolding(AST_NODE* Node){
-    if(Node->nodeType != EXPR_NODE)
-        return NULL;
-    EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
-    if(expr->kind == BINARY_OPERATION){
-        AST_NODE *l = Node->child, *r = Node->child->rightSibling;
-        if(r->nodeType == CONST_VALUE_NODE && l->rightSibling->nodeType == CONST_VALUE_NODE){
-            CON_Type *c1 = r->semantic_value.const1, *c2 = l->semantic_value.const1;
-            if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, expr->op.binaryOp);
-            }
-            else if(c1->const_type == FLOATC && c2->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp);
-            }
-            else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp);
-            }
-            else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp);
-            }
-            else{
-                //handle string in expr error
-            }
-            return Node;
+AST_NODE* NodeFolding(AST_NODE *Node){
+    if(Node->nodeType == EXPR_NODE)
+        return ExprNodeFolding(Node);
+    if(Node->nodeType == CONST_VALUE_NODE){
+        Node->nodeType = EXPR_NODE;
+        CON_Type *c = Node->semantic_value.const1;
+        EXPRSemanticValue expr;
+        if(c->const_type == INTEGERC){
+            expr.isConstEval = 1;
+            expr.constEvalValue.iValue = c->const_u.intval;
         }
-        else if((r->nodeType == CONST_VALUE_NODE && l->nodeType == EXPR_NODE) || (l->nodeType == CONST_VALUE_NODE && r->nodeType == EXPR_NODE)){
-            AST_NODE *C_Node, *E_Node;
-            if(r->nodeType == CONST_VALUE_NODE){
-                C_Node = r;
-                E_Node = ExprNodeFolding(l);
-            }
-            else{
-                C_Node = l;
-                E_Node = ExprNodeFolding(r);
-            }
-            EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
-            if(e->isConstEval == 0)
-                return Node;
-            CON_Type *c = C_Node->semantic_value.const1;
-            if(c->const_type == INTEGERC && e->isConstEval == 1){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(c->const_u.intval, e->constEvalValue.iValue, expr->op.binaryOp);
-            }
-            else if(c->const_type == FLOATC && e->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp);
-            }
-            else if(c->const_type == FLOATC && e->isConstEval == 1){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp);
-            }
-            else if(c->const_type == INTEGERC && e->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp);
-            }
-            else{
-                //handle string in expr error
-            }
-            return Node;
+        else if(c->const_type == FLOATC){
+            expr.isConstEval = 2;
+            expr.constEvalValue.iValue = c->const_u.fval;
         }
-        else if(r->nodeType == EXPR_NODE && l->nodeType == EXPR_NODE){
-            ExprNodeFolding(r);
-            ExprNodeFolding(l);
-            EXPRSemanticValue *e1 = &r->semantic_value.exprSemanticValue, *e2 = &l->semantic_value.exprSemanticValue;
-            if(e1->isConstEval == 1 && e2->isConstEval == 1){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(e1->constEvalValue.iValue, e2->constEvalValue.iValue, expr->op.binaryOp);
-            }
-            else if(e1->isConstEval == 2 && e2->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp);
-            }
-            else if(e1->isConstEval == 2 && e2->isConstEval == 1){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp);
-            }
-            else if(e1->isConstEval == 1 && e2->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp);
-            }
-            return Node;
-        }
+        Node->semantic_value.exprSemanticValue = expr;
     }
-    else{
-        AST_NODE *child = Node->child;
-        if(child->nodeType == CONST_VALUE_NODE){
-            CON_Type *c = child->semantic_value.const1;
-            if(c->const_type == INTEGERC){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleUnaryIntFolding(c->const_u.intval, expr->op.unaryOp);
-            }
-            else if(c->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
-            }
-            else{
-                //handle string in expr error
-            }
-        }
-        return Node;
-    }
-    return NULL;
+    return Node;
 }
 
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op){
@@ -685,4 +597,177 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op){
         break;
     }
     return 0;
+}
+
+DATA_TYPE checkType(AST_NODE *Node){
+    if(Node->nodeType == CONST_VALUE_NODE){
+        if(Node->semantic_value.const1->const_type == INTEGERC)
+            return INT_TYPE;
+        else if(Node->semantic_value.const1->const_type == FLOATC)
+            return FLOAT_TYPE;
+        else{
+           //handle error 
+        }
+    }
+    else if(Node->nodeType == STMT_NODE){
+        if(Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
+            return checkType(Node->child);
+        }
+        else{
+            //handle error
+        }
+    }
+    else if(Node->nodeType == IDENTIFIER_NODE){
+        SymbolTableEntry *symbol = retrieveSymbol(Node->semantic_value.identifierSemanticValue.identifierName);
+        Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
+        SymbolAttribute *attribute = symbol->attribute;
+        if(attribute->attributeKind == VARIABLE_ATTRIBUTE || attribute->attributeKind == TYPE_ATTRIBUTE){
+            if(attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
+                return attribute->attr.typeDescriptor->properties.dataType;
+            }
+            else
+                return attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+        }
+        else if(attribute->attributeKind == FUNCTION_SIGNATURE){
+            return attribute->attr.functionSignature->returnType;
+        }
+    }
+}
+
+AST_NODE* ExprNodeFolding(AST_NODE* Node){
+    if(Node->nodeType != EXPR_NODE)
+        return NULL;
+    EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
+    if(expr->kind == BINARY_OPERATION){
+        AST_NODE *l = Node->child, *r = Node->child->rightSibling;
+        if(r->nodeType == CONST_VALUE_NODE && l->rightSibling->nodeType == CONST_VALUE_NODE){
+            CON_Type *c1 = r->semantic_value.const1, *c2 = l->semantic_value.const1;
+            if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
+                expr->isConstEval = 1;
+                expr->constEvalValue.iValue = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, expr->op.binaryOp);
+                Node->dataType = INT_TYPE;
+            }
+            else if(c1->const_type == FLOATC && c2->const_type == FLOATC){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else{
+                //handle string in expr error
+            }
+            return Node;
+        }
+        else if((r->nodeType == CONST_VALUE_NODE && l->nodeType == EXPR_NODE) || (l->nodeType == CONST_VALUE_NODE && r->nodeType == EXPR_NODE)){
+            AST_NODE *C_Node, *E_Node;
+            if(r->nodeType == CONST_VALUE_NODE){
+                C_Node = r;
+                E_Node = ExprNodeFolding(l);
+            }
+            else{
+                C_Node = l;
+                E_Node = ExprNodeFolding(r);
+            }
+            EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
+            CON_Type *c = C_Node->semantic_value.const1;
+            if(e->isConstEval == 0){
+                if(E_Node->dataType == FLOAT_TYPE || c->const_type == FLOATC)
+                    Node->dataType = FLOAT_TYPE;
+                else
+                    Node->dataType = INT_TYPE;
+                return Node;
+            }
+            if(c->const_type == INTEGERC && e->isConstEval == 1){
+                expr->isConstEval = 1;
+                expr->constEvalValue.iValue = handleBinaryIntFolding(c->const_u.intval, e->constEvalValue.iValue, expr->op.binaryOp);
+                Node->dataType = INT_TYPE;
+            }
+            else if(c->const_type == FLOATC && e->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(c->const_type == FLOATC && e->isConstEval == 1){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(c->const_type == INTEGERC && e->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else{
+                //handle string in expr error
+            }
+            return Node;
+        }
+        else if(r->nodeType == EXPR_NODE && l->nodeType == EXPR_NODE){
+            ExprNodeFolding(r);
+            ExprNodeFolding(l);
+            EXPRSemanticValue *e1 = &r->semantic_value.exprSemanticValue, *e2 = &l->semantic_value.exprSemanticValue;
+            if(e1->isConstEval == 1 && e2->isConstEval == 1){
+                expr->isConstEval = 1;
+                expr->constEvalValue.iValue = handleBinaryIntFolding(e1->constEvalValue.iValue, e2->constEvalValue.iValue, expr->op.binaryOp);
+                Node->dataType = INT_TYPE;
+            }
+            else if(e1->isConstEval == 2 && e2->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(e1->isConstEval == 2 && e2->isConstEval == 1){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(e1->isConstEval == 1 && e2->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp);
+                Node->dataType = FLOAT_TYPE;
+            }
+            else if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE)
+                Node->dataType = FLOAT_TYPE;
+            else
+                Node->dataType = INT_TYPE;
+            return Node;
+        }
+        else{
+            if(checkType(l) == FLOAT_TYPE || checkType(r) == FLOAT_TYPE){
+                Node->dataType = FLOAT_TYPE;
+            }
+            else{
+                Node->dataType = INT_TYPE;
+            }
+        }
+        return Node;
+    }
+    else{
+        AST_NODE *child = Node->child;
+        if(child->nodeType == CONST_VALUE_NODE){
+            CON_Type *c = child->semantic_value.const1;
+            if(c->const_type == INTEGERC){
+                expr->isConstEval = 1;
+                expr->constEvalValue.iValue = handleUnaryIntFolding(c->const_u.intval, expr->op.unaryOp);
+            }
+            else if(c->const_type == FLOATC){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
+            }
+            else{
+                //handle string in expr error
+            }
+        }
+        return Node;
+    }
+    return NULL;
 }
