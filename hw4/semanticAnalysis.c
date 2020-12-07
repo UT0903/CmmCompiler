@@ -300,9 +300,10 @@ void processBlockNode(AST_NODE* blockNode)
         return;
     if(blockNode->child->nodeType == VARIABLE_DECL_LIST_NODE){
         Decl = blockNode->child->child;
-        Stmt = Decl->rightSibling->child;
+        if(Decl->child->rightSibling->nodeType == STMT_LIST_NODE)
+            Stmt = Decl->rightSibling->child->child;
     }
-    else if(blockNode->child->nodeType == STMT_NODE){
+    else if(blockNode->child->nodeType == STMT_LIST_NODE){
         Stmt = blockNode->child->child;
     }
     while (Decl)
