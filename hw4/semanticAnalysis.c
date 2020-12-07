@@ -161,7 +161,7 @@ void checkWhileStmt(AST_NODE* whileNode)
         checkAssignmentStmt(test);
     }
     else if(test->nodeType == EXPR_NODE)
-        processExprRelatedNode(test);
+        processExprNode(test);
     else{
         //error
         perror("wrong node in while");
@@ -182,7 +182,7 @@ void checkForStmt(AST_NODE* forNode)
                 checkAssignmentStmt(assign_expr);
             }
             else if(assign_expr->nodeType == EXPR_NODE){
-                processExprRelatedNode(assign_expr);
+                processExprNode(assign_expr);
             }
             else{
                 //error
@@ -226,7 +226,7 @@ void checkIfStmt(AST_NODE* ifNode)
         checkAssignmentStmt(test);
     }
     else if(test->nodeType == EXPR_NODE)
-        processExprRelatedNode(test);
+        processExprNode(test);
     else{
         //error
         perror("wrong node in while");
