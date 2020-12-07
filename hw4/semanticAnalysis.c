@@ -208,11 +208,12 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
     else{
         NodeFolding(r);
         DATA_TYPE type = checkType(l);
+        //fprintf(stderr, "type: %d\n", type);
         if(type == INT_TYPE && r->dataType != INT_TYPE){
             perror("rhs need to be int");
             exit(0);
         }
-        else if(type == FLOAT_TYPE && (r->dataType != INT_TYPE || r->dataType != FLOAT_TYPE)){
+        else if(type == FLOAT_TYPE && r->dataType != INT_TYPE && r->dataType != FLOAT_TYPE){
             perror("rhs need to be int or float");
             exit(0);
         }
@@ -302,8 +303,8 @@ void processBlockNode(AST_NODE* blockNode)
     if(blockNode->child->nodeType == VARIABLE_DECL_LIST_NODE){
         Decls = blockNode->child;
         Decl = Decls->child;
-        if(Decls->rightSibling->nodeType == STMT_LIST_NODE){
-            Stmts = Decls->rightSibling->child;
+        if(Decls->rightSibling != NULL && Decls->rightSibling->nodeType == STMT_LIST_NODE){
+            Stmts = Decls->rightSibling;
             Stmt = Stmts->child;
         }
     }
@@ -328,7 +329,8 @@ void processStmtNode(AST_NODE* stmtNode)
 {
     if(stmtNode->nodeType == BLOCK_NODE)
         processBlockNode(stmtNode);
-    else{
+    else if(stmtNode->nodeType == STMT_NODE){
+        //fprintf(stderr, "stmtkind: %d\n", stmtNode->semantic_value.stmtSemanticValue.kind);
         switch (stmtNode->semantic_value.stmtSemanticValue.kind)
         {
         case WHILE_STMT:
@@ -348,8 +350,14 @@ void processStmtNode(AST_NODE* stmtNode)
         case RETURN_STMT:
             break;
         default:
+            perror("no match stmt");
+            exit(0);
             break;
         }
+    }
+    else{
+        perror("input no stmt");
+        exit(0);
     }
 }
 
@@ -614,13 +622,21 @@ AST_NODE* NodeFolding(AST_NODE *Node){
         EXPRSemanticValue expr;
         if(c->const_type == INTEGERC){
             expr.isConstEval = 1;
+            Node->dataType = INT_TYPE;
             expr.constEvalValue.iValue = c->const_u.intval;
         }
         else if(c->const_type == FLOATC){
             expr.isConstEval = 2;
+            Node->dataType = FLOAT_TYPE;
             expr.constEvalValue.iValue = c->const_u.fval;
         }
         Node->semantic_value.exprSemanticValue = expr;
+    }
+    if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
+        Node->dataType = checkType(Node->child);
+    }
+    if(Node->nodeType == IDENTIFIER_NODE){
+        Node->dataType = checkType(Node);
     }
     return Node;
 }
@@ -738,7 +754,7 @@ DATA_TYPE checkType(AST_NODE *Node){
             return FLOAT_TYPE;
         else{
            //handle error 
-           perror("string in wrong place");
+           perror("string in wrong place 755");
             exit(0);
         }
     }
@@ -777,7 +793,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
     EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
     if(expr->kind == BINARY_OPERATION){
         AST_NODE *l = Node->child, *r = Node->child->rightSibling;
-        if(r->nodeType == CONST_VALUE_NODE && l->rightSibling->nodeType == CONST_VALUE_NODE){
+        if(r->nodeType == CONST_VALUE_NODE && l->nodeType == CONST_VALUE_NODE){
             CON_Type *c1 = r->semantic_value.const1, *c2 = l->semantic_value.const1;
             if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
                 expr->isConstEval = 1;
@@ -801,7 +817,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
-                perror("string in expr");
+                perror("string in expr 818");
                 exit(0);
             }
             return Node;
@@ -847,7 +863,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
-                perror("string in expr");
+                perror("string in expr 864");
                 exit(0);
             }
             return Node;
@@ -906,7 +922,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
-                perror("string in expr");
+                perror("string in expr 923");
                 exit(0);
             }
         }
