@@ -221,11 +221,54 @@ void processConstValueNode(AST_NODE* constValueNode)
 
 void processBlockNode(AST_NODE* blockNode)
 {
+    AST_NODE *Stmt = NULL, *Decl = NULL;
+    if(blockNode->child->dataType == VARIABLE_DECL_LIST_NODE){
+        Decl = blockNode->child->child;
+        Stmt = Decl->rightSibling->child;
+    }
+    else if(blockNode->child->dataType == Stmt){
+        Stmt = blockNode->child->child;
+    }
+    while (Decl)
+    {   
+        processDeclarationNode(Decl, 1);
+        Decl = Decl->rightSibling;
+    }
+    while(Stmt){
+        processStmtNode(Stmt);
+        Stmt = Stmt->rightSibling;
+    }
+    return;
 }
 
 
 void processStmtNode(AST_NODE* stmtNode)
 {
+    if(stmtNode->nodeType == BLOCK_NODE)
+        processBlockNode(stmtNode);
+    else{
+        switch (stmtNode->semantic_value.stmtSemanticValue.kind)
+        {
+        case WHILE_STMT:
+            checkWhileStmt(stmtNode);
+            break;
+        case IF_STMT:
+            checkIfStmt(stmtNode);
+            break;
+        case FOR_STMT:
+            checkForStmt(stmtNode);
+            break;
+        case ASSIGN_STMT:
+            checkAssignmentStmt(stmtNode);
+        case FUNCTION_CALL_STMT:
+            checkFunctionCall(stmtNode);
+            break;
+        case RETURN_STMT:
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 
@@ -509,6 +552,8 @@ float handleUnaryFloatFolding(float a, UNARY_OPERATOR op){
         return -a;
     case UNARY_OP_LOGICAL_NEGATION:
         //handle float ! error
+        perror("float ! error");
+        exit(0);
         break;
     default:
         break;
@@ -556,9 +601,13 @@ float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op){
         return a < b;
     case BINARY_OP_AND:
         //handle float & error
+        perror("float & error");
+        exit(0);
         break;
     case BINARY_OP_OR:
-        //handle float & error
+        //handle float | error
+        perror("float | error");
+        exit(0);
         break;
     default:
         break;
@@ -607,6 +656,8 @@ DATA_TYPE checkType(AST_NODE *Node){
             return FLOAT_TYPE;
         else{
            //handle error 
+           perror("string in wrong place");
+            exit(0);
         }
     }
     else if(Node->nodeType == STMT_NODE){
@@ -615,6 +666,8 @@ DATA_TYPE checkType(AST_NODE *Node){
         }
         else{
             //handle error
+            perror("string in wrong place");
+            exit(0);
         }
     }
     else if(Node->nodeType == IDENTIFIER_NODE){
@@ -664,6 +717,8 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
+                perror("string in expr");
+                exit(0);
             }
             return Node;
         }
@@ -708,6 +763,8 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
+                perror("string in expr");
+                exit(0);
             }
             return Node;
         }
@@ -765,6 +822,8 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
+                perror("string in expr");
+                exit(0);
             }
         }
         return Node;
