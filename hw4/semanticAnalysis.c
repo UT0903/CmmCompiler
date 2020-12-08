@@ -35,14 +35,6 @@ void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 
 
-int ConstValue(AST_NODE *Node){
-    if(Node->nodeType != EXPR_NODE || Node->nodeType != CONST_VALUE_NODE){
-        return 0;
-    }
-    NodeFolding(Node);
-    return (Node->semantic_value.exprSemanticValue.isConstEval);
-}
-
 
 Parameter* makeParameter(AST_NODE* paramNode);
 TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, int LocalOrGlobalDecl);
@@ -58,7 +50,7 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
 SymbolTableEntry* getSymbol(AST_NODE* Node);
 AST_NODE* NodeFolding(AST_NODE* Node);
 DATA_TYPE checkType(AST_NODE *Node);
-
+int ConstValue(AST_NODE *Node);
 typedef enum ErrorMsgKind
 {
     NOT_DECLARED_IN_THIS_SCOPE, // ‘<name>’ was not declared in this scope
@@ -462,15 +454,10 @@ void handleReturnNode(AST_NODE* returnNode, char* funcName){
             exit(0);
         }
     }
-    else{ //non-void
-        AST_NODE* exprNode = NodeFolding(returnNode->child);
-        int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
+    else{ //non-void TODO:
+        int isConstEval = ConstValue(returnNode->child);
         if(isConstEval == 0){
             fprintf(stderr, "Error in NodeFolding()\n");
-            exit(0);
-        }
-        if((isConstEval == 2 || isConstEval == 4) && returnType == INT_TYPE){
-            fprintf(stderr, "Cannot assign float to int\n");
             exit(0);
         }
     }
@@ -630,15 +617,30 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         }
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){
-            AST_NODE* exprNode = NodeFolding(dimInfo);
-            assert(exprNode != NULL);
+            int isConstEval = ConstValue(dimInfo);
             //TODO: rewrite isConstEval
-            if(exprNode->semantic_value.exprSemanticValue.isConstEval != 1){
-                fprintf(stderr, "Cannot have non-ConstInt in array dimension declaration\n");
+            if(isConstEval == 0){
+                fprintf(stderr, "Cannot have variable in array dimension declaration\n");
                 exit(0);
             }
-            typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
-                = exprNode->semantic_value.exprSemanticValue.constEvalValue.iValue;
+            else if(isConstEval == 2){
+                fprintf(stderr, "Cannot have float in array dimension declaration\n");
+                exit(0);
+            }
+            else if(isConstEval == 1){
+                int iValue = dimInfo->semantic_value.exprSemanticValue.constEvalValue.iValue;
+                if(iValue < 0){
+                    fprintf(stderr, "Cannot have negative integer in array dimension declaration\n");
+                    exit(0);
+                }
+                typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
+                = iValue;
+            }
+            else{
+                fprintf(stderr, "Error when calling isConstEval()\n");
+                exit(0);
+            }
+            
             dimInfo = dimInfo->rightSibling;
         }
         typeDescStruct->properties.arrayProperties.elementType = tempDataType;
@@ -649,31 +651,13 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        int isConstEval = isCount(ID->child);
-        fprintf(stderr, "isConstEval: %d\n", isConstEval);
-        if(isConstEval == 0){
-            fprintf(stderr, "Error occur in NodeFolding\n");
-            exit(0);
-        }
+        int isConstEval = ConstValue(ID->child);
+        //fprintf(stderr, "isConstEval: %d\n", isConstEval);
         if(LocalOrGlobalDecl == 0){ //global decl
             if(isConstEval == 0){
                 fprintf(stderr, "Not support for dynamic declaration in global\n");
                 exit(0);
             }
-            else if(isConstEval == 2 && typeDescStruct->properties.dataType == INT_TYPE){
-                fprintf(stderr, "Cannot assign float to int\n");
-                exit(0);
-            }
-        }
-        else if(LocalOrGlobalDecl == 1){ //local decl
-            if((isConstEval == 2 || isConstEval == 4) && typeDescStruct->properties.dataType == INT_TYPE){
-                fprintf(stderr, "Cannot assign float to int\n");
-                exit(0);
-            }
-        }
-        else{
-            fprintf(stderr, "LocalOrGlobalDecl param can be only 0 or 1\n");
-            exit(0);
         }
     }
     else{
@@ -1014,4 +998,11 @@ SymbolTableEntry* getSymbol(AST_NODE* Node){
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = retrieveSymbol(Node->semantic_value.identifierSemanticValue.identifierName);
     }
     return Node->semantic_value.identifierSemanticValue.symbolTableEntry;
+}
+int ConstValue(AST_NODE *Node){
+    if(Node->nodeType != EXPR_NODE || Node->nodeType != CONST_VALUE_NODE){
+        return 0;
+    }
+    NodeFolding(Node);
+    return (Node->semantic_value.exprSemanticValue.isConstEval);
 }
