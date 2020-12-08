@@ -144,6 +144,7 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
             fprintf(fp, "default case in char *getLabelString(AST_TYPE astType)");
             break;
     }
+    return ""; 
 }
 
 void printGV(AST_NODE *root, char* fileName)

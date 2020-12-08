@@ -162,13 +162,8 @@ void checkWhileStmt(AST_NODE* whileNode)
     if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
         checkAssignmentStmt(test);
     }
-    else if(test->nodeType == EXPR_NODE)
+    else
         processExprNode(test);
-    else{
-        //error
-        perror("wrong node in while");
-        exit(0);
-    }
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
 }
@@ -176,21 +171,32 @@ void checkWhileStmt(AST_NODE* whileNode)
 
 void checkForStmt(AST_NODE* forNode)
 {
-    AST_NODE *assign_expr_list = forNode->child;
+    AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling;
     if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = assign_expr_list->child;
         while(assign_expr){
             if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
                 checkAssignmentStmt(assign_expr);
             }
-            else if(assign_expr->nodeType == EXPR_NODE){
+            else
                 processExprNode(assign_expr);
+            assign_expr = assign_expr->rightSibling;
+        }
+    }
+    if(relop_expr_list->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
+        AST_NODE *relop_expr = relop_expr_list->child;
+        while(relop_expr){
+            processExprNode(relop_expr);
+        }
+    }
+    if(second_assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
+        AST_NODE *assign_expr = second_assign_expr_list->child;
+        while(assign_expr){
+            if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+                checkAssignmentStmt(assign_expr);
             }
-            else{
-                //error
-                perror("wrong node in for");
-                exit(0);
-            }
+            else
+                processExprNode(assign_expr);
             assign_expr = assign_expr->rightSibling;
         }
     }
@@ -228,13 +234,8 @@ void checkIfStmt(AST_NODE* ifNode)
     if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
         checkAssignmentStmt(test);
     }
-    else if(test->nodeType == EXPR_NODE)
+    else
         processExprNode(test);
-    else{
-        //error
-        perror("wrong node in while");
-        exit(0);
-    }
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
     AST_NODE *ELSE = stmt->rightSibling;
@@ -251,8 +252,69 @@ void checkWriteFunction(AST_NODE* functionCallNode)
 {
 }
 
+int checkArray(ArrayProperties *prop, AST_NODE *arr){
+    if(arr->nodeType != IDENTIFIER_NODE){
+        return 0;
+    }
+    if(arr->semantic_value.identifierSemanticValue.kind != ARRAY_ID){
+        return 0;
+    }
+    ArrayProperties *arrprop = &arr->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor->properties.arrayProperties;
+    if(prop->dimension != arrprop->dimension || prop->elementType != arrprop->elementType){
+        return 0;
+    }
+    int d = prop->dimension;
+    for(int i = 0; i < d; i ++){
+        if(prop->sizeInEachDimension[i] != arrprop->sizeInEachDimension[i]){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int checkParam(Parameter *decl_param, AST_NODE *param){
+    if(decl_param->type->kind == ARRAY_TYPE_DESCRIPTOR){
+        if(!checkArray(&decl_param->type->properties.arrayProperties, param))
+            return 0;
+    }
+    else{
+        NodeFolding(param);
+        if(checkType(param) != decl_param->type->properties.dataType){
+            return 0;
+        }
+    }
+    return 1;
+}
+
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
+    SymbolTableEntry *entry = getSymbol(functionCallNode->child);
+    AST_NODE *param_list = functionCallNode->child->rightSibling;
+    if(entry->attribute->attributeKind != FUNCTION_SIGNATURE){
+        perror("this node is not function");
+        exit(0);
+    }
+    FunctionSignature *signature = entry->attribute->attr.functionSignature;
+    if(signature->parametersCount == 0 && param_list->nodeType == NUL_NODE)
+        return;
+    Parameter *decl_param = signature->parameterList;
+    AST_NODE *param = param_list->child;
+    while(decl_param){
+        if(param == NULL){
+            perror("lose param");
+            exit(0);
+        }
+        if(!checkParam(decl_param, param)){
+            perror("param type wrong");
+            exit(0);
+        }
+        decl_param = decl_param->next;
+        param = param->rightSibling;
+    }
+    if(param != NULL){
+        perror("too many param");
+        exit(0);
+    }
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
@@ -275,6 +337,7 @@ void evaluateExprValue(AST_NODE* exprNode)
 
 void processExprNode(AST_NODE* exprNode)
 {
+    NodeFolding(exprNode);
 }
 
 void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize){
@@ -633,10 +696,15 @@ AST_NODE* NodeFolding(AST_NODE *Node){
         Node->semantic_value.exprSemanticValue = expr;
     }
     if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
+        checkFunctionCall(Node);
         Node->dataType = checkType(Node->child);
     }
     if(Node->nodeType == IDENTIFIER_NODE){
         Node->dataType = checkType(Node);
+    }
+    else{
+        perror("wrong node in node folding");
+        exit(0);
     }
     return Node;
 }
