@@ -35,6 +35,15 @@ void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 
 
+int ConstValue(AST_NODE *Node){
+    if(Node->nodeType != EXPR_NODE || Node->nodeType != CONST_VALUE_NODE){
+        return 0;
+    }
+    NodeFolding(Node);
+    return (Node->semantic_value.exprSemanticValue.isConstEval);
+}
+
+
 Parameter* makeParameter(AST_NODE* paramNode);
 TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, int LocalOrGlobalDecl);
 AST_NODE* ExprNodeFolding(AST_NODE* ExprNode);
@@ -640,15 +649,14 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        AST_NODE* exprNode = NodeFolding(ID->child);
-        int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
+        int isConstEval = isCount(ID->child);
         fprintf(stderr, "isConstEval: %d\n", isConstEval);
         if(isConstEval == 0){
             fprintf(stderr, "Error occur in NodeFolding\n");
             exit(0);
         }
         if(LocalOrGlobalDecl == 0){ //global decl
-            if(isConstEval == 3 || isConstEval == 4){
+            if(isConstEval == 0){
                 fprintf(stderr, "Not support for dynamic declaration in global\n");
                 exit(0);
             }
