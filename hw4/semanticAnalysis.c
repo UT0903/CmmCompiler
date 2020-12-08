@@ -454,10 +454,10 @@ void handleReturnNode(AST_NODE* returnNode, char* funcName){
         }
     }
     else{ //non-void
-        AST_NODE* exprNode = ExprNodeFolding(returnNode->child);
+        AST_NODE* exprNode = NodeFolding(returnNode->child);
         int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
         if(isConstEval == 0){
-            fprintf(stderr, "Error in ExprNodeFolding()\n");
+            fprintf(stderr, "Error in NodeFolding()\n");
             exit(0);
         }
         if((isConstEval == 2 || isConstEval == 4) && returnType == INT_TYPE){
@@ -621,7 +621,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         }
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){
-            AST_NODE* exprNode = ExprNodeFolding(dimInfo);
+            AST_NODE* exprNode = NodeFolding(dimInfo);
             assert(exprNode != NULL);
             //TODO: rewrite isConstEval
             if(exprNode->semantic_value.exprSemanticValue.isConstEval != 1){
@@ -640,11 +640,11 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        AST_NODE* exprNode = ExprNodeFolding(ID->child);
-        assert(exprNode != NULL);
+        AST_NODE* exprNode = NodeFolding(ID->child);
         int isConstEval = exprNode->semantic_value.exprSemanticValue.isConstEval;
+        fprintf(stderr, "isConstEval: %d\n", isConstEval);
         if(isConstEval == 0){
-            fprintf(stderr, "Error occur in ExprNodeFolding\n");
+            fprintf(stderr, "Error occur in NodeFolding\n");
             exit(0);
         }
         if(LocalOrGlobalDecl == 0){ //global decl
