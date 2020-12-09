@@ -316,6 +316,11 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
         if(param->nodeType == IDENTIFIER_NODE && param->semantic_value.identifierSemanticValue.kind == ARRAY_ID && !checkArrayDim(param)){
             return 0;
         }
+        if(param->dataType == VOID_TYPE){
+            perror("void in param");
+            exit(0);
+            return 0;
+        }
     }
     return 1;
 }
@@ -1013,8 +1018,13 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             return Node;
         }
         else{
-            if(checkType(l) == FLOAT_TYPE || checkType(r) == FLOAT_TYPE){
+            DATA_TYPE l_type = checkType(l), r_type = checkType(r);
+            if(l_type == FLOAT_TYPE || r_type == FLOAT_TYPE){
                 Node->dataType = FLOAT_TYPE;
+            }
+            else if(l_type == VOID_TYPE || r_type == VOID_TYPE){
+                perror("void no");
+                exit(0);
             }
             else{
                 Node->dataType = INT_TYPE;
