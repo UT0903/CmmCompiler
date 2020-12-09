@@ -1,3 +1,5 @@
+int read(){}
+void write(int a){}
 int f() { return 0; }
 float g() { return 0.0; }
 int h(int x, int y) { return x + y; }

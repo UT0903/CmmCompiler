@@ -180,6 +180,9 @@ void PrintTypeDescriptor(TypeDescriptor* type){
         else if(type->properties.dataType == FLOAT_TYPE){
             fprintf(stderr, "Float\n");
         }
+        else if(type->properties.dataType == VOID_TYPE){
+            fprintf(stderr, "Void\n");
+        }
         else{
             fprintf(stderr, "ERROR in printTable, This should not happen2\n");
             fprintf(stderr, "%d\n", type->properties.dataType);
