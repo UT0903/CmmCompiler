@@ -1057,6 +1057,9 @@ SymbolTableEntry* getSymbol(AST_NODE* Node){
 int ConstValue(AST_NODE *Node){
     //fprintf(stderr, "type: %d\n", Node->nodeType);
     if(Node->nodeType != EXPR_NODE && Node->nodeType != CONST_VALUE_NODE){
+        if(Node->nodeType == STMT_NODE){
+            processStmtNode(Node);
+        }
         return 0;
     }
     NodeFolding(Node);
