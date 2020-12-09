@@ -906,6 +906,27 @@ DATA_TYPE checkType(AST_NODE *Node){
     exit(0);
 }
 
+DATA_TYPE isRelopExpr(BINARY_OPERATOR op, DATA_TYPE type){
+    switch (op)
+    {
+    case BINARY_OP_ADD:
+    case BINARY_OP_SUB:
+    case BINARY_OP_MUL:
+    case BINARY_OP_DIV:
+        return type;
+    case BINARY_OP_EQ:
+    case BINARY_OP_GE:
+    case BINARY_OP_LE:
+    case BINARY_OP_NE:
+    case BINARY_OP_GT:
+    case BINARY_OP_LT:
+    case BINARY_OP_AND:
+    case BINARY_OP_OR:
+    default:
+        return INT_TYPE;
+    }
+}
+
 AST_NODE* ExprNodeFolding(AST_NODE* Node){
     if(Node->nodeType != EXPR_NODE)
         return NULL;
@@ -917,22 +938,22 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
                 expr->isConstEval = 1;
                 expr->constEvalValue.iValue = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, expr->op.binaryOp);
-                Node->dataType = INT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
             }
             else if(c1->const_type == FLOATC && c2->const_type == FLOATC){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else{
                 //handle string in expr error
@@ -955,30 +976,30 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             CON_Type *c = C_Node->semantic_value.const1;
             if(e->isConstEval == 0){
                 if(E_Node->dataType == FLOAT_TYPE || c->const_type == FLOATC)
-                    Node->dataType = FLOAT_TYPE;
+                    Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
                 else
-                    Node->dataType = INT_TYPE;
+                    Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
                 return Node;
             }
             if(c->const_type == INTEGERC && e->isConstEval == 1){
                 expr->isConstEval = 1;
                 expr->constEvalValue.iValue = handleBinaryIntFolding(c->const_u.intval, e->constEvalValue.iValue, expr->op.binaryOp);
-                Node->dataType = INT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
             }
             else if(c->const_type == FLOATC && e->isConstEval == 2){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(c->const_type == FLOATC && e->isConstEval == 1){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(c->const_type == INTEGERC && e->isConstEval == 2){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else{
                 //handle string in expr error
@@ -994,40 +1015,40 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             if(e1->isConstEval == 1 && e2->isConstEval == 1){
                 expr->isConstEval = 1;
                 expr->constEvalValue.iValue = handleBinaryIntFolding(e1->constEvalValue.iValue, e2->constEvalValue.iValue, expr->op.binaryOp);
-                Node->dataType = INT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
             }
             else if(e1->isConstEval == 2 && e2->isConstEval == 2){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(e1->isConstEval == 2 && e2->isConstEval == 1){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(e1->isConstEval == 1 && e2->isConstEval == 2){
                 expr->isConstEval = 2;
                 expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp);
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE)
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             else
-                Node->dataType = INT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
             return Node;
         }
         else{
             DATA_TYPE l_type = checkType(l), r_type = checkType(r);
             if(l_type == FLOAT_TYPE || r_type == FLOAT_TYPE){
-                Node->dataType = FLOAT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, FLOAT_TYPE);
             }
             else if(l_type == VOID_TYPE || r_type == VOID_TYPE){
                 perror("void no");
                 exit(0);
             }
             else{
-                Node->dataType = INT_TYPE;
+                Node->dataType = isRelopExpr(expr->op.binaryOp, INT_TYPE);
             }
         }
         return Node;
