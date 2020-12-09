@@ -1,4 +1,7 @@
 /* gcc: valid */
+void f(int a[]){
+
+}
 int main(){
-	return 1.1;
+	
 }
