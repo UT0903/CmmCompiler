@@ -252,13 +252,9 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
             exit(0);
         }
         else{
-            SymbolTableEntry *entry = getSymbol(l->child);
+            SymbolTableEntry *entry = getSymbol(l);
             if(entry == NULL){
-                perror("bob-decl");
-                exit(0);
-            }
-            else if(entry->attribute->attributeKind == FUNCTION_SIGNATURE){
-                perror("wrong type");
+                perror("non-decl");
                 exit(0);
             }
         }
