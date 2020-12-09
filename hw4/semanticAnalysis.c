@@ -51,6 +51,7 @@ SymbolTableEntry* getSymbol(AST_NODE* Node);
 AST_NODE* NodeFolding(AST_NODE* Node);
 DATA_TYPE checkType(AST_NODE *Node);
 int ConstValue(AST_NODE *Node);
+int checkArrayDim(AST_NODE *Node);
 typedef enum ErrorMsgKind
 {
     NOT_DECLARED_IN_THIS_SCOPE, // ‘<name>’ was not declared in this scope
@@ -204,25 +205,71 @@ void checkForStmt(AST_NODE* forNode)
 }
 
 
+int checkArrayDim(AST_NODE *Node){
+    SymbolTableEntry *entry = getSymbol(Node);
+    int d = 0;
+    if(entry == NULL){
+        perror("non-decl");
+        exit(0);
+    }
+    else if(entry->attribute->attributeKind == FUNCTION_SIGNATURE || entry->attribute->attr.typeDescriptor->kind != ARRAY_TYPE_DESCRIPTOR){
+        perror("id not array");
+        exit(0);
+    }
+    else{
+        AST_NODE *dim = Node->child;
+        while(dim){
+            d ++;
+            NodeFolding(dim);
+            if(checkType(dim) != INT_TYPE){
+                perror("not int in array dim");
+                exit(0);
+            }
+            dim = dim->rightSibling;
+        }
+        if(d == entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
+            return 1;
+        else if(d < entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
+            return 0;
+        else{
+            perror("outof array dim");
+            exit(0);
+        }
+    }
+}
+
 void checkAssignmentStmt(AST_NODE* assignmentNode)
 {
     AST_NODE *l = assignmentNode->child;
     AST_NODE *r = l->rightSibling;
     if(l->nodeType != IDENTIFIER_NODE){
-        perror("it need id node");
+        perror("it need id node at assignment right side");
         exit(0);
     }
     else{
+        if(l->semantic_value.identifierSemanticValue.kind == ARRAY_ID && !checkArrayDim(l)){
+            perror("array error");
+            exit(0);
+        }
+        else{
+            SymbolTableEntry *entry = getSymbol(l->child);
+            if(entry == NULL){
+                perror("bob-decl");
+                exit(0);
+            }
+            else if(entry->attribute->attributeKind == FUNCTION_SIGNATURE){
+                perror("wrong type");
+                exit(0);
+            }
+        }
         NodeFolding(r);
         DATA_TYPE type = checkType(l);
         //fprintf(stderr, "type: %d\n", type);
         if(type == INT_TYPE && r->dataType != INT_TYPE){
-            perror("rhs need to be int");
-            exit(0);
+            r->dataType = INT_TYPE;
         }
-        else if(type == FLOAT_TYPE && r->dataType != INT_TYPE && r->dataType != FLOAT_TYPE){
-            perror("rhs need to be int or float");
-            exit(0);
+        else if(type == FLOAT_TYPE && r->dataType != FLOAT_TYPE){
+            r->dataType = FLOAT_TYPE;
         }
     }
     return;
@@ -260,15 +307,8 @@ int checkArray(ArrayProperties *prop, AST_NODE *arr){
     if(arr->semantic_value.identifierSemanticValue.kind != ARRAY_ID){
         return 0;
     }
-    ArrayProperties *arrprop = &arr->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.typeDescriptor->properties.arrayProperties;
-    if(prop->dimension != arrprop->dimension || prop->elementType != arrprop->elementType){
+    if(checkArrayDim(arr)){
         return 0;
-    }
-    int d = prop->dimension;
-    for(int i = 0; i < d; i ++){
-        if(prop->sizeInEachDimension[i] != arrprop->sizeInEachDimension[i]){
-            return 0;
-        }
     }
     return 1;
 }
@@ -280,7 +320,7 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
     }
     else{
         NodeFolding(param);
-        if(checkType(param) != decl_param->type->properties.dataType){
+        if(param->nodeType == IDENTIFIER_NODE && param->semantic_value.identifierSemanticValue.kind == ARRAY_ID && !checkArrayDim(param)){
             return 0;
         }
     }
@@ -290,9 +330,13 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
     SymbolTableEntry *entry = getSymbol(functionCallNode->child);
+    if(entry == NULL){
+        perror("function not decl");
+        exit(0);
+    }
     AST_NODE *param_list = functionCallNode->child->rightSibling;
     if(entry->attribute->attributeKind != FUNCTION_SIGNATURE){
-        perror("this node is not function");
+        perror("non-callable");
         exit(0);
     }
     FunctionSignature *signature = entry->attribute->attr.functionSignature;
@@ -302,7 +346,7 @@ void checkFunctionCall(AST_NODE* functionCallNode)
     AST_NODE *param = param_list->child;
     while(decl_param){
         if(param == NULL){
-            perror("lose param");
+            perror("too few param");
             exit(0);
         }
         if(!checkParam(decl_param, param)){
@@ -391,8 +435,9 @@ void processBlockNode(AST_NODE* blockNode)
 
 void processStmtNode(AST_NODE* stmtNode)
 {
-    if(stmtNode->nodeType == BLOCK_NODE)
+    if(stmtNode->nodeType == BLOCK_NODE){
         processBlockNode(stmtNode);
+    }
     else if(stmtNode->nodeType == STMT_NODE){
         //fprintf(stderr, "stmtkind: %d\n", stmtNode->semantic_value.stmtSemanticValue.kind);
         switch (stmtNode->semantic_value.stmtSemanticValue.kind)
@@ -408,6 +453,7 @@ void processStmtNode(AST_NODE* stmtNode)
             break;
         case ASSIGN_STMT:
             checkAssignmentStmt(stmtNode);
+            break;
         case FUNCTION_CALL_STMT:
             checkFunctionCall(stmtNode);
             break;
@@ -830,14 +876,19 @@ DATA_TYPE checkType(AST_NODE *Node){
     }
     else if(Node->nodeType == IDENTIFIER_NODE){
         SymbolTableEntry *symbol = getSymbol(Node);
+        if(symbol == NULL){
+            perror("no decl");
+            exit(0);
+        } 
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
         SymbolAttribute *attribute = symbol->attribute;
         if(attribute->attributeKind == VARIABLE_ATTRIBUTE || attribute->attributeKind == TYPE_ATTRIBUTE){
             if(attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
                 return attribute->attr.typeDescriptor->properties.dataType;
             }
-            else
+            else{
                 return attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
+            }
         }
         else if(attribute->attributeKind == FUNCTION_SIGNATURE){
             return attribute->attr.functionSignature->returnType;
@@ -854,7 +905,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
     if(expr->kind == BINARY_OPERATION){
         AST_NODE *l = Node->child, *r = Node->child->rightSibling;
         if(r->nodeType == CONST_VALUE_NODE && l->nodeType == CONST_VALUE_NODE){
-            CON_Type *c1 = r->semantic_value.const1, *c2 = l->semantic_value.const1;
+            CON_Type *c1 = l->semantic_value.const1, *c2 = r->semantic_value.const1;
             if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
                 expr->isConstEval = 1;
                 expr->constEvalValue.iValue = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, expr->op.binaryOp);
