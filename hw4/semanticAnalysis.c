@@ -221,7 +221,7 @@ int checkArrayDim(AST_NODE *Node){
         while(dim){
             d ++;
             NodeFolding(dim);
-            if(checkType(dim) != INT_TYPE){
+            if(dim->dataType != INT_TYPE){
                 perror("not int in array dim");
                 exit(0);
             }
@@ -298,9 +298,6 @@ void checkWriteFunction(AST_NODE* functionCallNode)
 
 int checkArray(ArrayProperties *prop, AST_NODE *arr){
     if(arr->nodeType != IDENTIFIER_NODE){
-        return 0;
-    }
-    if(arr->semantic_value.identifierSemanticValue.kind != ARRAY_ID){
         return 0;
     }
     if(checkArrayDim(arr)){
@@ -857,6 +854,7 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op){
 }
 
 DATA_TYPE checkType(AST_NODE *Node){
+    fprintf(stderr, "type: %d\n", Node->nodeType);
     if(Node->nodeType == CONST_VALUE_NODE){
         if(Node->semantic_value.const1->const_type == INTEGERC)
             return INT_TYPE;
@@ -898,6 +896,7 @@ DATA_TYPE checkType(AST_NODE *Node){
             return attribute->attr.functionSignature->returnType;
         }
     }
+    fprintf(stderr, "line: %d\n", Node->linenumber);
     perror("wrong check");
     exit(0);
 }
