@@ -37,7 +37,7 @@ void evaluateExprValue(AST_NODE* exprNode);
 
 
 Parameter* makeParameter(AST_NODE* paramNode);
-TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, int LocalOrGlobalDecl);
+TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, int LocalOrGlobalDecl, int voidValid);
 AST_NODE* ExprNodeFolding(AST_NODE* ExprNode);
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl);
@@ -512,7 +512,7 @@ void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
-        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl);
+        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 1);
         FillInSymbolTable(varName, typeDescStruct, TYPE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
@@ -521,7 +521,7 @@ void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
-        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl);
+        TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 0);
         FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE);
         IDNode = IDNode->rightSibling;
     }
@@ -622,7 +622,7 @@ Parameter* makeParameter(AST_NODE* typeNode){
     AST_NODE* ID = typeNode->rightSibling;
 
     char *name = ID->semantic_value.identifierSemanticValue.identifierName;
-    TypeDescriptor* typeDescStruct = extendTypeDescriptor(ID, getTypeDescriptor(typeNode), 0);
+    TypeDescriptor* typeDescStruct = extendTypeDescriptor(ID, getTypeDescriptor(typeNode), 0, 0);
 
     //fill Parameter struct
     Parameter *paramStruct = (Parameter*)malloc(sizeof(Parameter));
@@ -633,7 +633,7 @@ Parameter* makeParameter(AST_NODE* typeNode){
     return paramStruct;
 }
 
-TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruct, int LocalOrGlobalDecl){
+TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruct, int LocalOrGlobalDecl, int voidValid){
     DATA_TYPE tempDataType;
     if(typeDescStruct->kind == ARRAY_TYPE_DESCRIPTOR){
         tempDataType = typeDescStruct->properties.arrayProperties.elementType;
@@ -645,7 +645,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         fprintf(stderr, "Error in extendTypeDescriptor1\n");
         exit(0);
     }
-    if(tempDataType == VOID_TYPE){
+    if(tempDataType == VOID_TYPE && voidValid == 0){
         fprintf(stderr, "No void type declaration\n");
         exit(0);
     }
@@ -663,7 +663,14 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         }
         AST_NODE *dimInfo = ID->child;
         while(dimInfo != NULL){
+            if(dimInfo == ID->child && dimInfo->nodeType == NUL_NODE){//first dim can be null
+                typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
+                = -1;
+                dimInfo = dimInfo->rightSibling;
+                continue;
+            }
             int isConstEval = ConstValue(dimInfo);
+            //fprintf(stderr, "isConstEval: %d\n", isConstEval);
             //TODO: rewrite isConstEval
             if(isConstEval == 0){
                 fprintf(stderr, "Cannot have variable in array dimension declaration\n");
@@ -675,6 +682,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             }
             else if(isConstEval == 1){
                 int iValue = dimInfo->semantic_value.exprSemanticValue.constEvalValue.iValue;
+                fprintf(stderr, "isConstEval = 1, iValue: %d\n", iValue);
                 if(iValue < 0){
                     fprintf(stderr, "Cannot have negative integer in array dimension declaration\n");
                     exit(0);
@@ -733,11 +741,11 @@ AST_NODE* NodeFolding(AST_NODE *Node){
         }
         Node->semantic_value.exprSemanticValue = expr;
     }
-    if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
+    else if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
         checkFunctionCall(Node);
         Node->dataType = checkType(Node->child);
     }
-    if(Node->nodeType == IDENTIFIER_NODE){
+    else if(Node->nodeType == IDENTIFIER_NODE){
         Node->dataType = checkType(Node);
     }
     else{
@@ -1051,7 +1059,8 @@ SymbolTableEntry* getSymbol(AST_NODE* Node){
     return Node->semantic_value.identifierSemanticValue.symbolTableEntry;
 }
 int ConstValue(AST_NODE *Node){
-    if(Node->nodeType != EXPR_NODE || Node->nodeType != CONST_VALUE_NODE){
+    //fprintf(stderr, "type: %d\n", Node->nodeType);
+    if(Node->nodeType != EXPR_NODE && Node->nodeType != CONST_VALUE_NODE){
         return 0;
     }
     NodeFolding(Node);
