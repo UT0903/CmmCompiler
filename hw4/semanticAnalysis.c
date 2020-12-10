@@ -533,6 +533,7 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
+
 int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
     if(returnNode->nodeType != STMT_NODE || returnNode->semantic_value.stmtSemanticValue.kind != RETURN_STMT){
         fprintf(stderr, "Should not pass non-RETURN_STMT node into handleReturnNode()\n");
@@ -1013,16 +1014,10 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             return Node;
         }
-        else if((r->nodeType == CONST_VALUE_NODE && l->nodeType == EXPR_NODE) || (l->nodeType == CONST_VALUE_NODE && r->nodeType == EXPR_NODE)){
+        else if(l->nodeType == CONST_VALUE_NODE && r->nodeType == EXPR_NODE){
             AST_NODE *C_Node, *E_Node;
-            if(r->nodeType == CONST_VALUE_NODE){
-                C_Node = r;
-                E_Node = ExprNodeFolding(l);
-            }
-            else{
-                C_Node = l;
-                E_Node = ExprNodeFolding(r);
-            }
+            C_Node = l;
+            E_Node = ExprNodeFolding(r);
             EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
             CON_Type *c = C_Node->semantic_value.const1;
             if(e->isConstEval == 0){
@@ -1059,10 +1054,50 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             return Node;
         }
+        else if(r->nodeType == CONST_VALUE_NODE && l->nodeType == EXPR_NODE){
+            AST_NODE *C_Node, *E_Node;
+            C_Node = r;
+            E_Node = ExprNodeFolding(l);
+            EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
+            CON_Type *c = C_Node->semantic_value.const1;
+            if(e->isConstEval == 0){
+                if(E_Node->dataType == FLOAT_TYPE || c->const_type == FLOATC)
+                    isRelopExpr(expr->op.binaryOp, Node);
+                else
+                    isRelopExpr(expr->op.binaryOp, Node);
+                return Node;
+            }
+            if(c->const_type == INTEGERC && e->isConstEval == 1){
+                expr->isConstEval = 1;
+                expr->constEvalValue.iValue = handleBinaryIntFolding(e->constEvalValue.iValue, c->const_u.intval, expr->op.binaryOp);
+                isRelopExpr(expr->op.binaryOp, Node);
+            }
+            else if(c->const_type == FLOATC && e->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e->constEvalValue.fValue, c->const_u.fval, expr->op.binaryOp, Node);
+                isRelopExpr(expr->op.binaryOp, Node);
+            }
+            else if(c->const_type == FLOATC && e->isConstEval == 1){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e->constEvalValue.iValue, c->const_u.fval, expr->op.binaryOp, Node);
+                isRelopExpr(expr->op.binaryOp, Node);
+            }
+            else if(c->const_type == INTEGERC && e->isConstEval == 2){
+                expr->isConstEval = 2;
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e->constEvalValue.fValue, (float)c->const_u.intval, expr->op.binaryOp, Node);
+                isRelopExpr(expr->op.binaryOp, Node);
+            }
+            else{
+                //handle string in expr error
+                perror("string in expr 864");
+                exit(0);
+            }
+            return Node;
+        }
         else if(r->nodeType == EXPR_NODE && l->nodeType == EXPR_NODE){
             ExprNodeFolding(r);
             ExprNodeFolding(l);
-            EXPRSemanticValue *e1 = &r->semantic_value.exprSemanticValue, *e2 = &l->semantic_value.exprSemanticValue;
+            EXPRSemanticValue *e1 = &l->semantic_value.exprSemanticValue, *e2 = &r->semantic_value.exprSemanticValue;
             if(e1->isConstEval == 1 && e2->isConstEval == 1){
                 expr->isConstEval = 1;
                 expr->constEvalValue.iValue = handleBinaryIntFolding(e1->constEvalValue.iValue, e2->constEvalValue.iValue, expr->op.binaryOp);
