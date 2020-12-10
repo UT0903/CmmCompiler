@@ -43,7 +43,7 @@ TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl);
 void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind);
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl);
-float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
+float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op, AST_NODE *Node);
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
 int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
 int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
@@ -58,8 +58,59 @@ typedef enum ErrorMsgKind
     REDECLARATION, //redeclaration of ‘<type> <name>’
     TOO_FEW_ARGUMENTS_TO_FUNCTION, //too few arguments to function ‘<function signature>’
     TOO_MANY_ARGUMENTS_TO_FUNCTION,  //too many arguments to function ‘<function signature>’
-    //subscripted value is neither array nor pointer nor vector
+    DIM_OVERSIZE,//subscripted value is neither array nor pointer nor vector
+    ASSIGN_TO_ARRAY,
+    ARRAY_SUBSCRIPT_NOT_INT,
+    INT_TO_ARRAY_PARAM,
+    ARRAY_TO_INT_PARAM,
+    FUNC_DECL_IN_SCOPE,
+    NON_VOLID_RETURN_ERROR,
+    VOLID_RETURN_ERROR,
+    INVALID_BINARY,
+    INCOMPUTABLE_VOLID,
 } ErrorMsgKind;
+void printError(ErrorMsgKind error, const void *Node1){
+    AST_NODE *Node = (AST_NODE *)Node1;
+    switch (error)
+    {
+    case NOT_DECLARED_IN_THIS_SCOPE:
+        fprintf(stderr, ":%d ERROR: \'%s\' was not declared in this scope", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case REDECLARATION:
+
+        break;
+    case TOO_FEW_ARGUMENTS_TO_FUNCTION:
+        fprintf(stderr, ":%d ERROR: too few arguments to function \'%s\'", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case TOO_MANY_ARGUMENTS_TO_FUNCTION:
+        fprintf(stderr, ":%d ERROR: too many arguments to function \'%s\'", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case DIM_OVERSIZE:
+        fprintf(stderr, ":%d ERROR: subscripted value is neither array nor pointer nor vector", Node->linenumber);
+        break;
+    case ASSIGN_TO_ARRAY:
+        fprintf(stderr, ":%d ERROR: assignment to expression with array type", Node->linenumber);
+        break;
+    case ARRAY_SUBSCRIPT_NOT_INT:
+        fprintf(stderr, ":%d ERROR: array subscript is not an integer", Node->linenumber);
+        break;
+    case INT_TO_ARRAY_PARAM:
+        break;
+    case ARRAY_TO_INT_PARAM:
+        break;
+    case FUNC_DECL_IN_SCOPE:
+        fprintf(stderr, ":%d ERROR: function definition is not allowed here", Node->linenumber);   
+        break;
+    case INVALID_BINARY:
+        fprintf(stderr, ":%d ERROR: invalid operands to binary expression('double' and 'double')", Node->linenumber);
+        break;
+    case INCOMPUTABLE_VOLID:
+        fprintf(stderr, ":%d ERROR: incompatible type 'void'", Node->linenumber);
+        break;
+    default:
+        break;
+    }
+}
 
 void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
     g_anyErrorOccur = 1;
@@ -133,10 +184,10 @@ void processDeclarationNode(AST_NODE* declarationNode, int LocalOrGlobalDecl){
     }
     else if(declKind == FUNCTION_DECL){
         if(LocalOrGlobalDecl == 1){
-            fprintf(stderr, "No loacl declaration of function\n");
-            exit(0);
+            printError(FUNC_DECL_IN_SCOPE, declarationNode);
         }
-        declareFunction(declarationNode->child);
+        else
+            declareFunction(declarationNode->child);
     }
     else if(declKind == FUNCTION_PARAMETER_DECL){
         fprintf(stderr, "Should be handled in declareFunction()\n");
@@ -160,6 +211,7 @@ void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
 
 void checkWhileStmt(AST_NODE* whileNode)
 {
+    openScope();
     AST_NODE *test = whileNode->child;
     if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
         checkAssignmentStmt(test);
@@ -168,11 +220,13 @@ void checkWhileStmt(AST_NODE* whileNode)
         processExprNode(test);
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
+    closeScope();
 }
 
 
 void checkForStmt(AST_NODE* forNode)
 {
+    openScope();
     AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling;
     if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = assign_expr_list->child;
@@ -189,6 +243,7 @@ void checkForStmt(AST_NODE* forNode)
         AST_NODE *relop_expr = relop_expr_list->child;
         while(relop_expr){
             processExprNode(relop_expr);
+            relop_expr = relop_expr->rightSibling;
         }
     }
     if(second_assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
@@ -202,6 +257,7 @@ void checkForStmt(AST_NODE* forNode)
             assign_expr = assign_expr->rightSibling;
         }
     }
+    closeScope();
 }
 
 
@@ -260,7 +316,6 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
         }
         NodeFolding(r);
         DATA_TYPE type = checkType(l);
-        //fprintf(stderr, "type: %d\n", type);
         if(type == INT_TYPE && r->dataType != INT_TYPE){
             r->dataType = INT_TYPE;
         }
@@ -274,6 +329,7 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
 
 void checkIfStmt(AST_NODE* ifNode)
 {
+    openScope();
     AST_NODE *test = ifNode->child;
     if(test->nodeType == STMT_NODE && test->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
         checkAssignmentStmt(test);
@@ -289,6 +345,7 @@ void checkIfStmt(AST_NODE* ifNode)
         perror("wrong node in if");
         exit(0);
     }
+    closeScope();
     return;
 }
 
@@ -437,7 +494,6 @@ void processStmtNode(AST_NODE* stmtNode)
         processBlockNode(stmtNode);
     }
     else if(stmtNode->nodeType == STMT_NODE){
-        //fprintf(stderr, "stmtkind: %d\n", stmtNode->semantic_value.stmtSemanticValue.kind);
         switch (stmtNode->semantic_value.stmtSemanticValue.kind)
         {
         case WHILE_STMT:
@@ -477,7 +533,7 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
-void handleReturnNode(AST_NODE* returnNode, char* funcName){
+int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
     if(returnNode->nodeType != STMT_NODE || returnNode->semantic_value.stmtSemanticValue.kind != RETURN_STMT){
         fprintf(stderr, "Should not pass non-RETURN_STMT node into handleReturnNode()\n");
         exit(0);
@@ -495,16 +551,17 @@ void handleReturnNode(AST_NODE* returnNode, char* funcName){
     if(returnNode->child->nodeType == NUL_NODE){ //void
         if(returnType != VOID_TYPE){
             fprintf(stderr, "Wrong return type\n");
-            exit(0);
+            return 1;
         }
     }
     else{ //non-void TODO:
         int isConstEval = ConstValue(returnNode->child);
         if(isConstEval == 0){
             fprintf(stderr, "Error in NodeFolding()\n");
-            exit(0);
+            return 2;
         }
     }
+    return 0;
 }
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
@@ -542,13 +599,12 @@ void declareFunction(AST_NODE* returnTypeNode){
     }
     funcSign->returnType = typeDescStruct->properties.dataType;
     free(typeDescStruct);
-
     AST_NODE* funcNameNode = returnTypeNode->rightSibling;
     char *funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;
     //check function 有沒有被declare過
     if(declaredInThisScope(funcName, 0) != NULL){
-        fprintf(stderr, "redeclaration of function name\n");
-        exit(0);
+        printError(REDECLARATION, returnTypeNode);
+        return;
     }
     AST_NODE* paramListNode = funcNameNode->rightSibling;
     AST_NODE* paramNode = paramListNode->child; // collect params attr
@@ -761,10 +817,7 @@ float handleUnaryFloatFolding(float a, UNARY_OPERATOR op){
     case UNARY_OP_NEGATIVE:
         return -a;
     case UNARY_OP_LOGICAL_NEGATION:
-        //handle float ! error
-        perror("float ! error");
-        exit(0);
-        break;
+        return !a;
     default:
         break;
     }
@@ -786,7 +839,7 @@ int handleUnaryIntFolding(int a, UNARY_OPERATOR op){
     return 0;
 }
 
-float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op){
+float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op, AST_NODE *Node){
     switch (op)
     {
     case BINARY_OP_ADD:
@@ -811,13 +864,11 @@ float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op){
         return a < b;
     case BINARY_OP_AND:
         //handle float & error
-        perror("float & error");
-        exit(0);
+        printError(INVALID_BINARY, Node);
         break;
     case BINARY_OP_OR:
         //handle float | error
-        perror("float | error");
-        exit(0);
+        printError(INVALID_BINARY, Node);
         break;
     default:
         break;
@@ -859,7 +910,6 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op){
 }
 
 DATA_TYPE checkType(AST_NODE *Node){
-    fprintf(stderr, "type: %d\n", Node->nodeType);
     if(Node->nodeType == CONST_VALUE_NODE){
         if(Node->semantic_value.const1->const_type == INTEGERC)
             return INT_TYPE;
@@ -884,8 +934,8 @@ DATA_TYPE checkType(AST_NODE *Node){
     else if(Node->nodeType == IDENTIFIER_NODE){
         SymbolTableEntry *symbol = getSymbol(Node);
         if(symbol == NULL){
-            perror("no decl");
-            exit(0);
+            printError(NOT_DECLARED_IN_THIS_SCOPE, Node);
+            return NULL;
         } 
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
         SymbolAttribute *attribute = symbol->attribute;
@@ -901,7 +951,6 @@ DATA_TYPE checkType(AST_NODE *Node){
             return attribute->attr.functionSignature->returnType;
         }
     }
-    fprintf(stderr, "line: %d\n", Node->linenumber);
     perror("wrong check");
     exit(0);
 }
@@ -944,17 +993,17 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else if(c1->const_type == FLOATC && c2->const_type == FLOATC){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else{
@@ -990,17 +1039,17 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else if(c->const_type == FLOATC && e->isConstEval == 2){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(c->const_type == FLOATC && e->isConstEval == 1){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(c->const_type == INTEGERC && e->isConstEval == 2){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else{
@@ -1021,17 +1070,17 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else if(e1->isConstEval == 2 && e2->isConstEval == 2){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(e1->isConstEval == 2 && e2->isConstEval == 1){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(e1->isConstEval == 1 && e2->isConstEval == 2){
                 expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp);
+                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp, Node);
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE)
@@ -1046,8 +1095,8 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
                 isRelopExpr(expr->op.binaryOp, Node);
             }
             else if(l_type == VOID_TYPE || r_type == VOID_TYPE){
-                perror("void no");
-                exit(0);
+                printError(INCOMPUTABLE_VOLID, Node);
+                return NULL;
             }
             else{
                 isRelopExpr(expr->op.binaryOp, Node);
