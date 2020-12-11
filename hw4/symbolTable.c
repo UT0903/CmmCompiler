@@ -90,18 +90,18 @@ SymbolTableEntry* retrieveSymbol(char* symbolName){
         }
         nowStackEntry = nowStackEntry->prevStack;
     }
-    fprintf(stderr, "Can't not find symbolName: %s\n", symbolName); 
+    //fprintf(stderr, "Can't not find symbolName: %s\n", symbolName); 
     return NULL;
 }
 
 int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope){
     SymbolTableStack *nowStackEntry = getStackEntry(scope);
     if(nowStackEntry == NULL){
-        fprintf(stderr, "Can't find stack entry\n");
+        //fprintf(stderr, "Can't find stack entry\n");
         return 0;
     }
     if(declaredInThisScope(symbolName, scope) != NULL){
-        fprintf(stderr, "Redeclearation of symbolName: [ %s ]\n", symbolName); 
+        //fprintf(stderr, "Redeclearation of symbolName: [ %s ]\n", symbolName); 
         return 0;
     }
     //insert
@@ -115,7 +115,7 @@ int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope){
 int removeSymbol(char* symbolName, int scope){
     SymbolTableStack *nowStackEntry = getStackEntry(scope);
     if(nowStackEntry == NULL){
-        fprintf(stderr, "Can't find stack entry\n");
+        //fprintf(stderr, "Can't find stack entry\n");
         return 0;
     }
 
@@ -135,14 +135,14 @@ int removeSymbol(char* symbolName, int scope){
         prevEntry = nowEntry;
         nowEntry = nowEntry->next;
     }
-    fprintf(stderr, "No symbolName: [ %s ] in this scope\n", symbolName); 
+    //fprintf(stderr, "No symbolName: [ %s ] in this scope\n", symbolName); 
     return 0;
 }
 
 SymbolTableEntry* declaredInThisScope(char* symbolName, int scope){
     SymbolTableStack *nowStackEntry = getStackEntry(scope);
     if(nowStackEntry == NULL){
-        fprintf(stderr, "Can't find stack entry\n");
+        //fprintf(stderr, "Can't find stack entry\n");
         return 0;
     }
 

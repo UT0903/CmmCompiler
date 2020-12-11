@@ -84,7 +84,7 @@ void printError(ErrorMsgKind error, const void *Node1){
     switch (error)
     {
     case NOT_DECLARED_IN_THIS_SCOPE:
-        fprintf(stderr, "ERROR: \'%s\' was not declared in this scope\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "\'%s\' was not declared in this scope\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case REDECLARATION:
         fprintf(stderr, "redeclaration of \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
@@ -102,52 +102,52 @@ void printError(ErrorMsgKind error, const void *Node1){
         fprintf(stderr, "conflicting types for \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_FEW_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, "ERROR: too few arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "too few arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_MANY_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, "ERROR: too many arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "too many arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case DIM_OVERSIZE:
-        fprintf(stderr, "ERROR: subscripted value is neither array nor pointer nor vector\n");
+        fprintf(stderr, "subscripted value is neither array nor pointer nor vector\n");
         break;
     case ASSIGN_TO_ARRAY:
-        fprintf(stderr, "ERROR: assignment to expression with array type\n");
+        fprintf(stderr, "assignment to expression with array type\n");
         break;
     case ARRAY_SUBSCRIPT_NOT_INT:
-        fprintf(stderr, "ERROR: array subscript is not an integer'\n");
+        fprintf(stderr, "array subscript is not an integer'\n");
         break;
     case INT_TO_ARRAY_PARAM:
-        fprintf(stderr, "ERROR: invalid conversion from '<scalar type>' to '<array type>'\n");
+        fprintf(stderr, "invalid conversion from '<scalar type>' to '<array type>'\n");
         break;
-    case ARRAY_TO_INT_PARAM: //TODO:
-        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to '<scalar type>'\n");
+    case ARRAY_TO_INT_PARAM: 
+        fprintf(stderr, "invalid conversion from '<array type>' to '<scalar type>'\n");
         break;
     case VOID_TO_ARRAY_PARAM:
-        fprintf(stderr, "ERROR: invalid conversion from 'void' to '<array type>'\n");
+        fprintf(stderr, "invalid conversion from 'void' to '<array type>'\n");
         break;
     case VOID_TO_INT_PARAM: //TODO:
-        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to 'void'\n");
+        fprintf(stderr, "invalid conversion from '<array type>' to 'void'\n");
         break;
     case FUNC_DECL_IN_SCOPE:
-        fprintf(stderr, "ERROR: function definition is not allowed here");   
+        fprintf(stderr, "function definition is not allowed here");   
         break;
     case INCOMPUTABLE_VOLID:
-        fprintf(stderr, "ERROR: incompatible type 'void'\n");
+        fprintf(stderr, "incompatible type 'void'\n");
         break;
     case VOLID_RETURN_ERROR:
-        fprintf(stderr, "ERROR: function '%s' should be return type 'void'\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "function '%s' should be return type 'void'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case NON_VOLID_RETURN_ERROR:
-        fprintf(stderr, "ERROR: function '%s' should be return type '%s'\n", Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "function '%s' should be return type '%s'\n", Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
         break;
     case NON_CALLABLE:
-        fprintf(stderr, "ERROR: called object '%s' is not a function or function pointer\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "called object '%s' is not a function or function pointer\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case INVALID_BINARY:
-        fprintf(stderr, ":%d ERROR: invalid operands to binary expression ('float' and 'float')\n", Node->linenumber);
+        fprintf(stderr, "invalid operands to binary expression ('float' and 'float')\n");
         break;
     case STRING_IN_EXPR:
-        fprintf(stderr, ":%d ERROR: string in expr\n", Node->linenumber);
+        fprintf(stderr, "string in expr\n");
         break;
     default:
         fprintf(stderr, "error undefined\n");
@@ -647,7 +647,7 @@ void declareFunction(AST_NODE* returnTypeNode){
         exit(0);
     }
     processBlockNode(paramListNode->rightSibling);
-    PrintSymbolTable();
+    //PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
