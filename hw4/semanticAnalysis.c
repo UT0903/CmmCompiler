@@ -50,8 +50,8 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
 SymbolTableEntry* getSymbol(AST_NODE* Node);
 AST_NODE* NodeFolding(AST_NODE* Node);
 DATA_TYPE checkType(AST_NODE *Node);
-int ConstValue(AST_NODE *Node);
 int checkArrayDim(AST_NODE *Node);
+void handleReturnNode(AST_NODE *Node);
 typedef enum ErrorMsgKind
 {
     NOT_DECLARED_IN_THIS_SCOPE, // ‘<name>’ was not declared in this scope
@@ -68,44 +68,57 @@ typedef enum ErrorMsgKind
     VOLID_RETURN_ERROR,
     INVALID_BINARY,
     INCOMPUTABLE_VOLID,
+    STRING_IN_EXPR,
+    NON_CALLABLE,
 } ErrorMsgKind;
 void printError(ErrorMsgKind error, const void *Node1){
     AST_NODE *Node = (AST_NODE *)Node1;
     switch (error)
     {
     case NOT_DECLARED_IN_THIS_SCOPE:
-        fprintf(stderr, ":%d ERROR: \'%s\' was not declared in this scope", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, ":%d ERROR: \'%s\' was not declared in this scope\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case REDECLARATION:
 
         break;
     case TOO_FEW_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, ":%d ERROR: too few arguments to function \'%s\'", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, ":%d ERROR: too few arguments to function \'%s\'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_MANY_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, ":%d ERROR: too many arguments to function \'%s\'", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, ":%d ERROR: too many arguments to function \'%s\'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case DIM_OVERSIZE:
-        fprintf(stderr, ":%d ERROR: subscripted value is neither array nor pointer nor vector", Node->linenumber);
+        fprintf(stderr, ":%d ERROR: subscripted value is neither array nor pointer nor vector\n", Node->linenumber);
         break;
     case ASSIGN_TO_ARRAY:
-        fprintf(stderr, ":%d ERROR: assignment to expression with array type", Node->linenumber);
+        fprintf(stderr, ":%d ERROR: assignment to expression with array type\n", Node->linenumber);
         break;
     case ARRAY_SUBSCRIPT_NOT_INT:
-        fprintf(stderr, ":%d ERROR: array subscript is not an integer", Node->linenumber);
+        fprintf(stderr, ":%d ERROR: invalid conversion from '<array type>' to '<scalar type>'\n", Node->linenumber);
         break;
     case INT_TO_ARRAY_PARAM:
+        fprintf(stderr, ":%d ERROR: invalid conversion from '<scalar type>' to '<array type>'\n", Node->linenumber);
         break;
     case ARRAY_TO_INT_PARAM:
+        fprintf(stderr, ":%d ERROR: This parameter \n", Node->linenumber);
         break;
     case FUNC_DECL_IN_SCOPE:
         fprintf(stderr, ":%d ERROR: function definition is not allowed here", Node->linenumber);   
         break;
     case INVALID_BINARY:
-        fprintf(stderr, ":%d ERROR: invalid operands to binary expression('double' and 'double')", Node->linenumber);
+        fprintf(stderr, ":%d ERROR: invalid operands to binary expression('double' and 'double')\n", Node->linenumber);
         break;
     case INCOMPUTABLE_VOLID:
-        fprintf(stderr, ":%d ERROR: incompatible type 'void'", Node->linenumber);
+        fprintf(stderr, ":%d ERROR: incompatible type 'void'\n", Node->linenumber);
+        break;
+    case VOLID_RETURN_ERROR:
+        fprintf(stderr, ":%d ERROR: function '%s' should be return type 'void'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case NON_VOLID_RETURN_ERROR:
+        fprintf(stderr, ":%d ERROR: function '%s' should be return type '%s'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case NON_CALLABLE:
+        fprintf(stderr, ":%d ERROR: called object '%s' is not a function or function pointer\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     default:
         break;
@@ -367,16 +380,15 @@ int checkArray(ArrayProperties *prop, AST_NODE *arr){
 int checkParam(Parameter *decl_param, AST_NODE *param){
     if(decl_param->type->kind == ARRAY_TYPE_DESCRIPTOR){
         if(!checkArray(&decl_param->type->properties.arrayProperties, param))
-            return 0;
+            printError(INT_TO_ARRAY_PARAM, param);
     }
     else{
         NodeFolding(param);
         if(param->nodeType == IDENTIFIER_NODE && param->semantic_value.identifierSemanticValue.kind == ARRAY_ID && !checkArrayDim(param)){
-            return 0;
+            printError(ARRAY_TO_INT_PARAM, param);
         }
         if(param->dataType == VOID_TYPE){
-            perror("void in param");
-            exit(0);
+            printError(ARRAY_TO_INT_PARAM, param);
             return 0;
         }
     }
@@ -387,13 +399,13 @@ void checkFunctionCall(AST_NODE* functionCallNode)
 {
     SymbolTableEntry *entry = getSymbol(functionCallNode->child);
     if(entry == NULL){
-        perror("function not decl");
-        exit(0);
+        printError(NOT_DECLARED_IN_THIS_SCOPE, functionCallNode);
+        return;
     }
     AST_NODE *param_list = functionCallNode->child->rightSibling;
     if(entry->attribute->attributeKind != FUNCTION_SIGNATURE){
-        perror("non-callable");
-        exit(0);
+        printError(NON_CALLABLE, functionCallNode);
+        return;
     }
     FunctionSignature *signature = entry->attribute->attr.functionSignature;
     if(signature->parametersCount == 0 && param_list->nodeType == NUL_NODE)
@@ -402,20 +414,17 @@ void checkFunctionCall(AST_NODE* functionCallNode)
     AST_NODE *param = param_list->child;
     while(decl_param){
         if(param == NULL){
-            perror("too few param");
-            exit(0);
+            printError(TOO_FEW_ARGUMENTS_TO_FUNCTION, functionCallNode);
+            return;
         }
-        if(!checkParam(decl_param, param)){
-            perror("param type wrong");
-            exit(0);
-        }
+        checkParam(decl_param, param);
         decl_param = decl_param->next;
         param = param->rightSibling;
     }
     if(param != NULL){
-        perror("too many param");
-        exit(0);
+        printError(TOO_MANY_ARGUMENTS_TO_FUNCTION, functionCallNode);
     }
+    return;
 }
 
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter)
@@ -513,6 +522,7 @@ void processStmtNode(AST_NODE* stmtNode)
             checkFunctionCall(stmtNode);
             break;
         case RETURN_STMT:
+            handleReturnNode(stmtNode);
             break;
         default:
             perror("no match stmt");
@@ -534,36 +544,28 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
-/*int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
-    if(returnNode->nodeType != STMT_NODE || returnNode->semantic_value.stmtSemanticValue.kind != RETURN_STMT){
-        fprintf(stderr, "Should not pass non-RETURN_STMT node into handleReturnNode()\n");
+
+void handleReturnNode(AST_NODE* returnNode){
+    AST_NODE *now = returnNode;
+    while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
+    {
+        now = now->parent;
+    }
+    if(now == NULL){
+        perror("wrong return place");
         exit(0);
+        return;
     }
-    SymbolTableEntry* entry = retrieveSymbol(funcName);
-    if(entry == NULL){
-        fprintf(stderr, "Cannot find funcName: %s in symbol table\n", funcName);
-        exit(0);
+    now = now->child->rightSibling;
+    SymbolTableEntry *entry = getSymbol(now);
+    DATA_TYPE return_type = entry->attribute->attr.functionSignature->returnType;
+    if(return_type == VOID_TYPE && returnNode->child->nodeType != NUL_NODE){
+        printError(VOLID_RETURN_ERROR, now);
     }
-    if(entry->attribute->attributeKind != FUNCTION_SIGNATURE){
-        fprintf(stderr, "%s is not a function\n", funcName);
-        exit(0);
+    if(return_type != VOID_TYPE && returnNode->child->nodeType == NUL_NODE){
+        printError(NON_VOLID_RETURN_ERROR, now);
     }
-    DATA_TYPE returnType = entry->attribute->attr.functionSignature->returnType;
-    if(returnNode->child->nodeType == NUL_NODE){ //void
-        if(returnType != VOID_TYPE){
-            fprintf(stderr, "Wrong return type\n");
-            return 1;
-        }
-    }
-    else{ //non-void TODO:
-        int isConstEval = ConstValue(returnNode->child);
-        if(isConstEval == 0){
-            fprintf(stderr, "Error in NodeFolding()\n");
-            return 2;
-        }
-    }
-    return 0;
-}*/
+}
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
@@ -583,8 +585,8 @@ void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     }
 }
 void declareFunction(AST_NODE* returnTypeNode){
-    openScope();
     //new func attr
+    openScope();
     SymbolAttribute *funcAttr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     funcAttr->attributeKind = FUNCTION_SIGNATURE;
     funcAttr->attr.functionSignature = (FunctionSignature*)malloc(sizeof(FunctionSignature));
@@ -617,12 +619,13 @@ void declareFunction(AST_NODE* returnTypeNode){
         paramNode = paramNode->rightSibling;
     }
     //TODO: deal with block node
-    processBlockNode(paramListNode->rightSibling); //TODO: check return type is equal or not 
+     //TODO: check return type is equal or not 
     if(!enterSymbol(funcName, funcAttr, 0)){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
     }
-    PrintSymbolTable();
+    processBlockNode(paramListNode->rightSibling);
+    //PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
@@ -724,20 +727,20 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
                 dimInfo = dimInfo->rightSibling;
                 continue;
             }
-            int isConstEval = ConstValue(dimInfo);
+            dimInfo = NodeFolding(dimInfo);
             //fprintf(stderr, "isConstEval: %d\n", isConstEval);
             //TODO: rewrite isConstEval
-            if(isConstEval == 0){
+            if(dimInfo->nodeType != CONST_VALUE_NODE){
                 fprintf(stderr, "Cannot have variable in array dimension declaration\n");
                 exit(0);
             }
-            else if(isConstEval == 2){
+            else if(dimInfo->dataType == FLOAT_TYPE){
                 fprintf(stderr, "Cannot have float in array dimension declaration\n");
                 exit(0);
             }
-            else if(isConstEval == 1){
-                int iValue = dimInfo->semantic_value.exprSemanticValue.constEvalValue.iValue;
-                fprintf(stderr, "isConstEval = 1, iValue: %d\n", iValue);
+            else if(dimInfo->dataType == INT_TYPE){
+                int iValue = dimInfo->semantic_value.const1->const_u.intval;
+                //fprintf(stderr, "isConstEval = 1, iValue: %d\n", iValue);
                 if(iValue < 0){
                     fprintf(stderr, "Cannot have negative integer in array dimension declaration\n");
                     exit(0);
@@ -760,10 +763,10 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             fprintf(stderr, "Does not support for Initializing Array\n");
             exit(0);
         }
-        int isConstEval = ConstValue(ID->child);
+        AST_NODE *child = NodeFolding(ID->child);
         //fprintf(stderr, "isConstEval: %d\n", isConstEval);
         if(LocalOrGlobalDecl == 0){ //global decl
-            if(isConstEval == 0){
+            if(child->nodeType != CONST_VALUE_NODE){
                 fprintf(stderr, "Not support for dynamic declaration in global\n");
                 exit(0);
             }
@@ -781,20 +784,19 @@ AST_NODE* NodeFolding(AST_NODE *Node){
     if(Node->nodeType == EXPR_NODE)
         return ExprNodeFolding(Node);
     if(Node->nodeType == CONST_VALUE_NODE){
-        Node->nodeType = EXPR_NODE;
-        CON_Type *c = Node->semantic_value.const1;
-        EXPRSemanticValue expr;
-        if(c->const_type == INTEGERC){
-            expr.isConstEval = 1;
+        switch (Node->semantic_value.const1->const_type)
+        {
+        case INTEGERC:
             Node->dataType = INT_TYPE;
-            expr.constEvalValue.iValue = c->const_u.intval;
-        }
-        else if(c->const_type == FLOATC){
-            expr.isConstEval = 2;
+            break;
+        case FLOATC:
             Node->dataType = FLOAT_TYPE;
-            expr.constEvalValue.iValue = c->const_u.fval;
+        case STRINGC:
+            Node->dataType = CONST_STRING_TYPE;
+        default:
+            break;
         }
-        Node->semantic_value.exprSemanticValue = expr;
+        return Node;
     }
     else if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
         checkFunctionCall(Node);
@@ -804,8 +806,7 @@ AST_NODE* NodeFolding(AST_NODE *Node){
         Node->dataType = checkType(Node);
     }
     else{
-        perror("wrong node in node folding");
-        exit(0);
+        Node->dataType = NONE_TYPE;
     }
     return Node;
 }
@@ -936,6 +937,7 @@ DATA_TYPE checkType(AST_NODE *Node){
         SymbolTableEntry *symbol = getSymbol(Node);
         if(symbol == NULL){
             printError(NOT_DECLARED_IN_THIS_SCOPE, Node);
+            return NONE_TYPE;
         } 
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
         SymbolAttribute *attribute = symbol->attribute;
@@ -955,13 +957,14 @@ DATA_TYPE checkType(AST_NODE *Node){
     exit(0);
 }
 
-void isRelopExpr(BINARY_OPERATOR op, AST_NODE *Node){
+int isRelopExpr(BINARY_OPERATOR op){
     switch (op)
     {
     case BINARY_OP_ADD:
     case BINARY_OP_SUB:
     case BINARY_OP_MUL:
     case BINARY_OP_DIV:
+        return 0;
         break;
     case BINARY_OP_EQ:
     case BINARY_OP_GE:
@@ -972,9 +975,7 @@ void isRelopExpr(BINARY_OPERATOR op, AST_NODE *Node){
     case BINARY_OP_AND:
     case BINARY_OP_OR:
     default:
-        Node->dataType = INT_TYPE;
-        if(Node->semantic_value.exprSemanticValue.isConstEval == 2)
-            Node->semantic_value.exprSemanticValue.isConstEval = 1;
+        return 1;
     }
 }
 
@@ -983,143 +984,116 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         return NULL;
     EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
     if(expr->kind == BINARY_OPERATION){
-        AST_NODE *l = Node->child, *r = Node->child->rightSibling;
+        BINARY_OPERATOR op = op;
+        AST_NODE *l = NodeFolding(Node->child), *r = NodeFolding(Node->child->rightSibling);
+        if(r->dataType == NONE_TYPE || l->dataType == NONE_TYPE){
+            Node->dataType = NONE_TYPE;
+            return Node;
+        }
         if(r->nodeType == CONST_VALUE_NODE && l->nodeType == CONST_VALUE_NODE){
-            CON_Type *c1 = l->semantic_value.const1, *c2 = r->semantic_value.const1;
+            CON_Type *c1 = l->semantic_value.const1, *c2 = r->semantic_value.const1, *c = (CON_Type *)malloc(sizeof(CON_Type));
             if(c1->const_type == INTEGERC && c2->const_type == INTEGERC){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, expr->op.binaryOp);
-                isRelopExpr(expr->op.binaryOp, Node);
+                c->const_type = INTEGERC;
+                Node->dataType = INT_TYPE;
+                c->const_u.intval = handleBinaryIntFolding(c1->const_u.intval, c2->const_u.intval, op);
             }
             else if(c1->const_type == FLOATC && c2->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
+                if(isRelopExpr(op)){
+                    c->const_type = INTEGERC;
+                    Node->dataType = INT_TYPE;
+                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op, Node);
+                }
+                else{
+                    c->const_type = FLOATC;
+                    Node->dataType = FLOAT_TYPE;
+                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op, Node);
+                }
             }
             else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
+                if(isRelopExpr(op)){
+                    c->const_type = INTEGERC;
+                    Node->dataType = INT_TYPE;
+                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op, Node);
+                }
+                else{
+                    c->const_type = FLOATC;
+                    Node->dataType = FLOAT_TYPE;
+                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op, Node);
+                }
             }
             else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
+                if(isRelopExpr(op)){
+                    c->const_type = INTEGERC;
+                    Node->dataType = INT_TYPE;
+                    c->const_u.intval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op, Node);
+                }
+                else{
+                    c->const_type = FLOATC;
+                    Node->dataType = FLOAT_TYPE;
+                    c->const_u.fval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op, Node);
+                }
             }
             else{
                 //handle string in expr error
-                perror("string in expr 818");
-                exit(0);
+                Node->dataType = NONE_TYPE;
+                printError(STRING_IN_EXPR, Node);
             }
-            return Node;
-        }
-        else if((r->nodeType == CONST_VALUE_NODE && l->nodeType == EXPR_NODE) || (l->nodeType == CONST_VALUE_NODE && r->nodeType == EXPR_NODE)){
-            AST_NODE *C_Node, *E_Node;
-            if(r->nodeType == CONST_VALUE_NODE){
-                C_Node = r;
-                E_Node = ExprNodeFolding(l);
-            }
-            else{
-                C_Node = l;
-                E_Node = ExprNodeFolding(r);
-            }
-            EXPRSemanticValue *e = &E_Node->semantic_value.exprSemanticValue;
-            CON_Type *c = C_Node->semantic_value.const1;
-            if(e->isConstEval == 0){
-                if(E_Node->dataType == FLOAT_TYPE || c->const_type == FLOATC)
-                    isRelopExpr(expr->op.binaryOp, Node);
-                else
-                    isRelopExpr(expr->op.binaryOp, Node);
-                return Node;
-            }
-            if(c->const_type == INTEGERC && e->isConstEval == 1){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(c->const_u.intval, e->constEvalValue.iValue, expr->op.binaryOp);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(c->const_type == FLOATC && e->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, e->constEvalValue.fValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(c->const_type == FLOATC && e->isConstEval == 1){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(c->const_u.fval, (float)e->constEvalValue.iValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(c->const_type == INTEGERC && e->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)c->const_u.intval, e->constEvalValue.fValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else{
-                //handle string in expr error
-                perror("string in expr 864");
-                exit(0);
-            }
-            return Node;
-        }
-        else if(r->nodeType == EXPR_NODE && l->nodeType == EXPR_NODE){
-            ExprNodeFolding(r);
-            ExprNodeFolding(l);
-            EXPRSemanticValue *e1 = &r->semantic_value.exprSemanticValue, *e2 = &l->semantic_value.exprSemanticValue;
-            if(e1->isConstEval == 1 && e2->isConstEval == 1){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleBinaryIntFolding(e1->constEvalValue.iValue, e2->constEvalValue.iValue, expr->op.binaryOp);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(e1->isConstEval == 2 && e2->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, e2->constEvalValue.fValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(e1->isConstEval == 2 && e2->isConstEval == 1){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding(e1->constEvalValue.fValue, (float)e2->constEvalValue.iValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(e1->isConstEval == 1 && e2->isConstEval == 2){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleBinaryFloatFolding((float)e1->constEvalValue.iValue, e2->constEvalValue.fValue, expr->op.binaryOp, Node);
-                isRelopExpr(expr->op.binaryOp, Node);
-            }
-            else if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE)
-                isRelopExpr(expr->op.binaryOp, Node);
-            else
-                isRelopExpr(expr->op.binaryOp, Node);
+            Node->nodeType = CONST_VALUE_NODE;
+            Node->semantic_value.const1 = c;
             return Node;
         }
         else{
-            DATA_TYPE l_type = checkType(l), r_type = checkType(r);
-            if(l_type == FLOAT_TYPE || r_type == FLOAT_TYPE){
-                isRelopExpr(expr->op.binaryOp, Node);
+            if(r->dataType == CONST_STRING_TYPE || l->dataType == CONST_STRING_TYPE){
+                Node->dataType = NONE_TYPE;
+                printError(STRING_IN_EXPR, Node);
             }
-            else if(l_type == VOID_TYPE || r_type == VOID_TYPE){
-                printError(INCOMPUTABLE_VOLID, Node);
-                return NULL;
+            else if(isRelopExpr(op)){
+                Node->dataType = INT_TYPE;
+            }
+            else if(r->dataType == FLOAT_TYPE || l->dataType == FLOAT_TYPE){
+                Node->dataType = FLOAT_TYPE;
             }
             else{
-                isRelopExpr(expr->op.binaryOp, Node);
+                Node->dataType = INT_TYPE;
             }
         }
         return Node;
     }
     else{
-        AST_NODE *child = Node->child;
+        AST_NODE *child = NodeFolding(Node->child);
+        if(child->nodeType == NONE_TYPE){
+            Node->dataType = NONE_TYPE;
+            return Node;
+        }
         if(child->nodeType == CONST_VALUE_NODE){
-            CON_Type *c = child->semantic_value.const1;
+            CON_Type *c = child->semantic_value.const1, *c2 = (CON_Type *)malloc(sizeof(CON_Type));
             if(c->const_type == INTEGERC){
-                expr->isConstEval = 1;
-                expr->constEvalValue.iValue = handleUnaryIntFolding(c->const_u.intval, expr->op.unaryOp);
+                c2->const_type = INTEGERC;
+                Node->dataType = INT_TYPE;
+                c2->const_u.intval = handleUnaryIntFolding(c->const_u.intval, expr->op.unaryOp);
             }
             else if(c->const_type == FLOATC){
-                expr->isConstEval = 2;
-                expr->constEvalValue.fValue = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
+                c2->const_type = FLOATC;
+                Node->dataType = FLOAT_TYPE;
+                c2->const_u.fval = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
             }
             else{
-                //handle string in expr error
-                perror("string in expr 923");
-                exit(0);
+                Node->dataType = NONE_TYPE;
+                printError(STRING_IN_EXPR, Node);
+            }
+            Node->nodeType = CONST_VALUE_NODE;
+            Node->semantic_value.const1 = c2;
+        }
+        else{
+            if(child->dataType == CONST_STRING_TYPE){
+                Node->dataType = NONE_TYPE;
+                printError(STRING_IN_EXPR, Node);
+            }
+            else if(child->dataType == INT_TYPE){
+                Node->dataType = INT_TYPE;
+            }
+            else{
+                Node->dataType = FLOAT_TYPE;
             }
         }
         return Node;
@@ -1134,15 +1108,4 @@ SymbolTableEntry* getSymbol(AST_NODE* Node){
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = retrieveSymbol(Node->semantic_value.identifierSemanticValue.identifierName);
     }
     return Node->semantic_value.identifierSemanticValue.symbolTableEntry;
-}
-int ConstValue(AST_NODE *Node){
-    //fprintf(stderr, "type: %d\n", Node->nodeType);
-    if(Node->nodeType != EXPR_NODE && Node->nodeType != CONST_VALUE_NODE){
-        if(Node->nodeType == STMT_NODE){
-            processStmtNode(Node);
-        }
-        return 0;
-    }
-    NodeFolding(Node);
-    return (Node->semantic_value.exprSemanticValue.isConstEval);
 }

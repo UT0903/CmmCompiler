@@ -156,7 +156,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
 %type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
-%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op double_add_id
+%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op double_add_id crelop_expr crelop_term crelop_factor
 
 %start program
 
@@ -364,7 +364,7 @@ id_list     : ID
                     $$ = makeChild(makeIDNode($1, ARRAY_ID), $2);
                 }
         ;
-dim_decl    : MK_LB cexpr MK_RB 
+dim_decl    : MK_LB crelop_expr MK_RB 
                 {
                     /*FINSH*/
                     $$ = $2;
@@ -372,11 +372,47 @@ dim_decl    : MK_LB cexpr MK_RB
             /*FINISH: Try if you can define a recursive production rule
             | .......
             */
-            | dim_decl MK_LB cexpr MK_RB
+            | dim_decl MK_LB crelop_expr MK_RB
                 {
                     $$ = makeSibling($1, $3);
                 }
             ;
+
+crelop_expr  : crelop_term 
+                {
+                    $$ = $1;
+                }
+            | crelop_expr OP_OR crelop_term
+                {
+                    $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_OR);
+                    $$ = makeFamily($$, 2, $1, $3);
+                }
+            ;
+
+crelop_term  : crelop_factor 
+                {
+                    /*FINISH*/
+                    $$ = $1;
+                }
+            | crelop_term OP_AND crelop_factor
+                {
+                    /*FINISH*/
+                    $$ = makeFamily(makeExprNode(BINARY_OPERATION, BINARY_OP_AND), 2, $1, $3);
+                }
+            ;
+
+crelop_factor    : cexpr
+                    {
+                        /*FINISH*/
+                        $$ = $1;
+                    }
+                | cexpr rel_op cexpr 
+                    {
+                        /*FINISH*/
+                        $$ = makeFamily($2, 2, $1, $3);
+                    }
+                ;
+
 cexpr       : cexpr OP_PLUS mcexpr 
                 {
                     $$ = makeExprNode(BINARY_OPERATION, BINARY_OP_ADD);
@@ -412,6 +448,7 @@ mcexpr      : mcexpr OP_TIMES cfactor
                     $$ = $1;
                 }
             ;
+            
         
 cfactor:    CONST 
                 {
@@ -834,12 +871,12 @@ var_ref     : ID
             ;
 
 
-dim_list    : dim_list MK_LB expr MK_RB 
+dim_list    : dim_list MK_LB relop_expr MK_RB 
                 {
                     /*FINISH*/
                    $$ = makeSibling($1, $3); 
                 }
-            | MK_LB expr MK_RB
+            | MK_LB relop_expr MK_RB
                 {
                     /*FINISH*/
                     $$ = $2;
