@@ -110,6 +110,7 @@ void printError(ErrorMsgKind error, const void *Node1){
     default:
         break;
     }
+    exit(0);
 }
 
 void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
@@ -533,7 +534,7 @@ void processGeneralNode(AST_NODE *node)
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {
 }
-int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
+/*int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
     if(returnNode->nodeType != STMT_NODE || returnNode->semantic_value.stmtSemanticValue.kind != RETURN_STMT){
         fprintf(stderr, "Should not pass non-RETURN_STMT node into handleReturnNode()\n");
         exit(0);
@@ -562,7 +563,7 @@ int_fast16_t handleReturnNode(AST_NODE* returnNode, char* funcName){
         }
     }
     return 0;
-}
+}*/
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     AST_NODE* IDNode = TypeNode->rightSibling;
     while(IDNode != NULL){
@@ -935,7 +936,6 @@ DATA_TYPE checkType(AST_NODE *Node){
         SymbolTableEntry *symbol = getSymbol(Node);
         if(symbol == NULL){
             printError(NOT_DECLARED_IN_THIS_SCOPE, Node);
-            return NULL;
         } 
         Node->semantic_value.identifierSemanticValue.symbolTableEntry = symbol;
         SymbolAttribute *attribute = symbol->attribute;
