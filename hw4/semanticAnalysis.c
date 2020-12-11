@@ -153,6 +153,7 @@ void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
 void semanticAnalysis(AST_NODE *root)
 {
     processProgramNode(root);
+    fprintf(stderr, "OKKKK\n");
 }
 
 
