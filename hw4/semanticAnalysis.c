@@ -73,7 +73,10 @@ typedef enum ErrorMsgKind
     DIM_INFO_NOT_INT,
     DIM_INFO_LESS_ZERO,
     GLOBAL_INIT_NOT_CONST,
-    REDEC_TYDEDEF
+    REDEC_TYDEDEF,
+    VOID_TO_ARRAY_PARAM,
+    VOID_TO_INT_PARAM
+
 } ErrorMsgKind;
 void printError(ErrorMsgKind error, const void *Node1){
     AST_NODE *Node = (AST_NODE *)Node1;
@@ -99,10 +102,10 @@ void printError(ErrorMsgKind error, const void *Node1){
         fprintf(stderr, "conflicting types for \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_FEW_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, "ERROR: too few arguments to function \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: too few arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_MANY_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, "ERROR: too many arguments to function \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: too many arguments to function \'%s\'\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case DIM_OVERSIZE:
         fprintf(stderr, "ERROR: subscripted value is neither array nor pointer nor vector\n");
@@ -111,13 +114,19 @@ void printError(ErrorMsgKind error, const void *Node1){
         fprintf(stderr, "ERROR: assignment to expression with array type\n");
         break;
     case ARRAY_SUBSCRIPT_NOT_INT:
-        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to '<scalar type>'\n");
+        fprintf(stderr, "ERROR: array subscript is not an integer'\n");
         break;
     case INT_TO_ARRAY_PARAM:
         fprintf(stderr, "ERROR: invalid conversion from '<scalar type>' to '<array type>'\n");
         break;
     case ARRAY_TO_INT_PARAM: //TODO:
-        fprintf(stderr, "ERROR: This parameter \n");
+        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to '<scalar type>'\n");
+        break;
+    case VOID_TO_ARRAY_PARAM:
+        fprintf(stderr, "ERROR: invalid conversion from 'void' to '<array type>'\n");
+        break;
+    case VOID_TO_INT_PARAM: //TODO:
+        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to 'void'\n");
         break;
     case FUNC_DECL_IN_SCOPE:
         fprintf(stderr, "ERROR: function definition is not allowed here");   
@@ -298,8 +307,8 @@ int checkArrayDim(AST_NODE *Node){
         else if(d < entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension)
             return 0;
         else{
-            perror("outof array dim");
-            exit(0);
+            printError(DIM_OVERSIZE, Node);
+            return 0;
         }
     }
 }
@@ -314,14 +323,14 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
     }
     else{
         if(l->semantic_value.identifierSemanticValue.kind == ARRAY_ID && !checkArrayDim(l)){
-            perror("array error");
-            exit(0);
+            printError(ASSIGN_TO_ARRAY, assignmentNode);
+            return;
         }
         else{
             SymbolTableEntry *entry = getSymbol(l);
             if(entry == NULL){
-                perror("non-decl");
-                exit(0);
+                printError(NOT_DECLARED_IN_THIS_SCOPE, assignmentNode->child);
+                return;
             }
         }
         NodeFolding(r);
@@ -371,8 +380,17 @@ int checkArray(ArrayProperties *prop, AST_NODE *arr){
 
 int checkParam(Parameter *decl_param, AST_NODE *param){
     if(decl_param->type->kind == ARRAY_TYPE_DESCRIPTOR){
-        if(!checkArray(&decl_param->type->properties.arrayProperties, param))
-            printError(INT_TO_ARRAY_PARAM, param);
+        if(!checkArray(&decl_param->type->properties.arrayProperties, param)){
+            if(param->dataType == VOID_TYPE){
+                printError(VOID_TO_ARRAY_PARAM, param);
+            }
+            else{
+                printError(INT_TO_ARRAY_PARAM, param);
+            }
+        }
+        else{
+
+        }
     }
     else{
         NodeFolding(param);
@@ -380,7 +398,7 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
             printError(ARRAY_TO_INT_PARAM, param);
         }
         if(param->dataType == VOID_TYPE){
-            printError(ARRAY_TO_INT_PARAM, param);
+            printError(VOID_TO_INT_PARAM, param);
             return 0;
         }
     }
