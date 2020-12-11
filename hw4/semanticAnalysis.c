@@ -122,12 +122,6 @@ void printError(ErrorMsgKind error, const void *Node1){
     case FUNC_DECL_IN_SCOPE:
         fprintf(stderr, "ERROR: function definition is not allowed here");   
         break;
-<<<<<<< HEAD
-    case INVALID_BINARY:
-        fprintf(stderr, "ERROR: invalid operands to binary expression('double' and 'double')\n");
-        break;
-=======
->>>>>>> 11a4a831cef128addcc87f55a8328ce0386de73f
     case INCOMPUTABLE_VOLID:
         fprintf(stderr, "ERROR: incompatible type 'void'\n");
         break;
@@ -138,7 +132,7 @@ void printError(ErrorMsgKind error, const void *Node1){
         fprintf(stderr, "ERROR: function '%s' should be return type '%s'\n", Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
         break;
     case NON_CALLABLE:
-        fprintf(stderr, "ERROR: called object '%s' is not a function or function pointer\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: called object '%s' is not a function or function pointer\n", Node->child->semantic_value.identifierSemanticValue.identifierName);
         break;
     case INVALID_BINARY:
         fprintf(stderr, ":%d ERROR: invalid operands to binary expression ('float' and 'float')\n", Node->linenumber);
@@ -285,12 +279,10 @@ int checkArrayDim(AST_NODE *Node){
     SymbolTableEntry *entry = getSymbol(Node);
     int d = 0;
     if(entry == NULL){
-        perror("non-decl");
-        exit(0);
+        printError(NOT_DECLARED_IN_THIS_SCOPE, Node);
     }
     else if(entry->attribute->attributeKind == FUNCTION_SIGNATURE || entry->attribute->attr.typeDescriptor->kind != ARRAY_TYPE_DESCRIPTOR){
-        perror("id not array");
-        exit(0);
+        printError(DIM_OVERSIZE, Node);
     }
     else{
         AST_NODE *dim = Node->child;
@@ -955,6 +947,7 @@ DATA_TYPE checkType(AST_NODE *Node){
                 return attribute->attr.typeDescriptor->properties.dataType;
             }
             else{
+                checkArrayDim(Node);
                 return attribute->attr.typeDescriptor->properties.arrayProperties.elementType;
             }
         }
