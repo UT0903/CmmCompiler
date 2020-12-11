@@ -1,4 +1,4 @@
-/* gcc: warning: passing argument 1 of ‘func’ makes pointer from integer without a cast */
+/* gcc: valid */
 int func(int c[1]){
 
 }

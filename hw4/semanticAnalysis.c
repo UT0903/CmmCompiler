@@ -41,7 +41,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* elementType, 
 AST_NODE* ExprNodeFolding(AST_NODE* ExprNode);
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl);
-void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind);
+void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind, AST_NODE* ID);
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl);
 float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
@@ -144,14 +144,13 @@ void printError(ErrorMsgKind error, const void *Node1){
         fprintf(stderr, "error undefined\n");
         break;
     }
-    return;
+    exit(0);
 }
 
 
 void semanticAnalysis(AST_NODE *root)
 {
     processProgramNode(root);
-    fprintf(stderr, "OKKKK\n");
 }
 
 
@@ -570,7 +569,7 @@ void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
         TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 1);
-        FillInSymbolTable(varName, typeDescStruct, TYPE_ATTRIBUTE);
+        FillInSymbolTable(varName, typeDescStruct, TYPE_ATTRIBUTE, IDNode);
         IDNode = IDNode->rightSibling;
     }
 }
@@ -579,7 +578,7 @@ void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
     while(IDNode != NULL){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
         TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 0);
-        FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE);
+        FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE, IDNode);
         IDNode = IDNode->rightSibling;
     }
 }
@@ -609,18 +608,28 @@ void declareFunction(AST_NODE* returnTypeNode){
     }
     AST_NODE* paramListNode = funcNameNode->rightSibling;
     AST_NODE* paramNode = paramListNode->child; // collect params attr
+    
+    Parameter* head = (Parameter*)malloc(sizeof(Parameter));
+    head->next = funcSign->parameterList;
+    Parameter *prev;
     while(paramNode != NULL){
-        Parameter* paramStruct = makeParameter(paramNode->child);
+        Parameter* new_param = makeParameter(paramNode->child);
+        new_param->next = NULL;
+        if(funcSign->parameterList == NULL)
+            funcSign->parameterList = new_param;
+        else
+            prev->next = new_param;
+        prev = new_param;
         funcSign->parametersCount++;
-        paramStruct->next = funcSign->parameterList;
-        funcSign->parameterList = paramStruct;
         paramNode = paramNode->rightSibling;
     }
+
     if(!enterSymbol(funcName, funcAttr, 0)){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
     }
     processBlockNode(paramListNode->rightSibling);
+    PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
@@ -652,7 +661,7 @@ TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Nod
         printError(NOT_DECLARED_IN_THIS_SCOPE, IDNode);
     }
 }
-void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind){ //fill Var in Symbol table
+void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind, AST_NODE* ID){ //fill Var in Symbol table
     //fprintf(stderr, "Insert: %s dataType: %d scope: %d\n", name, typeDescStruct->properties.dataType, getCurrentScope());
     if(attrKind != VARIABLE_ATTRIBUTE && attrKind != TYPE_ATTRIBUTE){
         fprintf(stderr, "FillInSymbolTable() Only support for VARIABLE_ATTRIBUTE and TYPE_ATTRIBUTE\n");
@@ -661,14 +670,13 @@ void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttribu
     SymbolAttribute *attr = (SymbolAttribute*)malloc(sizeof(SymbolAttribute));
     attr->attributeKind = attrKind;
     attr->attr.typeDescriptor = typeDescStruct;
-    if(declaredInThisScope(name, getCurrentScope()) != NULL){
-        AST_NODE *ErrorNode = (AST_NODE*)malloc(sizeof(AST_NODE));
-        ErrorNode->semantic_value.identifierSemanticValue.identifierName = name;
+    SymbolTableEntry *res;
+    if((res = declaredInThisScope(name, getCurrentScope())) != NULL){
         if(attrKind == VARIABLE_ATTRIBUTE){
-            printError(REDECLARATION, ErrorNode);
+            printError(REDECLARATION, ID);
         }
         else{
-            printError(REDEC_TYDEDEF, ErrorNode);
+            printError(REDEC_TYDEDEF, ID);
         }
         
         
@@ -689,7 +697,7 @@ Parameter* makeParameter(AST_NODE* typeNode){
     paramStruct->parameterName = name;
     paramStruct->type = typeDescStruct;
 
-    FillInSymbolTable(name, typeDescStruct, VARIABLE_ATTRIBUTE);
+    FillInSymbolTable(name, typeDescStruct, VARIABLE_ATTRIBUTE, ID);
     return paramStruct;
 }
 
