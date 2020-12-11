@@ -123,6 +123,7 @@ void printError(ErrorMsgKind error, const void *Node1){
     default:
         break;
     }
+    exit(0);
 }
 
 void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
@@ -152,6 +153,7 @@ void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
 void semanticAnalysis(AST_NODE *root)
 {
     processProgramNode(root);
+    fprintf(stderr, "OKKKK\n");
 }
 
 
@@ -603,7 +605,6 @@ void declareFunction(AST_NODE* returnTypeNode){
     //check function 有沒有被declare過
     if(declaredInThisScope(funcName, 0) != NULL){
         printError(REDECLARATION, returnTypeNode);
-        return;
     }
     AST_NODE* paramListNode = funcNameNode->rightSibling;
     AST_NODE* paramNode = paramListNode->child; // collect params attr
@@ -614,8 +615,6 @@ void declareFunction(AST_NODE* returnTypeNode){
         funcSign->parameterList = paramStruct;
         paramNode = paramNode->rightSibling;
     }
-    //TODO: deal with block node
-     //TODO: check return type is equal or not 
     if(!enterSymbol(funcName, funcAttr, 0)){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
@@ -953,7 +952,7 @@ DATA_TYPE checkType(AST_NODE *Node){
     exit(0);
 }
 
-int_fast16_t isRelopExpr(BINARY_OPERATOR op){
+int isRelopExpr(BINARY_OPERATOR op){
     switch (op)
     {
     case BINARY_OP_ADD:
