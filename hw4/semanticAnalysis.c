@@ -122,12 +122,6 @@ void printError(ErrorMsgKind error, const void *Node1){
     case FUNC_DECL_IN_SCOPE:
         fprintf(stderr, "ERROR: function definition is not allowed here");   
         break;
-<<<<<<< HEAD
-    case INVALID_BINARY:
-        fprintf(stderr, "ERROR: invalid operands to binary expression('double' and 'double')\n");
-        break;
-=======
->>>>>>> 11a4a831cef128addcc87f55a8328ce0386de73f
     case INCOMPUTABLE_VOLID:
         fprintf(stderr, "ERROR: incompatible type 'void'\n");
         break;
