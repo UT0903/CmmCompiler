@@ -70,55 +70,72 @@ typedef enum ErrorMsgKind
     INCOMPUTABLE_VOLID,
     STRING_IN_EXPR,
     NON_CALLABLE,
+    DIM_INFO_NOT_INT,
+    DIM_INFO_LESS_ZERO,
+    GLOBAL_INIT_NOT_CONST,
+    REDEC_TYDEDEF
 } ErrorMsgKind;
 void printError(ErrorMsgKind error, const void *Node1){
     AST_NODE *Node = (AST_NODE *)Node1;
+    printf("Error found in line %d\n", Node->linenumber);
     switch (error)
     {
     case NOT_DECLARED_IN_THIS_SCOPE:
-        fprintf(stderr, ":%d ERROR: \'%s\' was not declared in this scope\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: \'%s\' was not declared in this scope\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case REDECLARATION:
-
+        fprintf(stderr, "redeclaration of \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case DIM_INFO_NOT_INT:
+        fprintf(stderr, "array subscript is not an integer\n");
+        break;
+    case DIM_INFO_LESS_ZERO:
+        fprintf(stderr, "size of array \'%s\' is negative\n", Node->semantic_value.identifierSemanticValue.identifierName);
+        break;
+    case GLOBAL_INIT_NOT_CONST:
+        fprintf(stderr, "initializer element is not constant\n");
+        break;
+    case REDEC_TYDEDEF:
+        fprintf(stderr, "conflicting types for \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_FEW_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, ":%d ERROR: too few arguments to function \'%s\'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: too few arguments to function \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case TOO_MANY_ARGUMENTS_TO_FUNCTION:
-        fprintf(stderr, ":%d ERROR: too many arguments to function \'%s\'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: too many arguments to function \'%s\'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case DIM_OVERSIZE:
-        fprintf(stderr, ":%d ERROR: subscripted value is neither array nor pointer nor vector\n", Node->linenumber);
+        fprintf(stderr, "ERROR: subscripted value is neither array nor pointer nor vector\n");
         break;
     case ASSIGN_TO_ARRAY:
-        fprintf(stderr, ":%d ERROR: assignment to expression with array type\n", Node->linenumber);
+        fprintf(stderr, "ERROR: assignment to expression with array type\n");
         break;
     case ARRAY_SUBSCRIPT_NOT_INT:
-        fprintf(stderr, ":%d ERROR: invalid conversion from '<array type>' to '<scalar type>'\n", Node->linenumber);
+        fprintf(stderr, "ERROR: invalid conversion from '<array type>' to '<scalar type>'\n");
         break;
     case INT_TO_ARRAY_PARAM:
-        fprintf(stderr, ":%d ERROR: invalid conversion from '<scalar type>' to '<array type>'\n", Node->linenumber);
+        fprintf(stderr, "ERROR: invalid conversion from '<scalar type>' to '<array type>'\n");
         break;
-    case ARRAY_TO_INT_PARAM:
-        fprintf(stderr, ":%d ERROR: This parameter \n", Node->linenumber);
+    case ARRAY_TO_INT_PARAM: //TODO:
+        fprintf(stderr, "ERROR: This parameter \n");
         break;
     case FUNC_DECL_IN_SCOPE:
-        fprintf(stderr, ":%d ERROR: function definition is not allowed here", Node->linenumber);   
+        fprintf(stderr, "ERROR: function definition is not allowed here");   
         break;
     case INVALID_BINARY:
-        fprintf(stderr, ":%d ERROR: invalid operands to binary expression('double' and 'double')\n", Node->linenumber);
+        fprintf(stderr, "ERROR: invalid operands to binary expression('double' and 'double')\n");
         break;
     case INCOMPUTABLE_VOLID:
-        fprintf(stderr, ":%d ERROR: incompatible type 'void'\n", Node->linenumber);
+        fprintf(stderr, "ERROR: incompatible type 'void'\n");
         break;
     case VOLID_RETURN_ERROR:
-        fprintf(stderr, ":%d ERROR: function '%s' should be return type 'void'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: function '%s' should be return type 'void'\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     case NON_VOLID_RETURN_ERROR:
-        fprintf(stderr, ":%d ERROR: function '%s' should be return type '%s'\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: function '%s' should be return type '%s'\n", Node->semantic_value.identifierSemanticValue.identifierName, Node->leftmostSibling->semantic_value.identifierSemanticValue.identifierName);
         break;
     case NON_CALLABLE:
-        fprintf(stderr, ":%d ERROR: called object '%s' is not a function or function pointer\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
+        fprintf(stderr, "ERROR: called object '%s' is not a function or function pointer\n", Node->semantic_value.identifierSemanticValue.identifierName);
         break;
     default:
         break;
@@ -126,29 +143,6 @@ void printError(ErrorMsgKind error, const void *Node1){
     exit(0);
 }
 
-void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
-    g_anyErrorOccur = 1;
-    printf("Error found in line %d\n", node1->linenumber);
-    
-    /*switch(errorMsgKind){
-    case(NOT_DECLARED_IN_THIS_SCOPE):
-        printf("%s was not declared in this scope\n",  node1->semantic_value.identifierSemanticValue.identifierName);
-        break;
-    case(REDECLARATION):
-        printf("redeclaration of ‘%s %s’\n", , node1->semantic_value.identifierSemanticValue.identifierName);
-        break;
-    case(TOO_FEW_ARGUMENTS_TO_FUNCTION):
-        printf("too few arguments to function ‘%s’\n", );
-        break;
-    case(TOO_FEW_ARGUMENTS_TO_FUNCTION):
-        break;
-    default:
-        printf("Unhandled case in void printErrorMsg(AST_NODE* node, ERROR_MSG_KIND* errorMsgKind)\n");
-        break;
-    }*/
-    
-    exit(0);
-}
 
 void semanticAnalysis(AST_NODE *root)
 {
@@ -595,7 +589,7 @@ void declareFunction(AST_NODE* returnTypeNode){
     
     TypeDescriptor* typeDescStruct = getTypeDescriptor(returnTypeNode); //check for return type
     if(typeDescStruct->kind != SCALAR_TYPE_DESCRIPTOR){
-        fprintf(stderr, "Return type error\n");
+        fprintf(stderr, "Function return type can only be SCALAR\n");
         exit(0);
     }
     funcSign->returnType = typeDescStruct->properties.dataType;
@@ -604,7 +598,7 @@ void declareFunction(AST_NODE* returnTypeNode){
     char *funcName = funcNameNode->semantic_value.identifierSemanticValue.identifierName;
     //check function 有沒有被declare過
     if(declaredInThisScope(funcName, 0) != NULL){
-        printError(REDECLARATION, returnTypeNode);
+        printError(REDECLARATION, funcNameNode);
     }
     AST_NODE* paramListNode = funcNameNode->rightSibling;
     AST_NODE* paramNode = paramListNode->child; // collect params attr
@@ -649,8 +643,7 @@ TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Nod
                 return typeDescStruct;
             }
         }
-        fprintf(stderr, "Ilegal type: %s\n", type);
-        exit(0); 
+        printError(NOT_DECLARED_IN_THIS_SCOPE, IDNode);
     }
 }
 void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind){ //fill Var in Symbol table
@@ -663,8 +656,16 @@ void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttribu
     attr->attributeKind = attrKind;
     attr->attr.typeDescriptor = typeDescStruct;
     if(declaredInThisScope(name, getCurrentScope()) != NULL){
-        fprintf(stderr, "Redeclaration of symbol name: %s\n", name);
-        exit(0);
+        AST_NODE *ErrorNode = (AST_NODE*)malloc(sizeof(AST_NODE));
+        ErrorNode->semantic_value.identifierSemanticValue.identifierName = name;
+        if(attrKind == VARIABLE_ATTRIBUTE){
+            printError(REDECLARATION, ErrorNode);
+        }
+        else{
+            printError(REDEC_TYDEDEF, ErrorNode);
+        }
+        
+        
     }
     if(!enterSymbol(name, attr, getCurrentScope())){
         fprintf(stderr, "Error in FillInSymbolTable\n");
@@ -699,7 +700,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
         exit(0);
     }
     if(tempDataType == VOID_TYPE && voidValid == 0){
-        fprintf(stderr, "No void type declaration\n");
+        fprintf(stderr, "storage size of \'%s\' isn’t known\n", ID->semantic_value.identifierSemanticValue.identifierName);
         exit(0);
     }
 
@@ -726,19 +727,16 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             //fprintf(stderr, "isConstEval: %d\n", isConstEval);
             //TODO: rewrite isConstEval
             if(dimInfo->nodeType != CONST_VALUE_NODE){
-                fprintf(stderr, "Cannot have variable in array dimension declaration\n");
-                exit(0);
+                printError(DIM_INFO_NOT_INT, ID);
             }
             else if(dimInfo->dataType == FLOAT_TYPE){
-                fprintf(stderr, "Cannot have float in array dimension declaration\n");
-                exit(0);
+                printError(DIM_INFO_NOT_INT, ID);
             }
             else if(dimInfo->dataType == INT_TYPE){
                 int iValue = dimInfo->semantic_value.const1->const_u.intval;
                 //fprintf(stderr, "isConstEval = 1, iValue: %d\n", iValue);
                 if(iValue < 0){
-                    fprintf(stderr, "Cannot have negative integer in array dimension declaration\n");
-                    exit(0);
+                    printError(DIM_INFO_LESS_ZERO, ID);
                 }
                 typeDescStruct->properties.arrayProperties.sizeInEachDimension[typeDescStruct->properties.arrayProperties.dimension++] \
                 = iValue;
@@ -755,15 +753,13 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
     }
     else if(ID->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
         if(typeDescStruct->kind != SCALAR_TYPE_DESCRIPTOR){
-            fprintf(stderr, "Does not support for Initializing Array\n");
-            exit(0);
+            printError(ASSIGN_TO_ARRAY, ID);
         }
         AST_NODE *child = NodeFolding(ID->child);
         //fprintf(stderr, "isConstEval: %d\n", isConstEval);
         if(LocalOrGlobalDecl == 0){ //global decl
             if(child->nodeType != CONST_VALUE_NODE){
-                fprintf(stderr, "Not support for dynamic declaration in global\n");
-                exit(0);
+                printError(GLOBAL_INIT_NOT_CONST, ID);
             }
         }
     }

@@ -1,7 +1,6 @@
 int count(){
 
 }
-
 int main(){
     int a;
     float b;
