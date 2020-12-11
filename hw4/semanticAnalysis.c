@@ -290,8 +290,7 @@ int checkArrayDim(AST_NODE *Node){
             d ++;
             NodeFolding(dim);
             if(dim->dataType != INT_TYPE){
-                perror("not int in array dim");
-                exit(0);
+                printError(DIM_INFO_NOT_INT, Node);
             }
             dim = dim->rightSibling;
         }
@@ -531,7 +530,6 @@ void processStmtNode(AST_NODE* stmtNode)
         }
     }
     else{
-        fprintf(stderr, "type:%d\n", stmtNode->nodeType);
         perror("input no stmt");
         exit(0);
     }
@@ -737,7 +735,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
             if(dimInfo->nodeType != CONST_VALUE_NODE){
                 printError(DIM_INFO_NOT_INT, ID);
             }
-            else if(dimInfo->dataType == FLOAT_TYPE){
+            else if(dimInfo->dataType != INT_TYPE){
                 printError(DIM_INFO_NOT_INT, ID);
             }
             else if(dimInfo->dataType == INT_TYPE){
@@ -986,7 +984,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         return NULL;
     EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue;    
     if(expr->kind == BINARY_OPERATION){
-        BINARY_OPERATOR op = op;
+        BINARY_OPERATOR op = expr->op.binaryOp;
         AST_NODE *l = NodeFolding(Node->child), *r = NodeFolding(Node->child->rightSibling);
         if(r->dataType == NONE_TYPE || l->dataType == NONE_TYPE){
             Node->dataType = NONE_TYPE;
@@ -1046,7 +1044,6 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
             }
             else{
                 //handle string in expr error
-                fprintf(stderr, "line: %d die 1053\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
             }
             Node->nodeType = CONST_VALUE_NODE;
@@ -1055,7 +1052,6 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         }
         else{
             if(r->dataType == CONST_STRING_TYPE || l->dataType == CONST_STRING_TYPE){
-                fprintf(stderr, "line: %d die 1061\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
             }
             else if(isRelopExpr(op)){
@@ -1076,7 +1072,6 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
     else{
         AST_NODE *child = NodeFolding(Node->child);
         if(child->nodeType == NONE_TYPE){
-            fprintf(stderr, "line: %d die 1083\n", Node->linenumber);
             Node->dataType = NONE_TYPE;
             return Node;
         }
@@ -1093,7 +1088,6 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
                 c2->const_u.fval = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
             }
             else{
-                fprintf(stderr, "line: %d die 1100\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
             }
             Node->nodeType = CONST_VALUE_NODE;
