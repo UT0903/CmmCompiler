@@ -607,7 +607,6 @@ void declareFunction(AST_NODE* returnTypeNode){
     //check function 有沒有被declare過
     if(declaredInThisScope(funcName, 0) != NULL){
         printError(REDECLARATION, returnTypeNode);
-        return;
     }
     AST_NODE* paramListNode = funcNameNode->rightSibling;
     AST_NODE* paramNode = paramListNode->child; // collect params attr
@@ -618,8 +617,6 @@ void declareFunction(AST_NODE* returnTypeNode){
         funcSign->parameterList = paramStruct;
         paramNode = paramNode->rightSibling;
     }
-    //TODO: deal with block node
-     //TODO: check return type is equal or not 
     if(!enterSymbol(funcName, funcAttr, 0)){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
