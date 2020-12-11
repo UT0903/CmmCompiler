@@ -156,7 +156,7 @@ static inline AST_NODE* makeExprNode(EXPR_KIND exprKind, int operationEnumValue)
 
 %type <node> program global_decl_list global_decl function_decl block stmt_list decl_list decl var_decl type init_id_list init_id  stmt relop_expr relop_term relop_factor expr term factor var_ref
 %type <node> param_list param dim_fn expr_null id_list dim_decl cexpr mcexpr cfactor assign_expr_list test assign_expr rel_op relop_expr_list nonempty_relop_expr_list
-%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op double_add_id crelop_expr crelop_term crelop_factor
+%type <node> add_op mul_op dim_list type_decl nonempty_assign_expr_list unary_op double_add_id crelop_expr crelop_term crelop_factor 
 
 %start program
 
@@ -531,25 +531,26 @@ stmt        : MK_LBRACE block MK_RBRACE
                     /*FINISH*/
                     $$ = makeFamily(makeStmtNode(FOR_STMT), 4, $3, $5, $7, $9);
                 }
-            | FOR MK_LPAREN type init_id_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
+            | FOR MK_LPAREN assign_expr_list MK_SEMICOLON relop_expr_list MK_SEMICOLON assign_expr_list MK_RPAREN stmt
                 {
                     /*FINISH*/
-                    $$ = makeFamily(makeStmtNode(FOR_STMT), 4, makeFamily(makeDeclNode(VARIABLE_DECL), 2, $3, $4), $6, $8, $10);
+                    $$ = makeStmtNode(FOR_STMT);
+                    makeFamily($$, 4, $3, $5, $7, $9);
                 }
             | var_ref OP_ASSIGN relop_expr MK_SEMICOLON
                 {
                     /*FINISH*/
                     $$ = makeFamily(makeStmtNode(ASSIGN_STMT), 2, $1, $3);
                 }
-            /*FINISH: | If Statement */
-            | IF MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt
+            | IF MK_LPAREN test MK_RPAREN stmt
                 {
-                    $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5,  Allocate(NUL_NODE));
+                    $$ = makeStmtNode(IF_STMT);
+                    makeFamily($$, 3, $3, $5, Allocate(NUL_NODE));
                 }
-            /*FINISH: | If then else */
-            | IF MK_LPAREN nonempty_assign_expr_list  MK_RPAREN stmt ELSE stmt
+            | IF MK_LPAREN test MK_RPAREN stmt ELSE stmt
                 {
-                    $$ = makeFamily(makeStmtNode(IF_STMT), 3, $3, $5, $7);
+                    $$ = makeStmtNode(IF_STMT);
+                    makeFamily($$, 3, $3, $5, $7);
                 } 
             /*FINISH: | function call */
             | var_ref MK_LPAREN relop_expr_list MK_RPAREN MK_SEMICOLON
@@ -577,6 +578,12 @@ stmt        : MK_LBRACE block MK_RBRACE
                 }
             ;
 
+test		: assign_expr
+                {
+                    $$ = $1;
+                }
+            ;
+
 assign_expr_list : nonempty_assign_expr_list 
                      {
                         /*FINISH*/
@@ -599,12 +606,6 @@ nonempty_assign_expr_list        : nonempty_assign_expr_list MK_COMMA assign_exp
                                     $$ = $1;
                                 }
                                  ;
-
-test        : assign_expr
-                {
-                    $$ = $1;
-                }
-            ;
 
 assign_expr     : ID OP_ASSIGN relop_expr 
                     {

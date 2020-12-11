@@ -241,7 +241,7 @@ void checkWhileStmt(AST_NODE* whileNode)
 void checkForStmt(AST_NODE* forNode)
 {
     openScope();
-    AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling;
+    AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling, *stmt = second_assign_expr_list->rightSibling;
     if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = assign_expr_list->child;
         while(assign_expr){
@@ -271,6 +271,7 @@ void checkForStmt(AST_NODE* forNode)
             assign_expr = assign_expr->rightSibling;
         }
     }
+    processStmtNode(stmt);
     closeScope();
 }
 
@@ -353,12 +354,8 @@ void checkIfStmt(AST_NODE* ifNode)
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
     AST_NODE *ELSE = stmt->rightSibling;
-    if(ELSE->nodeType == STMT_NODE)
+    if(ELSE->nodeType != NUL_NODE)
         processStmtNode(ELSE);
-    else if(ELSE->dataType != NUL_NODE){
-        perror("wrong node in if");
-        exit(0);
-    }
     closeScope();
     return;
 }
@@ -622,7 +619,7 @@ void declareFunction(AST_NODE* returnTypeNode){
         exit(0);
     }
     processBlockNode(paramListNode->rightSibling);
-    //PrintSymbolTable();
+    PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
