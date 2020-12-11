@@ -43,7 +43,7 @@ TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode);
 void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl);
 void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttributeKind attrKind);
 void declareTypedef(AST_NODE* TypeNode, int LocalOrGlobalDecl);
-float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op, AST_NODE *Node);
+float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op);
 float handleUnaryFloatFolding(float a, UNARY_OPERATOR op);
 int handleUnaryIntFolding(int a, UNARY_OPERATOR op);
 int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op);
@@ -105,9 +105,6 @@ void printError(ErrorMsgKind error, const void *Node1){
     case FUNC_DECL_IN_SCOPE:
         fprintf(stderr, ":%d ERROR: function definition is not allowed here", Node->linenumber);   
         break;
-    case INVALID_BINARY:
-        fprintf(stderr, ":%d ERROR: invalid operands to binary expression('double' and 'double')\n", Node->linenumber);
-        break;
     case INCOMPUTABLE_VOLID:
         fprintf(stderr, ":%d ERROR: incompatible type 'void'\n", Node->linenumber);
         break;
@@ -120,10 +117,17 @@ void printError(ErrorMsgKind error, const void *Node1){
     case NON_CALLABLE:
         fprintf(stderr, ":%d ERROR: called object '%s' is not a function or function pointer\n", Node->linenumber, Node->semantic_value.identifierSemanticValue.identifierName);
         break;
+    case INVALID_BINARY:
+        fprintf(stderr, ":%d ERROR: invalid operands to binary expression ('float' and 'float')\n", Node->linenumber);
+        break;
+    case STRING_IN_EXPR:
+        fprintf(stderr, ":%d ERROR: string in expr\n", Node->linenumber);
+        break;
     default:
+        fprintf(stderr, "error undefined\n");
         break;
     }
-    exit(0);
+    return;
 }
 
 void printErrorMsg(AST_NODE* node1, char* name2, ErrorMsgKind errorMsgKind){
@@ -501,6 +505,12 @@ void processStmtNode(AST_NODE* stmtNode)
     if(stmtNode->nodeType == BLOCK_NODE){
         processBlockNode(stmtNode);
     }
+    else if(stmtNode->nodeType == CONST_VALUE_NODE){
+        NodeFolding(stmtNode);
+    }
+    else if(stmtNode->nodeType == NUL_NODE){
+        return;
+    }
     else if(stmtNode->nodeType == STMT_NODE){
         switch (stmtNode->semantic_value.stmtSemanticValue.kind)
         {
@@ -529,6 +539,7 @@ void processStmtNode(AST_NODE* stmtNode)
         }
     }
     else{
+        fprintf(stderr, "type:%d\n", stmtNode->nodeType);
         perror("input no stmt");
         exit(0);
     }
@@ -620,7 +631,6 @@ void declareFunction(AST_NODE* returnTypeNode){
         exit(0);
     }
     processBlockNode(paramListNode->rightSibling);
-    PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
@@ -778,7 +788,7 @@ TypeDescriptor* extendTypeDescriptor(AST_NODE* ID, TypeDescriptor* typeDescStruc
 AST_NODE* NodeFolding(AST_NODE *Node){
     if(Node->nodeType == EXPR_NODE)
         return ExprNodeFolding(Node);
-    if(Node->nodeType == CONST_VALUE_NODE){
+    else if(Node->nodeType == CONST_VALUE_NODE){
         switch (Node->semantic_value.const1->const_type)
         {
         case INTEGERC:
@@ -786,8 +796,10 @@ AST_NODE* NodeFolding(AST_NODE *Node){
             break;
         case FLOATC:
             Node->dataType = FLOAT_TYPE;
+            break;
         case STRINGC:
             Node->dataType = CONST_STRING_TYPE;
+            break;
         default:
             break;
         }
@@ -836,7 +848,7 @@ int handleUnaryIntFolding(int a, UNARY_OPERATOR op){
     return 0;
 }
 
-float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op, AST_NODE *Node){
+float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op){
     switch (op)
     {
     case BINARY_OP_ADD:
@@ -861,11 +873,11 @@ float handleBinaryFloatFolding(float a, float b, BINARY_OPERATOR op, AST_NODE *N
         return a < b;
     case BINARY_OP_AND:
         //handle float & error
-        printError(INVALID_BINARY, Node);
+        return 0;
         break;
     case BINARY_OP_OR:
         //handle float | error
-        printError(INVALID_BINARY, Node);
+        return 0;
         break;
     default:
         break;
@@ -996,42 +1008,51 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
                 if(isRelopExpr(op)){
                     c->const_type = INTEGERC;
                     Node->dataType = INT_TYPE;
-                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op, Node);
+                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op);
+                    if(op == BINARY_OP_ADD || op == BINARY_OP_OR){
+                        printError(INVALID_BINARY, Node);
+                    }
                 }
                 else{
                     c->const_type = FLOATC;
                     Node->dataType = FLOAT_TYPE;
-                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op, Node);
+                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, c2->const_u.fval, op);
                 }
             }
             else if(c1->const_type == FLOATC && c2->const_type == INTEGERC){
                 if(isRelopExpr(op)){
                     c->const_type = INTEGERC;
                     Node->dataType = INT_TYPE;
-                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op, Node);
+                    c->const_u.intval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op);
+                    if(op == BINARY_OP_ADD || op == BINARY_OP_OR){
+                        printError(INVALID_BINARY, Node);
+                    }
                 }
                 else{
                     c->const_type = FLOATC;
                     Node->dataType = FLOAT_TYPE;
-                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op, Node);
+                    c->const_u.fval = handleBinaryFloatFolding(c1->const_u.fval, (float)c2->const_u.intval, op);
                 }
             }
             else if(c1->const_type == INTEGERC && c2->const_type == FLOATC){
                 if(isRelopExpr(op)){
                     c->const_type = INTEGERC;
                     Node->dataType = INT_TYPE;
-                    c->const_u.intval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op, Node);
+                    c->const_u.intval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op);
+                    if(op == BINARY_OP_ADD || op == BINARY_OP_OR){
+                        printError(INVALID_BINARY, Node);
+                    }
                 }
                 else{
                     c->const_type = FLOATC;
                     Node->dataType = FLOAT_TYPE;
-                    c->const_u.fval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op, Node);
+                    c->const_u.fval = handleBinaryFloatFolding((float)c1->const_u.intval, c2->const_u.fval, op);
                 }
             }
             else{
                 //handle string in expr error
+                fprintf(stderr, "line: %d die 1053\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
-                printError(STRING_IN_EXPR, Node);
             }
             Node->nodeType = CONST_VALUE_NODE;
             Node->semantic_value.const1 = c;
@@ -1039,11 +1060,14 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         }
         else{
             if(r->dataType == CONST_STRING_TYPE || l->dataType == CONST_STRING_TYPE){
+                fprintf(stderr, "line: %d die 1061\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
-                printError(STRING_IN_EXPR, Node);
             }
             else if(isRelopExpr(op)){
                 Node->dataType = INT_TYPE;
+                if((op == BINARY_OP_ADD || op == BINARY_OP_OR) && (r->dataType == FLOAT_TYPE || l->dataType == FLOAT_TYPE)){
+                    printError(INVALID_BINARY, Node);
+                }
             }
             else if(r->dataType == FLOAT_TYPE || l->dataType == FLOAT_TYPE){
                 Node->dataType = FLOAT_TYPE;
@@ -1057,6 +1081,7 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
     else{
         AST_NODE *child = NodeFolding(Node->child);
         if(child->nodeType == NONE_TYPE){
+            fprintf(stderr, "line: %d die 1083\n", Node->linenumber);
             Node->dataType = NONE_TYPE;
             return Node;
         }
@@ -1073,8 +1098,8 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
                 c2->const_u.fval = handleUnaryFloatFolding(c->const_u.fval, expr->op.unaryOp);
             }
             else{
+                fprintf(stderr, "line: %d die 1100\n", Node->linenumber);
                 Node->dataType = NONE_TYPE;
-                printError(STRING_IN_EXPR, Node);
             }
             Node->nodeType = CONST_VALUE_NODE;
             Node->semantic_value.const1 = c2;
@@ -1082,7 +1107,6 @@ AST_NODE* ExprNodeFolding(AST_NODE* Node){
         else{
             if(child->dataType == CONST_STRING_TYPE){
                 Node->dataType = NONE_TYPE;
-                printError(STRING_IN_EXPR, Node);
             }
             else if(child->dataType == INT_TYPE){
                 Node->dataType = INT_TYPE;
