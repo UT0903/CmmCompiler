@@ -4,11 +4,10 @@ int fn1() {
 }
 void fn2() {
 }
-void fn3(int a, int b[3][4]) {
+void fn3(int a, int b[3][4], int c[5][7], int d) {
 }
 int main() {
     int b[4][4];
     fn1();
     fn2();
-    fn3(2, b);
 }
