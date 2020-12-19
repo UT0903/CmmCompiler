@@ -70,20 +70,22 @@ extern int yydebug;
     OP_GE = 276,
     OP_LE = 277,
     OP_PLUS = 278,
-    OP_MINUS = 279,
-    OP_TIMES = 280,
-    OP_DIVIDE = 281,
-    MK_LB = 282,
-    MK_RB = 283,
-    MK_LPAREN = 284,
-    MK_RPAREN = 285,
-    MK_LBRACE = 286,
-    MK_RBRACE = 287,
-    MK_COMMA = 288,
-    MK_SEMICOLON = 289,
-    MK_DOT = 290,
-    ERROR = 291,
-    RETURN = 292
+    OP_PP = 279,
+    OP_MINUS = 280,
+    OP_MM = 281,
+    OP_TIMES = 282,
+    OP_DIVIDE = 283,
+    MK_LB = 284,
+    MK_RB = 285,
+    MK_LPAREN = 286,
+    MK_RPAREN = 287,
+    MK_LBRACE = 288,
+    MK_RBRACE = 289,
+    MK_COMMA = 290,
+    MK_SEMICOLON = 291,
+    MK_DOT = 292,
+    ERROR = 293,
+    RETURN = 294
   };
 #endif
 
@@ -97,7 +99,11 @@ union YYSTYPE
 	CON_Type  *const1;
 	AST_NODE  *node;
 
+<<<<<<< HEAD
 #line 101 "parser.tab.h"
+=======
+#line 103 "parser.tab.h"
+>>>>>>> feature/aa
 
 };
 typedef union YYSTYPE YYSTYPE;

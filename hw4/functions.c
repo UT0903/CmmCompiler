@@ -1,5 +1,3 @@
-/* 2015/10 functions to support printGV() */
-
 #include "header.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,20 +25,12 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
         ">",
         "<",
         "&&",
-        "||",
-        "+=",
-        "-=",
-        "*=",
-        "/=",
+        "||"
     };
     char *unaryOpString[] = {
         "+",
         "-",
-        "!",
-        "i++",
-        "++i",
-        "i--",
-        "--i"
+        "!"
     };
 //    fprintf(fp, "%d ", astNode->linenumber);
     switch (astNode->nodeType) {
@@ -115,9 +105,6 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
                 case RETURN_STMT:
                     fprintf(fp, "RETURN_STMT");
                     break;
-                case DOUBLE_ADD_STMT:
-                    fprintf(fp, "DOUBLE_ADD_STMT");
-                    break;
             }
             break;
         case EXPR_NODE:
@@ -144,7 +131,6 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
                     astNode->semantic_value.const1->const_u.sc[strlen(astNode->semantic_value.const1->const_u.sc) - 1] = 0;
                     fprintf(fp, "\\\"%s\\\"", astNode->semantic_value.const1->const_u.sc + 1);
                     astNode->semantic_value.const1->const_u.sc[strlen(astNode->semantic_value.const1->const_u.sc)] = '"';
-                    astNode->semantic_value.const1->const_u.sc[strlen(astNode->semantic_value.const1->const_u.sc) + 1] = 0;
                     break;
             }
             break;
@@ -158,6 +144,7 @@ char *printLabelString(FILE *fp, AST_NODE *astNode)
             fprintf(fp, "default case in char *getLabelString(AST_TYPE astType)");
             break;
     }
+    return ""; 
 }
 
 void printGV(AST_NODE *root, char* fileName)

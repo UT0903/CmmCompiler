@@ -43,3 +43,12 @@ diff gv_file/typedef.gv AST_Graph.gv
 echo 'while'
 ./parser testdata/while.c
 diff gv_file/while.gv AST_Graph.gv
+
+echo 'plusplus'
+./parser testdata/plusplus.c
+
+echo 'forInt'
+./parser testdata/forInt.c
+
+make clean
+rm AST_Graph.gv parser.output

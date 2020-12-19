@@ -1,3 +1,5 @@
+int read(){}
+void write(int a){}
 int main() {
 	int i;
         int p;

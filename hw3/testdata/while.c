@@ -18,3 +18,4 @@ int main() {
   while (g()) {}
   while (A[0] > A[1]) {}
 }
+

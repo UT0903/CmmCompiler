@@ -4,7 +4,7 @@ CC = gcc -g
 LEX = flex
 YACC = bison -v
 YACCFLAG = -d
-LIBS = -ll 
+LIBS = -lfl 
 
 parser: parser.tab.o alloc.o functions.o
 	$(CC) -o $(TARGET) parser.tab.o alloc.o functions.o $(LIBS)
@@ -25,5 +25,5 @@ functions.o: functions.c
 	$(CC) -c functions.c
 
 clean:
-	rm -f $(TARGET) $(OBJECT) 
+	rm -f $(TARGET) $(OBJECT) AST_Graph.gv parser.output
 
