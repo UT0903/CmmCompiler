@@ -733,6 +733,14 @@ Parameter* makeParameter(AST_NODE* typeNode){
     paramStruct->type = typeDescStruct;
 
     FillInSymbolTable(name, typeDescStruct, VARIABLE_ATTRIBUTE, ID);
+    //ADD entry
+    SymbolTableEntry* varEntry;
+    if((varEntry = retrieveSymbol(name)) == NULL){
+        fprintf(stderr, "Error in retrieveSymbol\n");
+        exit(0);
+    }
+    ID->semantic_value.identifierSemanticValue.symbolTableEntry = varEntry;
+    //END ADD
     return paramStruct;
 }
 
