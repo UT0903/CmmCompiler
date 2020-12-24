@@ -75,6 +75,7 @@ typedef struct SymbolTableEntry{
     struct SymbolTableEntry* next;
     char* name;
     SymbolAttribute* attribute;
+    int offset;
 } SymbolTableEntry;
 
 typedef struct SymbolTableStack{
