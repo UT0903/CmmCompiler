@@ -58,7 +58,7 @@ void closeScope(){ //pop stack
     SymbolTableStack* prevStack = TopStackEntry->prevStack;
     
     //free hash table
-    for(int i = 0; i < HASH_TABLE_SIZE; i++){
+    /*for(int i = 0; i < HASH_TABLE_SIZE; i++){
         SymbolTableEntry* nowEntry = TopStackEntry->hashTable[i];
         while(nowEntry != NULL){
             SymbolTableEntry* tempEntry = nowEntry;
@@ -66,7 +66,7 @@ void closeScope(){ //pop stack
             free(tempEntry);
         }
     }
-    free(TopStackEntry);
+    free(TopStackEntry);*/
     TopStackEntry = prevStack;
 }
 void symbolTableEnd(){}
@@ -129,7 +129,7 @@ int removeSymbol(char* symbolName, int scope){
             else{
                 prevEntry->next = nowEntry->next;
             }
-            free(nowEntry);
+            //free(nowEntry);
             return 1;
         }
         prevEntry = nowEntry;

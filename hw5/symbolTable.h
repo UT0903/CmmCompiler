@@ -2,6 +2,7 @@
 #define __SYMBOL_TABLE_H__
 
 #include "header.h"
+// This file is for reference only, you are not required to follow the implementation. //
 
 
 //SYMBOL_TABLE_PREINSERT_NAME
@@ -70,35 +71,26 @@ typedef struct SymbolAttribute
     } attr;
 } SymbolAttribute;
 
-typedef struct SymbolTableEntry
-{
-    struct SymbolTableEntry* nextInHashChain;
-    struct SymbolTableEntry* prevInHashChain;
-    struct SymbolTableEntry* nextInSameLevel;
-    struct SymbolTableEntry* sameNameInOuterLevel;
-
+typedef struct SymbolTableEntry{
+    struct SymbolTableEntry* next;
     char* name;
     SymbolAttribute* attribute;
-    int nestingLevel;
-
 } SymbolTableEntry;
 
-typedef struct SymbolTable
-{
+typedef struct SymbolTableStack{
+    struct SymbolTableStack* prevStack;
     SymbolTableEntry* hashTable[HASH_TABLE_SIZE];
-    SymbolTableEntry** scopeDisplay;
-    int currentLevel;
-    int scopeDisplayElementCount;
-} SymbolTable;
-
+    int currentScope;
+} SymbolTableStack;
 
 void initializeSymbolTable();
 void symbolTableEnd();
+int enterSymbol(char* symbolName, SymbolAttribute* attribute, int scope);
+int removeSymbol(char* symbolName, int scope);
 SymbolTableEntry* retrieveSymbol(char* symbolName);
-SymbolTableEntry* enterSymbol(char* symbolName, SymbolAttribute* attribute);
-void removeSymbol(char* symbolName);
-int declaredLocally(char* symbolName);
+SymbolTableEntry* declaredInThisScope(char* symbolName, int scope);
 void openScope();
 void closeScope();
-
+int getCurrentScope();
+void PrintSymbolTable();
 #endif

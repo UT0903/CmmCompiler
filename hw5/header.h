@@ -35,14 +35,22 @@ typedef enum BINARY_OPERATOR
     BINARY_OP_GT,
     BINARY_OP_LT,
     BINARY_OP_AND,
-    BINARY_OP_OR
+    BINARY_OP_OR,
+    BINARY_OP_ADDE,
+    BINARY_OP_SUBE,
+    BINARY_OP_MULE,
+    BINARY_OP_DIVE,
 } BINARY_OPERATOR;
 
 typedef enum UNARY_OPERATOR
 {
     UNARY_OP_POSITIVE,
     UNARY_OP_NEGATIVE,
-    UNARY_OP_LOGICAL_NEGATION
+    UNARY_OP_LOGICAL_NEGATION,
+    UNARY_OP_ID_PP,
+    UNARY_OP_PP_ID,
+    UNARY_OP_ID_MM,
+    UNARY_OP_MM_ID
 } UNARY_OPERATOR;
 
 //C_type= type of constant ex: 1, 3.3, "const string"
@@ -57,6 +65,7 @@ typedef enum STMT_KIND
     IF_STMT,
     FUNCTION_CALL_STMT,
     RETURN_STMT,
+    DOUBLE_ADD_STMT,
 } STMT_KIND;
 
 typedef enum EXPR_KIND
@@ -140,29 +149,29 @@ typedef struct TypeSpecSemanticValue
 //don't modify or lexer may break
 typedef struct CON_Type{
         C_type  const_type;
-	union {
-		int     intval;
-		double  fval;
-		char    *sc; }
-		const_u;
+    union {
+        int     intval;
+        double  fval;
+        char    *sc; }
+        const_u;
 } CON_Type;
 
 
 struct AST_NODE {
-	struct AST_NODE *child;
-	struct AST_NODE *parent;
-	struct AST_NODE *rightSibling;
-	struct AST_NODE *leftmostSibling;
-	AST_TYPE nodeType;
-    DATA_TYPE dataType;
-	int linenumber;
-	union {
+    struct AST_NODE *child;
+    struct AST_NODE *parent;
+    struct AST_NODE *rightSibling;
+    struct AST_NODE *leftmostSibling;
+    AST_TYPE nodeType;
+        DATA_TYPE dataType;
+    int linenumber;
+    union {
         IdentifierSemanticValue identifierSemanticValue;
         STMTSemanticValue stmtSemanticValue;
         DECLSemanticValue declSemanticValue;
         EXPRSemanticValue exprSemanticValue;
-		CON_Type *const1;
-	} semantic_value;
+        CON_Type *const1;
+    } semantic_value;
 };
 typedef struct AST_NODE AST_NODE;
 

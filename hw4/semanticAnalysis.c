@@ -597,6 +597,14 @@ void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
         TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 0);
         FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE, IDNode);
+        //ADD entry
+        SymbolTableEntry* varEntry;
+        if((varEntry = retrieveSymbol(varName)) == NULL){
+            fprintf(stderr, "Error in retrieveSymbol\n");
+            exit(0);
+        }
+        IDNode->semantic_value.identifierSemanticValue.symbolTableEntry = varEntry;
+        //END ADD
         IDNode = IDNode->rightSibling;
     }
 }
@@ -646,6 +654,15 @@ void declareFunction(AST_NODE* returnTypeNode){
         fprintf(stderr, "Error in declareFunction\n");
         exit(0);
     }
+    //ADD entry
+    SymbolTableEntry* funcEntry;
+    if((funcEntry = retrieveSymbol(funcName)) == NULL){
+        fprintf(stderr, "Error in retrieveSymbol\n");
+        exit(0);
+    }
+    funcNameNode->semantic_value.identifierSemanticValue.symbolTableEntry = funcEntry;
+    //END ADD
+
     processBlockNode(paramListNode->rightSibling);
     //PrintSymbolTable();
     closeScope();
