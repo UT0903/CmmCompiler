@@ -36,4 +36,7 @@ functions.o: functions.c
 
 clean:
 	rm -f $(TARGET) $(OBJECT) $(OUTPUT)
-
+compile:
+	riscv64-unknown-linux-gnu-gcc -O0 -static main.S -o output
+test:
+	/home/ntu/.local/riscv/bin/qemu-riscv64 output

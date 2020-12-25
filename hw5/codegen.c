@@ -10,7 +10,9 @@ typedef enum{
 	ARRAY,
 	INIT_INT,
 	INIT_FLOAT,
-	STRING
+	STRING,
+	GLOBAL,
+	LOCAL
 }TYPE;
 
 FILE *fp;
@@ -28,8 +30,22 @@ void codeGen(AST_NODE *rootNode){
 	fprintf(stderr, "Start Code generation\n");
 	fp = fopen("output.s", "w+");
 	Init_reg();
-	gen_prologue("MAIN");
-	gen_epilogue("MAIN", int size);
+	AST_NODE * declNode = rootNode->child;
+	while(declNode != NULL){
+		if(declNode.nodeType == VARIABLE_DECL_LIST_NODE){
+			AST_NODE *varDeclNode = declNode->child;
+			while(varDeclNode != NULL){
+				processDecl(varDeclNode, GLOBAL);
+				varDeclNode = varDeclNode->rightSibling;
+			}
+		}
+		else if(declNode.nodeType != DECLARATION_NODE){
+			fprintf(stderr, "Error in codeGen\n");
+			exit(0);
+		}
+		processDecl(declNode, GLOBAL);
+		declNode= declNode->rightSibling;
+	}
 	fclose(fp);
 }
 void gen_prologue (char *name){
@@ -115,9 +131,11 @@ void Init_reg(){
 		float_dirty[i+12] = 1;
 	}
 }
-char *getReg(TYPE type){
+/*char *getReg(TYPE type){
 	if(TYPE == INT){
-		//for(int i = 0; i < )
+		for(int i = 0; i < ){
+
+		}
 	}
 	else if(TYPE == FLOAT){
 
@@ -126,7 +144,76 @@ char *getReg(TYPE type){
 		fprintf(stderr, "Error in getReg: Unknown type\n");
 		exit(0);
 	}
-}
+}*/
 void Read(){
 	fprintf(fp, "call _read_int\n");
+}
+void processDecl(AST_NODE *declNode, TYPE type){
+	assert(type == GLOBAL || type == LOCAL);
+	switch(declNode->semantic_value.declSemanticValue.kind){
+		case(VARIABLE_DECL):
+		case(FUNCTION_PARAMETER_DECL):
+			if(type == GLOBAL)
+				processGlobalVarDecl(declNode->child);
+			else
+				processLocalVarDecl(declNode->child);
+			break;
+		case(TYPE_DECL):
+			break;
+		case(FUNCTION_DECL):
+			processFuncDecl(declNode->child);
+			break;
+		default:
+			fprintf(stderr, "Error in processDecl\n");
+			exit(0);
+	}
+}
+void processFuncDecl(AST_NODE* typeNode){
+
+}
+void processLocalVarDecl(AST_NODE* typeNode){
+
+}
+void processGlobalVarDecl(AST_NODE* typeNode){
+	AST_NODE* varNode = typeNode->rightSibling;
+	while(varNode != NULL){
+		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+		assert(entry != NULL);
+		entry->offset //offset
+		entry->attribute->attr.typeDescriptor->properties.dataType//scalar
+		entry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType //array
+		int arr_total_size = 1;
+		switch(varNode->semantic_value.identifierSemanticValue.kind){
+			case(NORMAL_ID):
+				fprintf(fp, ".data\n");
+				fprintf(fp, "\t_g_%s: .word\n", entry->name);
+				break;
+			case(ARRAY_ID):
+				for(int i = 0; i < entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension; i++){
+					arr_total_size *= entry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[i];
+				}
+				fprintf(fp, ".data\n");
+				fprintf(fp, "\t_g_%s: .space %d\n", entry->name, arr_total_size*4);
+				break;
+			case(WITH_INIT_ID):
+				fprintf(fp, ".data\n");
+				switch(varNode->child->semantic_value.const1->const_type){
+					case(INTEGERC):
+						fprintf(fp, "\t_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
+						break;
+					case(FLOATC):
+						fprintf(fp, "\t_g_%s: .word %lf\n", entry->name, varNode->child->semantic_value.const1->const_u.fval);
+						break;
+					default:
+						fprintf(stderr, "Error in processGlobalVarDecl\n");
+						exit(0);
+				}
+				break;
+			default:
+				fprintf(stderr, "Error in processGlobalVarDecl\n");
+				exit(0);
+		}
+		
+		varNode = varNode->rightSibling;
+	}
 }
