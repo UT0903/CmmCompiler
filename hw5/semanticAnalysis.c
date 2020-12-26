@@ -30,7 +30,6 @@ void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter
 void processExprNode(AST_NODE* exprNode);
 void processVariableLValue(AST_NODE* idNode);
 void processVariableRValue(AST_NODE* idNode);
-void processConstValueNode(AST_NODE* constValueNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
 void evaluateExprValue(AST_NODE* exprNode);
 
@@ -471,10 +470,6 @@ void processVariableRValue(AST_NODE* idNode)
 {
 }
 
-
-void processConstValueNode(AST_NODE* constValueNode)
-{
-}
 
 
 void processBlockNode(AST_NODE* blockNode)

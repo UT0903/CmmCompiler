@@ -888,13 +888,13 @@ char *argv[];
   {
      yyin = fopen(argv[1],"r");
      yyparse();
-     // printGV(prog, NULL);
-     
+        printGV(prog, NULL);
      initializeSymbolTable();
      
      semanticAnalysis(prog);
      
      symbolTableEnd();
+     codeGen(prog);
      if (!g_anyErrorOccur) {
         //printf("Parsing completed. No errors found.\n");
      }

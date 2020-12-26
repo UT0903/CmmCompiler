@@ -1,5 +1,4 @@
-
 int main(){
-    int b;
-    int a = b;
+    char *c = "string\n";
+    char *b = c;
 }
