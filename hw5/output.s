@@ -4,8 +4,7 @@ _start_MAIN:
 	sd	s0,0(sp)
 	addi	s0,sp,16
 	li	t0, 1065353216
-	sw	t0, -8(sp)
-	flw fa0, -8(sp)
+	mv	fa0, t0
 	call	_write_float
 	ld	ra,8(sp)
 	ld	s0,0(sp)

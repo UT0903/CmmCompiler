@@ -149,14 +149,10 @@ void Read(){
 	fprintf(fp, "call _read_int\n");
 }
 void processDecl(AST_NODE *declNode, TYPE type){
-	assert(type == GLOBAL || type == LOCAL);
 	switch(declNode->semantic_value.declSemanticValue.kind){
 		case(VARIABLE_DECL):
 		case(FUNCTION_PARAMETER_DECL):
-			if(type == GLOBAL)
-				processGlobalVarDecl(declNode->child);
-			else
-				processLocalVarDecl(declNode->child);
+			processVarDecl(declNode->child, type);
 			break;
 		case(TYPE_DECL):
 			break;
@@ -171,49 +167,109 @@ void processDecl(AST_NODE *declNode, TYPE type){
 void processFuncDecl(AST_NODE* typeNode){
 
 }
-void processLocalVarDecl(AST_NODE* typeNode){
-
-}
-void processGlobalVarDecl(AST_NODE* typeNode){
+void processVarDecl(AST_NODE* typeNode, TYPE type){
 	AST_NODE* varNode = typeNode->rightSibling;
 	while(varNode != NULL){
 		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 		assert(entry != NULL);
 		entry->offset //offset
-		entry->attribute->attr.typeDescriptor->properties.dataType//scalar
+		entry->global
+		entry->attribute->attr.typeDescriptor->properties.dataType //scalar
 		entry->attribute->attr.typeDescriptor->properties.arrayProperties.elementType //array
 		int arr_total_size = 1;
 		switch(varNode->semantic_value.identifierSemanticValue.kind){
 			case(NORMAL_ID):
-				fprintf(fp, ".data\n");
-				fprintf(fp, "\t_g_%s: .word\n", entry->name);
+				switch(type){
+					case(GLOBAL):
+						fprintf(fp, ".data\n");
+						fprintf(fp, "\t_g_%s: .word\n", entry->name);
+						entry->global = 1;
+						break;
+					case(LOCAL):
+						entry->offset = AR_offset;
+						AR_offset += 8;
+						entry->global = 0;
+						break;
+					default:
+						fprintf(stderr, "Error in processVarDecl\n");
+						exit(0);
+				}
 				break;
 			case(ARRAY_ID):
 				for(int i = 0; i < entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension; i++){
 					arr_total_size *= entry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension[i];
 				}
-				fprintf(fp, ".data\n");
-				fprintf(fp, "\t_g_%s: .space %d\n", entry->name, arr_total_size*4);
-				break;
-			case(WITH_INIT_ID):
-				fprintf(fp, ".data\n");
-				switch(varNode->child->semantic_value.const1->const_type){
-					case(INTEGERC):
-						fprintf(fp, "\t_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
+				switch(type){
+					case(GLOBAL):
+						fprintf(fp, ".data\n");
+						fprintf(fp, "\t_g_%s: .space %d\n", entry->name, arr_total_size*8);
+						entry->global = 1;
 						break;
-					case(FLOATC):
-						fprintf(fp, "\t_g_%s: .word %lf\n", entry->name, varNode->child->semantic_value.const1->const_u.fval);
+					case(LOCAL):
+						entry->offset = AR_offset;
+						AR_offset += arr_total_size;
+						entry->global = 0;
 						break;
 					default:
-						fprintf(stderr, "Error in processGlobalVarDecl\n");
+						fprintf(stderr, "Error in processVarDecl\n");
+						exit(0);
+				}
+				break;
+			case(WITH_INIT_ID):
+				switch(type){
+					case(GLOBAL):
+						fprintf(fp, ".data\n");
+						switch(varNode->child->semantic_value.const1->const_type){
+							case(INTEGERC):
+								fprintf(fp, "\t_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
+								break;
+							case(FLOATC):
+								fprintf(fp, "\t_g_%s: .word %lf\n", entry->name, varNode->child->semantic_value.const1->const_u.fval);
+								break;
+							default:
+								fprintf(stderr, "Error in processVarDecl\n");
+								exit(0);
+						}
+						entry->global = 1;
+						break;
+					case(LOCAL):
+						if(varNode->child->semantic_value.const1->const_type == INTEGERC){
+							int reg = getReg();
+							fprintf(fp, "li %s, %d\n", reg, varNode->child->semantic_value.const1->const_u.intval);
+							fprintf(fp, "sd %s, %d(sp)\n", reg, AR_offset);
+						}
+						else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+							int val = FloatToInt(varNode->child->semantic_value.const1->const_u.fval);
+							int reg = getReg();
+							fprintf(fp, "li %s, %d\n", reg, val);
+							fprintf(fp, "sd %s, %d(sp)\n", reg, AR_offset);
+						}
+						else{
+							fprintf(stderr, "Error in processVarDecl\n");
+							exit(0);
+						}
+						entry->offset = AR_offset;
+						AR_offset += 8;
+						entry->global = 0;
+						break;
+					default:
+						fprintf(stderr, "Error in processVarDecl\n");
 						exit(0);
 				}
 				break;
 			default:
-				fprintf(stderr, "Error in processGlobalVarDecl\n");
+				fprintf(stderr, "Error in processVarDecl\n");
 				exit(0);
 		}
 		
 		varNode = varNode->rightSibling;
 	}
+}
+void load(int rd, TYPE GL, TYPE IFS){
+	assert(GL == GLOBAL || GL == LOCAL);
+	assert(IFS == INT || IFS == FLOAT || IFS == STRING)
+	if(GL == GLOBAL)
+}
+void store(int rs, TYPE GL, TYPE IFS){
+	if(GL)
 }
