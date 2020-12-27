@@ -14,11 +14,8 @@ void processDeclarationNode(AST_NODE* declarationNode, int LocalOrGlobalDecl);
 void declareIdList(AST_NODE* typeNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize);
 void declareFunction(AST_NODE* declarationNode);
 void processDeclDimList(AST_NODE* variableDeclDimList, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize);
-void processTypeNode(AST_NODE* typeNode);
 void processBlockNode(AST_NODE* blockNode);
 void processStmtNode(AST_NODE* stmtNode);
-void processGeneralNode(AST_NODE *node);
-void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode);
 void checkWhileStmt(AST_NODE* whileNode);
 void checkForStmt(AST_NODE* forNode);
 void checkAssignmentStmt(AST_NODE* assignmentNode);
@@ -219,15 +216,6 @@ void processDeclarationNode(AST_NODE* declarationNode, int LocalOrGlobalDecl){
     }
 }
 
-
-void processTypeNode(AST_NODE* idNodeAsType)
-{
-}
-
-
-void checkAssignOrExpr(AST_NODE* assignOrExprRelatedNode)
-{
-}
 
 void checkWhileStmt(AST_NODE* whileNode)
 {
@@ -548,9 +536,7 @@ void processStmtNode(AST_NODE* stmtNode)
 }
 
 
-void processGeneralNode(AST_NODE *node)
-{
-}
+
 
 void processDeclDimList(AST_NODE* idNode, TypeDescriptor* typeDescriptor, int ignoreFirstDimSize)
 {

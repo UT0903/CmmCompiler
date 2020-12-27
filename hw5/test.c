@@ -1,4 +1,3 @@
-int main(){
-    char *c = "string\n";
-    char *b = c;
+int MAIN(){
+    int a = 4, b = 5;
 }

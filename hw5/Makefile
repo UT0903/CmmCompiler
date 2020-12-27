@@ -35,8 +35,6 @@ functions.o: functions.c
 	$(CC) -c functions.c
 
 clean:
-	rm -f $(TARGET) $(OBJECT) $(OUTPUT)
-compile:
-	riscv64-unknown-linux-gnu-gcc -O0 -static main.S -o output
+	rm -f $(TARGET) $(OBJECT) $(OUTPUT) a.out AST_Graph.gv output.s
 test:
-	/home/ntu/.local/riscv/bin/qemu-riscv64 output
+	/home/ntu/.local/riscv/bin/qemu-riscv64 a.out 
