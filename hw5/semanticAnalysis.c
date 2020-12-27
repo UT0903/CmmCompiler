@@ -298,6 +298,7 @@ int checkArrayDim(AST_NODE *Node){
             return 0;
         }
     }
+    return 0;
 }
 
 void checkAssignmentStmt(AST_NODE* assignmentNode)
