@@ -55,6 +55,7 @@ int getReg(TYPE type){
 	}
 	return ret;
 }
+void freeReg(int reg, TYPE type){}
 void processConstValueNode(AST_NODE *constNode){
 	CON_Type *const1 = constNode->semantic_value.const1;
 	if(const1->const_type == INTEGERC){
@@ -260,15 +261,63 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 		varNode = varNode->rightSibling;
 	}
 }
-void load(char* rd, SymbolTableEntry *entry, int shift){
-	if(entry->global == 1){
-		fprintf(fp, "la %s, _g_%s\n", rd, entry->name);
-		if(entry->attribute->attributeKind)
-		fprintf(fp, "lw %s, _g_%s\n", rd, entry->name);
+int load(AST_NODE *node, int shift){
+	int rd;
+	if(node->nodeType == CONST_VALUE_NODE){
+		if(node->semantic_value.const1->const_type == INTEGERC){
+			rd = getReg(INT);
+			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[rd], node->place);
+			fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
+		}
+		else if(node->semantic_value.const1->const_type == FLOATC){
+			rd = getReg(FLOAT);
+			int tmp = getReg(INT);
+			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[tmp], node->place);
+			fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
+			freeReg(tmp, INT);
+		}
+		else{
+			rd = getReg(INT);
+			fprintf(fp, "\tla %s, _CONSTANT_%d\n", float_reg[rd], node->place);
+		}
 	}
-	else{
-		//TODO
+	else if(node->nodeType == IDENTIFIER_NODE){
+		SymbolTableEntry *entry = node->semantic_value.identifierSemanticValue.symbolTableEntry;
+		TypeDescriptor *td = entry->attribute->attr.typeDescriptor;
+		DATA_TYPE data_type;
+		if(td->kind == SCALAR_TYPE_DESCRIPTOR){
+			data_type = td->properties.dataType;
+		}
+		else{
+			data_type = td->properties.arrayProperties.elementType;
+		}
+		if(entry->global == 1){
+			if(data_type == INT_TYPE){
+				rd = getReg(INT);
+				fprintf(fp, "\tla %s, _g_%s\n", int_reg[rd], entry->name);
+				fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
+			}
+			else{
+				rd = getReg(FLOAT);
+				int tmp = getReg(INT);
+				fprintf(fp, "\tla %s, _g_%s\n", int_reg[tmp], entry->name);
+				fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
+				freeReg(tmp, INT);
+			}
+			fprintf(fp, "\tlw %s, %d(%s)\n", rd, shift, rd);
+		}
+		else{ //local
+			if(data_type == INT_TYPE){
+				rd = getReg(INT);
+				fprintf(fp, "\tlw %s, %d(sp)\n", int_reg[rd], entry->offset + shift);
+			}
+			else{
+				rd = getReg(FLOAT);
+				fprintf(fp, "\tflw %s, %d(sp)\n", float_reg[rd], entry->offset + shift);
+			}	
+		}
 	}
+	return rd;
 }
 int FloatToInt (float f){
     union {
