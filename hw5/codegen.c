@@ -47,7 +47,7 @@ void processAssignmentStmt(AST_NODE* assignmentNode);
 void processIfStmt(AST_NODE* ifNode);
 void processWriteFunction(AST_NODE* functionCallNode);
 void processFunctionCall(AST_NODE* functionCallNode);
-int getOffset(AST_NODE* Node);
+char* getOffsetPlace(AST_NODE* Node);
 char* getRegName(AST_NODE* Node);
 void processNode(AST_NODE* Node);
 void processExprNode(AST_NODE* Node);
@@ -56,7 +56,7 @@ void processIDNode(AST_NODE* Node);
 void processReturnNode(AST_NODE *Node);
 void processBlockNode(AST_NODE* Node);
 void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
-void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg);
+void processUnaryOp(UNARY_OPERATOR op, char *c_reg);
 
 
 int getReg(DATA_TYPE type){
@@ -184,7 +184,7 @@ void processStmt(AST_NODE* stmtNode){
 	if(stmtNode->nodeType == BLOCK_NODE){
         processBlockNode(stmtNode);
     }
-    else if(stmtNode->nodeType == CONST_VALUE_NODE){
+    else if(stmtNode->nodeType == CONST_VALUE_NODE || stmtNode->nodeType == IDENTIFIER_NODE){
         processNode(stmtNode);
     }
     else if(stmtNode->nodeType == NUL_NODE){
@@ -227,9 +227,9 @@ void processAssignmentStmt(AST_NODE* assignmentNode){
 	AST_NODE *l = assignmentNode->child;
     AST_NODE *r = l->rightSibling;
 	processNode(r);
-	int off = getOffset(l);
+	char *id_reg = getOffsetPlace(l);
 	char *reg = getRegName(r);
-	fprintf(fp, "\tld %s %d(sp)\n", reg, off);
+	fprintf(fp, "\tsw %s 0(%s)\n", reg, id_reg);
 	return;
 }
 
@@ -254,14 +254,21 @@ void processNode(AST_NODE* Node){
 	return;
 }
 
-int getOffset(AST_NODE* Node){
+char* getOffsetPlace(AST_NODE* Node){
+	Node->place = getReg(Node->dataType);
+	char *reg = getRegName(Node);
 	if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-		return Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset;
+		fprintf(fp, "\taddi %s fp %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
 	}
 	else{
-		int dim = Node->child->semantic_value.const1->const_u.intval;
-		return Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset + dim * 4;
+		AST_NODE *dim = Node->child;
+		processNode(dim);
+		char *dim_reg = getRegName(dim);
+		fprintf(fp, "\taddi %s %d fp\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+		fprintf(fp, "\tslli %s %s 2\n", dim_reg, dim_reg);
+		fprintf(fp, "\tadd %s %s %s\n", reg, reg, dim_reg);
 	}
+	return reg;
 }
 
 char* getRegName(AST_NODE* Node){
@@ -288,9 +295,9 @@ void processExprNode(AST_NODE* Node){
 		AST_NODE *child = Node->child;
 		processNode(child);
 		UNARY_OPERATOR op =expr->op.unaryOp;
-		Node->place = getReg(Node->dataType);
-		char *c_reg = getRegName(child), *reg = getRegName(Node);
-		processUnaryOp(op, c_reg, reg);
+		Node->place = child->place;
+		char *c_reg = getRegName(child);
+		processUnaryOp(op, c_reg);
 	}
 	return;
 }
@@ -311,16 +318,26 @@ void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tdiv %s %s %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_EQ:
+		fprintf(fp, "\tsub %s %s %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tseqz %s %s\n", reg, l_reg );
         break;
     case BINARY_OP_GE:
+		fprintf(fp, "\tslt %s %s %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s %s\n", reg, reg );
         break;
     case BINARY_OP_LE:
+		fprintf(fp, "\tslt %s %s %s\n", l_reg, r_reg, l_reg);
+		fprintf(fp, "\tsnez %s %s\n", reg, reg );
         break;
     case BINARY_OP_NE:
+		fprintf(fp, "\tsub %s %s %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s %s\n", reg, reg );
         break;
     case BINARY_OP_GT:
+		fprintf(fp, "\tslt %s %s %s\n", reg, r_reg, l_reg);
         break;
     case BINARY_OP_LT:
+		fprintf(fp, "\tslt %s %s %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_AND:
 		fprintf(fp, "\tand %s %s %s\n", reg, l_reg, r_reg);
@@ -334,14 +351,16 @@ void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 	return;
 }
 
-void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg){
+void processUnaryOp(UNARY_OPERATOR op, char *c_reg){
 	switch (op)
     {
     case UNARY_OP_POSITIVE:
         break;
     case UNARY_OP_NEGATIVE:
+		fprintf(fp, "\rsub %s x0 %s\n", c_reg, c_reg);
         break;
     case UNARY_OP_LOGICAL_NEGATION:
+		fprintf(fp, "\rseqz %s %s\n", c_reg, c_reg);
         break;
     default:
         break;
