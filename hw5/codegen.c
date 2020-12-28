@@ -481,7 +481,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 			fprintf(fp, "\tmv a0 %s\n", getRegName(param));
 			fprintf(fp, "\tjal _write_int\n");
 		}
-		else if(param->dataType == INT_TYPE){
+		else if(param->dataType == FLOAT_TYPE){
 			fprintf(fp, "\tfmv.s fa0 %s\n", getRegName(param));
 			fprintf(fp, "\tjal _write_float\n");
 		}
@@ -515,6 +515,10 @@ void genForStmt(AST_NODE* forNode){
 }
 
 void genReturnNode(AST_NODE *Node){
+	if(Node->child->nodeType != NUL_NODE){
+		genNode(Node->child);
+		fprintf(fp, "\tmv a0 %s\n", getRegName(Node->child));
+	}
 	return;
 }
 
