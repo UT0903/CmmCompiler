@@ -7,7 +7,7 @@
 #include "header.h"
 #include "symbolTable.h"
 #define ERR_EXIT(a) { fprintf(stderr, "%s\n", a); exit(0); }
-#define INT_REG_NUM 19
+#define INT_REG_NUM 18
 #define FLOAT_REG_NUM 8
 typedef enum{
 	GLOBAL,
@@ -15,7 +15,7 @@ typedef enum{
 }TYPE;
 
 FILE *fp;
-char int_reg[INT_REG_NUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"};
+char int_reg[INT_REG_NUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"};
 int used_int[INT_REG_NUM] = {};
 char float_reg[FLOAT_REG_NUM][10] = {"ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7"};
 int used_float[FLOAT_REG_NUM] = {};
@@ -115,8 +115,10 @@ void codeGen(AST_NODE *rootNode){
 			fprintf(stderr, "Error in codeGen\n");
 			exit(0);
 		}
-		genDecl(declNode, GLOBAL);
-		declNode= declNode->rightSibling;
+		else{
+			genDecl(declNode, GLOBAL);
+		}
+		declNode = declNode->rightSibling;
 	}
 	fclose(fp);
 	fprintf(stderr, "End Code generation\n");
@@ -168,10 +170,14 @@ void Read(char* to, DATA_TYPE type){
 	else ERR_EXIT("Read");
 }
 void genDecl(AST_NODE *declNode, TYPE type){
+	
+	//fprintf(stderr, "declNode type: %d\n", declNode->nodeType);
+	assert(declNode->nodeType == DECLARATION_NODE);
 	switch(declNode->semantic_value.declSemanticValue.kind){
 		case(VARIABLE_DECL):
 		case(FUNCTION_PARAMETER_DECL):
 			genVarDecl(declNode->child, type);
+			//fprintf(stderr, "genVarDecl\n");
 			break;
 		case(TYPE_DECL):
 			break;
@@ -639,10 +645,12 @@ void genFuncDecl(AST_NODE* typeNode){
 	AST_NODE *blockNode = paramListNode->rightSibling;
 	genBlockNode(blockNode);
 	gen_epilogue(nameNode->semantic_value.identifierSemanticValue.identifierName);
+	
 }
 void genVarDecl(AST_NODE* typeNode, TYPE type){
 	AST_NODE* varNode = typeNode->rightSibling;
 	while(varNode != NULL){
+		//fprintf(stderr, "%s\n", varNode->semantic_value.identifierSemanticValue.identifierName);
 		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 		assert(entry != NULL);
 		if(varNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID){

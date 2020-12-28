@@ -583,14 +583,6 @@ void declareVariable(AST_NODE* TypeNode, int LocalOrGlobalDecl){
         char *varName = IDNode->semantic_value.identifierSemanticValue.identifierName;
         TypeDescriptor* typeDescStruct = extendTypeDescriptor(IDNode, getTypeDescriptor(TypeNode), LocalOrGlobalDecl, 0);
         FillInSymbolTable(varName, typeDescStruct, VARIABLE_ATTRIBUTE, IDNode);
-        //ADD entry
-        SymbolTableEntry* varEntry;
-        if((varEntry = retrieveSymbol(varName)) == NULL){
-            fprintf(stderr, "Error in retrieveSymbol\n");
-            exit(0);
-        }
-        IDNode->semantic_value.identifierSemanticValue.symbolTableEntry = varEntry;
-        //END ADD
         IDNode = IDNode->rightSibling;
     }
 }
@@ -706,6 +698,14 @@ void FillInSymbolTable(char *name, TypeDescriptor* typeDescStruct, SymbolAttribu
         fprintf(stderr, "Error in FillInSymbolTable\n");
         exit(0);
     }
+    //ADD entry
+    SymbolTableEntry* varEntry;
+    if((varEntry = retrieveSymbol(name)) == NULL){
+        fprintf(stderr, "Error in retrieveSymbol\n");
+        exit(0);
+    }
+    ID->semantic_value.identifierSemanticValue.symbolTableEntry = varEntry;
+    //END ADD
 }
 Parameter* makeParameter(AST_NODE* typeNode){
     AST_NODE* ID = typeNode->rightSibling;
@@ -719,14 +719,6 @@ Parameter* makeParameter(AST_NODE* typeNode){
     paramStruct->type = typeDescStruct;
 
     FillInSymbolTable(name, typeDescStruct, VARIABLE_ATTRIBUTE, ID);
-    //ADD entry
-    SymbolTableEntry* varEntry;
-    if((varEntry = retrieveSymbol(name)) == NULL){
-        fprintf(stderr, "Error in retrieveSymbol\n");
-        exit(0);
-    }
-    ID->semantic_value.identifierSemanticValue.symbolTableEntry = varEntry;
-    //END ADD
     return paramStruct;
 }
 
