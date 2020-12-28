@@ -1,6 +1,4 @@
-float a = 1.0, b;
-void write(int c){}
-int MAIN(){
-    int d = 4, e = 5;
-    write(a);
+int main(){
+    int a = 5, b = 4, c = 3;
+    a = (b >= c);
 }
