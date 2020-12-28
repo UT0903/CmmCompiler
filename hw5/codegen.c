@@ -16,8 +16,10 @@ typedef enum{
 
 FILE *fp;
 char int_reg[INT_REG_NUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"};
+int used_int[INT_REG_NUM] = {};
 char float_reg[FLOAT_REG_NUM][10] = {"ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7"};
-int int_ptr, float_ptr;
+int used_float[FLOAT_REG_NUM] = {};
+int int_ptr, float_ptr, L_ptr;
 int AR_offset;
 typedef struct{
 	int ptr;
@@ -43,7 +45,7 @@ void genAssignmentStmt(AST_NODE* assignmentNode);
 void genIfStmt(AST_NODE* ifNode);
 void genWriteFunction(AST_NODE* functionCallNode);
 void genFunctionCall(AST_NODE* functionCallNode);
-char* getOffsetPlace(AST_NODE* Node);
+int getOffsetPlace(AST_NODE* Node);
 char* getRegName(AST_NODE* Node);
 void genNode(AST_NODE* Node);
 void genExprNode(AST_NODE* Node);
@@ -62,15 +64,32 @@ int getReg(DATA_TYPE type){
 	int ret;
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		ret = int_ptr;
+		while(used_int[ret]){
+			int_ptr = (int_ptr + 1) % INT_REG_NUM;
+			ret = int_ptr;
+		}
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
 	}
 	else{
 		ret = float_ptr;
+		while (used_float[ret])
+		{
+			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
+			ret = float_ptr;
+		}
 		float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 	}
 	return ret;
 }
-void freeReg(int reg, DATA_TYPE type){}
+void freeReg(int reg, DATA_TYPE type){
+	if(type == INT_TYPE){
+		used_int[reg] = 0;
+	}
+	else{
+		used_float[reg] = 0;
+	}
+	return;
+}
 
 void ReleaseConst(){
 	for(int i = 0; i < constant.ptr; i++){
@@ -212,7 +231,8 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	AST_NODE *l = assignmentNode->child;
     AST_NODE *r = l->rightSibling;
 	genNode(r);
-	char *id_reg = getOffsetPlace(l);
+	int reg_num = getOffsetPlace(l);
+	char *id_reg = int_reg[reg_num];
 	char *reg = getRegName(r);
 	if(l->dataType == INT_TYPE){
 		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
@@ -220,6 +240,8 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	else{
 		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
 	}
+	freeReg(reg_num, INT_TYPE);
+	freeReg(r->place, r->dataType);
 	return;
 }
 
@@ -244,7 +266,7 @@ void genNode(AST_NODE* Node){
 	return;
 }
 
-char* getOffsetPlace(AST_NODE* Node){
+int getOffsetPlace(AST_NODE* Node){
 	int reg_num = getReg(INT_TYPE);
 	char *reg = int_reg[reg_num];
 	if(Node->semantic_value.identifierSemanticValue.symbolTableEntry->global){
@@ -271,9 +293,10 @@ char* getOffsetPlace(AST_NODE* Node){
 			fprintf(fp, "\taddi %s, %d, fp\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
 			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
+			freeReg(dim->place, dim->dataType);
 		}
 	}
-	return reg;
+	return reg_num;
 }
 
 char* getRegName(AST_NODE* Node){
@@ -298,6 +321,8 @@ void genExprNode(AST_NODE* Node){
 			genfBinaryOp(op, l_reg, r_reg, reg);
 		else
 			genBinaryOp(op, l_reg, r_reg, reg);
+		freeReg(l->place, l->dataType);
+		freeReg(r->place, r->dataType);
 	}
 	else{
 		AST_NODE *child = Node->child;
@@ -309,6 +334,7 @@ void genExprNode(AST_NODE* Node){
 			genfUnaryOp(op, c_reg);
 		else
 			genUnaryOp(op, c_reg);
+		freeReg(child->place, child->dataType);
 	}
 	return;
 }
@@ -463,7 +489,8 @@ void genConstNode(AST_NODE* Node){
 	return;
 }
 void genIDNode(AST_NODE* Node){
-	char *reg = getOffsetPlace(Node);
+	int reg_num = getOffsetPlace(Node);
+	char *reg = int_reg[reg_num];
 	Node->place = getReg(Node->dataType);
 	char *n_reg = getRegName(Node);
 	if(Node->dataType == INT_TYPE)
@@ -471,10 +498,38 @@ void genIDNode(AST_NODE* Node){
 	else{
 		fprintf(fp, "\tflw %s, 0(%s)\n", n_reg, reg);
 	}
+	freeReg(reg_num, INT_TYPE);
 	return;
 }
 
 void genIfStmt(AST_NODE* ifNode){
+	AST_NODE *test = ifNode->child;
+	AST_NODE *stmt = test->rightSibling;
+	AST_NODE *ELSE = stmt->rightSibling;
+	if(ELSE->nodeType == NUL_NODE){
+		genNode(test);
+		int L1 = L_ptr++, L2 = L_ptr++;
+		fprintf(fp, "\tbeq %s x0 ,L%d\n", getRegName(test), L1);
+		fprintf(fp, "\tj .L%d\n", L2);
+		freeReg(test->place, test->dataType);
+		fprintf(fp, ".L%d\n", L1);
+		genStmt(stmt);
+		fprintf(fp, ".L%d\n", L2);
+	}
+	else{
+		genNode(test);
+		int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
+		fprintf(fp, "\tbeq %s x0 ,L%d\n", getRegName(test), L1);
+		fprintf(fp, "\tj .L%d\n", L2);
+		freeReg(test->place, test->dataType);
+		fprintf(fp, ".L%d\n", L1);
+		genStmt(stmt);
+		fprintf(fp, "\tj L%d\n", L3);
+		fprintf(fp, ".L%d\n", L2);
+		genStmt(ELSE);
+		fprintf(fp, "\tj .L%d\n", L3);
+		fprintf(fp, ".L%d\n", L3);
+	}
 	return;
 }
 void genWriteFunction(AST_NODE* functionCallNode){
@@ -525,9 +580,10 @@ void genForStmt(AST_NODE* forNode){
 
 void genReturnNode(AST_NODE *Node){
 	if(Node->child->nodeType != NUL_NODE){
-		genNode(Node->child);
+		genNode(Node->child);;
 		fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 	}
+	fprintf(fp, "\tret\n");
 	return;
 }
 

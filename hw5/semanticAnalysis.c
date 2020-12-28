@@ -558,7 +558,9 @@ void handleReturnNode(AST_NODE* returnNode){
     }
     now = now->child->rightSibling;
     SymbolTableEntry *entry = getSymbol(now);
+
     DATA_TYPE return_type = entry->attribute->attr.functionSignature->returnType;
+    processStmtNode(returnNode->child);
     if(return_type == VOID_TYPE && returnNode->child->nodeType != NUL_NODE){
         printError(VOLID_RETURN_ERROR, now);
     }
