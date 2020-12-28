@@ -75,6 +75,7 @@ void freeReg(int reg, DATA_TYPE type){}
 void ReleaseConst(){
 	for(int i = 0; i < constant.ptr; i++){
 		fprintf(fp, "%s", constant.value[i]);
+		fprintf(fp, "\t.align 3\n");
 	}
 	constant.ptr = 0;
 }
@@ -132,7 +133,7 @@ void gen_epilogue(char *name){
 	fprintf(fp, "\tld fp, 0(fp)\n"); // restore caller (old) fp
 	fprintf(fp, "\tjr ra\n");
 	fprintf(fp, "\t.data\n");
-	fprintf(fp, "\t_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
 	ReleaseConst();
 }
 
@@ -454,7 +455,7 @@ void genConstNode(AST_NODE* Node){
 		constant.ptr++;
 	}
 	else if(Node->dataType == CONST_STRING_TYPE){
-		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .ascii \"%s\"\n", constant.ptr, Node->semantic_value.const1->const_u.sc);
+		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .ascii %s\n", constant.ptr, Node->semantic_value.const1->const_u.sc);
 		fprintf(fp, "\tla %s, _CONSTANT_%d\n", getRegName(Node), constant.ptr);
 		constant.ptr++;
 	}
@@ -613,9 +614,9 @@ void genVarDecl(AST_NODE* typeNode, TYPE type){
 					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
 				}
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					int reg = getReg(FLOAT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", float_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					fprintf(fp, "\tsw %s, %d(fp)\n", float_reg[reg], AR_offset);
+					int reg = getReg(INT_TYPE);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
+					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
 				}
 				else ERR_EXIT("genVarDecl4");
 				entry->offset = AR_offset;
