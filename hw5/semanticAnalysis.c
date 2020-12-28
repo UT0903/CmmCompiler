@@ -405,6 +405,7 @@ void checkFunctionCall(AST_NODE* functionCallNode)
         return;
     }
     FunctionSignature *signature = entry->attribute->attr.functionSignature;
+    functionCallNode->dataType = signature->returnType;
     if(signature->parametersCount == 0 && param_list->nodeType == NUL_NODE)
         return;
     Parameter *decl_param = signature->parameterList;
