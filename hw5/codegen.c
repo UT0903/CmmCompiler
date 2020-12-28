@@ -10,9 +10,6 @@
 #define INT_REG_NUM 19
 #define FLOAT_REG_NUM 8
 typedef enum{
-	INT,
-	FLOAT,
-	STRING,
 	GLOBAL,
 	LOCAL
 }TYPE;
@@ -34,34 +31,33 @@ void gen_head (char *name);
 void globalDecl(TYPE type, char* name, int sizeOrValue, char* str);
 int FloatToInt (float f);
 int getArraySize(ArrayProperties ap);
-void processStmt(AST_NODE *stmtNode);
-void processDecl(AST_NODE *declNode, TYPE type);
-void processVarDecl(AST_NODE* typeNode, TYPE type);
-void processFuncDecl(AST_NODE* typeNode);
+void genStmt(AST_NODE *stmtNode);
+void genDecl(AST_NODE *declNode, TYPE type);
+void genVarDecl(AST_NODE* typeNode, TYPE type);
+void genFuncDecl(AST_NODE* typeNode);
 void ReleaseConst();
-void processConstValueNode(AST_NODE *constNode);
-void processBlock(AST_NODE* Node, AST_NODE* typeNode);
-void processWhileStmt(AST_NODE* whileNode);
-void processForStmt(AST_NODE* forNode);
-void processAssignmentStmt(AST_NODE* assignmentNode);
-void processIfStmt(AST_NODE* ifNode);
-void processWriteFunction(AST_NODE* functionCallNode);
-void processFunctionCall(AST_NODE* functionCallNode);
+
+void genWhileStmt(AST_NODE* whileNode);
+void genForStmt(AST_NODE* forNode);
+void genAssignmentStmt(AST_NODE* assignmentNode);
+void genIfStmt(AST_NODE* ifNode);
+void genWriteFunction(AST_NODE* functionCallNode);
+void genFunctionCall(AST_NODE* functionCallNode);
 int getOffset(AST_NODE* Node);
 char* getRegName(AST_NODE* Node);
-void processNode(AST_NODE* Node);
-void processExprNode(AST_NODE* Node);
-void processConstNode(AST_NODE* Node);
-void processIDNode(AST_NODE* Node);
-void processReturnNode(AST_NODE *Node);
-void processBlockNode(AST_NODE* Node);
-void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
-void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg);
+void genNode(AST_NODE* Node);
+void genExprNode(AST_NODE* Node);
+void genConstNode(AST_NODE* Node);
+void genIDNode(AST_NODE* Node);
+void genReturnNode(AST_NODE *Node);
+void genBlockNode(AST_NODE* blockNode);
+void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
+void genUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg);
 
 
 int getReg(DATA_TYPE type){
 	int ret;
-	if(type == INT_TYPE){
+	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		ret = int_ptr;
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
 	}
@@ -71,22 +67,8 @@ int getReg(DATA_TYPE type){
 	}
 	return ret;
 }
-void freeReg(int reg, TYPE type){}
-void processConstValueNode(AST_NODE *constNode){
-	CON_Type *const1 = constNode->semantic_value.const1;
-	if(const1->const_type == INTEGERC){
-		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .word %d\n", constant.ptr, const1->const_u.intval);
-	}
-	else if(const1->const_type == FLOATC){
-		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .word %d\n", constant.ptr, FloatToInt(const1->const_u.fval));
-	}
-	else if(const1->const_type == STRINGC){
-		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .ascii \"%s\"\n", constant.ptr, const1->const_u.sc);
-	}
-	else ERR_EXIT("processConstValueNode");
-	constNode->place = constant.ptr++;
-	return;
-}
+void freeReg(int reg, DATA_TYPE type){}
+
 void ReleaseConst(){
 	for(int i = 0; i < constant.ptr; i++){
 		fprintf(fp, "%s", constant.value[i]);
@@ -102,7 +84,7 @@ void codeGen(AST_NODE *rootNode){
 			AST_NODE *varDeclNode = declNode->child;
 			fprintf(fp, "\t.data\n");
 			while(varDeclNode != NULL){
-				processDecl(varDeclNode, GLOBAL);
+				genDecl(varDeclNode, GLOBAL);
 				varDeclNode = varDeclNode->rightSibling;
 			}
 		}
@@ -110,7 +92,7 @@ void codeGen(AST_NODE *rootNode){
 			fprintf(stderr, "Error in codeGen\n");
 			exit(0);
 		}
-		processDecl(declNode, GLOBAL);
+		genDecl(declNode, GLOBAL);
 		declNode= declNode->rightSibling;
 	}
 	fclose(fp);
@@ -151,41 +133,40 @@ void gen_epilogue(char *name){
 	ReleaseConst();
 }
 
-void Read(char* to, TYPE type){
-	if(type == INT){
+void Read(char* to, DATA_TYPE type){
+	if(type == INT_TYPE){
 		fprintf(fp, "\tcall _read_int\n");
 		fprintf(fp, "\tmv %s a0\n", to);
 	}
-	else if(type == FLOAT){
+	else if(type == FLOAT_TYPE){
 		fprintf(fp, "\tcall _read_float\n");
 		fprintf(fp, "\tfmv.s %s fa0\n", to);
 	}
 	else ERR_EXIT("Read");
 }
-void processDecl(AST_NODE *declNode, TYPE type){
-	assert(type == GLOBAL || type == LOCAL);
+void genDecl(AST_NODE *declNode, TYPE type){
 	switch(declNode->semantic_value.declSemanticValue.kind){
 		case(VARIABLE_DECL):
 		case(FUNCTION_PARAMETER_DECL):
-			processVarDecl(declNode->child, type);
+			genVarDecl(declNode->child, type);
 			break;
 		case(TYPE_DECL):
 			break;
 		case(FUNCTION_DECL):
-			processFuncDecl(declNode->child);
+			genFuncDecl(declNode->child);
 			break;
 		default:
-			fprintf(stderr, "Error in processDecl\n");
+			fprintf(stderr, "Error in genDecl\n");
 			exit(0);
 	}
 }
-void processStmt(AST_NODE* stmtNode){
+void genStmt(AST_NODE* stmtNode){
 	//TODO
 	if(stmtNode->nodeType == BLOCK_NODE){
-        processBlockNode(stmtNode);
+        genBlockNode(stmtNode);
     }
     else if(stmtNode->nodeType == CONST_VALUE_NODE){
-        processNode(stmtNode);
+        genNode(stmtNode);
     }
     else if(stmtNode->nodeType == NUL_NODE){
         return;
@@ -194,22 +175,22 @@ void processStmt(AST_NODE* stmtNode){
         switch (stmtNode->semantic_value.stmtSemanticValue.kind)
         {
         case WHILE_STMT:
-            processWhileStmt(stmtNode);
+            genWhileStmt(stmtNode);
             break;
         case IF_STMT:
-            processIfStmt(stmtNode);
+            genIfStmt(stmtNode);
             break;
         case FOR_STMT:
-            processForStmt(stmtNode);
+            genForStmt(stmtNode);
             break;
         case ASSIGN_STMT:
-            processAssignmentStmt(stmtNode);
+            genAssignmentStmt(stmtNode);
             break;
         case FUNCTION_CALL_STMT:
-            processFunctionCall(stmtNode);
+            genFunctionCall(stmtNode);
             break;
         case RETURN_STMT:
-            processReturnNode(stmtNode);
+            genReturnNode(stmtNode);
             break;
         default:
             perror("no match stmt");
@@ -223,30 +204,30 @@ void processStmt(AST_NODE* stmtNode){
     }
 }
 
-void processAssignmentStmt(AST_NODE* assignmentNode){
+void genAssignmentStmt(AST_NODE* assignmentNode){
 	AST_NODE *l = assignmentNode->child;
     AST_NODE *r = l->rightSibling;
-	processNode(r);
+	genNode(r);
 	int off = getOffset(l);
 	char *reg = getRegName(r);
 	fprintf(fp, "\tld %s %d(sp)\n", reg, off);
 	return;
 }
 
-void processNode(AST_NODE* Node){
+void genNode(AST_NODE* Node){
 	switch (Node->nodeType)
 	{
 	case STMT_NODE:
-		processStmt(Node);
+		genStmt(Node);
 		break;
 	case EXPR_NODE:
-		processExprNode(Node);
+		genExprNode(Node);
 		break;
 	case CONST_VALUE_NODE:
-		processConstNode(Node);
+		genConstNode(Node);
 		break;
 	case IDENTIFIER_NODE:
-		processIDNode(Node);
+		genIDNode(Node);
 		break;
 	default:
 		break;
@@ -265,7 +246,7 @@ int getOffset(AST_NODE* Node){
 }
 
 char* getRegName(AST_NODE* Node){
-	if(Node->dataType == INT_TYPE){
+	if(Node->dataType == INT_TYPE || Node->dataType == CONST_STRING_TYPE){
 		return int_reg[Node->place];
 	}
 	else{
@@ -273,29 +254,29 @@ char* getRegName(AST_NODE* Node){
 	}
 }
 
-void processExprNode(AST_NODE* Node){
+void genExprNode(AST_NODE* Node){
 	EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue; 
 	if(Node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION){
 		BINARY_OPERATOR op = expr->op.binaryOp;
 		AST_NODE *l = Node->child, *r = Node->child->rightSibling;
-		processNode(l);
-		processNode(r);
+		genNode(l);
+		genNode(r);
 		Node->place = getReg(Node->dataType);
 		char *l_reg = getRegName(l), *r_reg = getRegName(r), *reg = getRegName(Node);
-		processBinaryOp(op, l_reg, r_reg, reg);
+		genBinaryOp(op, l_reg, r_reg, reg);
 	}
 	else{
 		AST_NODE *child = Node->child;
-		processNode(child);
+		genNode(child);
 		UNARY_OPERATOR op =expr->op.unaryOp;
 		Node->place = getReg(Node->dataType);
 		char *c_reg = getRegName(child), *reg = getRegName(Node);
-		processUnaryOp(op, c_reg, reg);
+		genUnaryOp(op, c_reg, reg);
 	}
 	return;
 }
 
-void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
+void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 	switch (op)
     {
     case BINARY_OP_ADD:
@@ -334,7 +315,7 @@ void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 	return;
 }
 
-void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg){
+void genUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg){
 	switch (op)
     {
     case UNARY_OP_POSITIVE:
@@ -349,17 +330,28 @@ void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg){
     return;
 }
 
-void processConstNode(AST_NODE* Node){
+void genConstNode(AST_NODE* Node){
 	Node->place = getReg(Node->dataType);
-	if(Node->dataType == INT_TYPE)
-		fprintf(fp, "\taddi %s x0 %d\r", getRegName(Node), Node->semantic_value.const1->const_u.intval);
-	else{
-		fprintf(fp, "\taddi %s x0 %f\r", getRegName(Node), Node->semantic_value.const1->const_u.fval);
+	if(Node->dataType == INT_TYPE){
+		fprintf(fp, "\tli %s, %d\n", getRegName(Node), Node->semantic_value.const1->const_u.intval);
 	}
+	else if(Node->dataType == FLOAT_TYPE){
+		int tmp_reg = getReg(INT_TYPE);
+		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .word %d\n", constant.ptr, FloatToInt(Node->semantic_value.const1->const_u.fval));
+		fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[tmp_reg], constant.ptr);
+		fprintf(fp, "\tflw %s, 0(%s)\n", getRegName(Node), int_reg[tmp_reg]);
+		freeReg(tmp_reg, INT_TYPE);
+		constant.ptr++;
+	}
+	else if(Node->dataType == CONST_STRING_TYPE){
+		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .ascii \"%s\"\n", constant.ptr, Node->semantic_value.const1->const_u.sc);
+		fprintf(fp, "\tla %s, _CONSTANT_%d\n", getRegName(Node), constant.ptr);
+		constant.ptr++;
+	}
+	else ERR_EXIT("genConstNode");
 	return;
 }
-
-void processIDNode(AST_NODE* Node){
+void genIDNode(AST_NODE* Node){
 	if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
 		Node->place = getReg(Node->dataType);
 		fprintf(fp, "\tadd %s x0 %d(sp)\n", getRegName(Node), Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
@@ -370,61 +362,62 @@ void processIDNode(AST_NODE* Node){
 	return;
 }
 
-void processIfStmt(AST_NODE* ifNode){
+void genIfStmt(AST_NODE* ifNode){
 	return;
 }
-void processWriteFunction(AST_NODE* functionCallNode){
+void genWriteFunction(AST_NODE* functionCallNode){
 	return;
 }
-void processFunctionCall(AST_NODE* functionCallNode){
-	return;
-}
-
-void processWhileStmt(AST_NODE* whileNode){
+void genFunctionCall(AST_NODE* functionCallNode){
 	return;
 }
 
-void processForStmt(AST_NODE* forNode){
+void genWhileStmt(AST_NODE* whileNode){
 	return;
 }
 
-void processReturnNode(AST_NODE *Node){
+void genForStmt(AST_NODE* forNode){
 	return;
 }
 
-void processBlock(AST_NODE* Node, AST_NODE* typeNode){
+void genReturnNode(AST_NODE *Node){
+	return;
+}
+
+void genBlockNode(AST_NODE* blockNode){
+	AST_NODE* Node = blockNode->child;
 	while(Node != NULL){
 		if(Node->nodeType == VARIABLE_DECL_LIST_NODE){
 			AST_NODE *declNode = Node->child;
 			while(declNode != NULL){
-				processDecl(declNode, LOCAL);
+				genDecl(declNode, LOCAL);
 				declNode = declNode->rightSibling;
 			}
 		}
 		else if(Node->nodeType == STMT_LIST_NODE){
 			AST_NODE *stmtNode = Node->child;
 			while(stmtNode != NULL){
-				processStmt(stmtNode);
+				genStmt(stmtNode);
 				stmtNode = stmtNode->rightSibling;
 			}
 		}
 		Node = Node->rightSibling;
 	}
 }
-void processFuncDecl(AST_NODE* typeNode){
+void genFuncDecl(AST_NODE* typeNode){
 	AST_NODE *nameNode = typeNode->rightSibling;
 	gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 	AST_NODE *paramListNode = nameNode->rightSibling;
 	AST_NODE *paramDeclNode = paramListNode->child;
 	while(paramDeclNode != NULL){
-		processDecl(paramDeclNode, LOCAL);
+		genDecl(paramDeclNode, LOCAL);
 		paramDeclNode = paramDeclNode->rightSibling;
 	}
 	AST_NODE *blockNode = paramListNode->rightSibling;
-	processBlock(blockNode->child, typeNode);
+	genBlockNode(blockNode);
 	gen_epilogue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 }
-void processVarDecl(AST_NODE* typeNode, TYPE type){
+void genVarDecl(AST_NODE* typeNode, TYPE type){
 	AST_NODE* varNode = typeNode->rightSibling;
 	while(varNode != NULL){
 		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
@@ -439,7 +432,7 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 				entry->offset = AR_offset;
 				entry->global = 0;
 			}
-			else ERR_EXIT("processVarDecl1");
+			else ERR_EXIT("genVarDecl1");
 		}
 		else if(varNode->semantic_value.identifierSemanticValue.kind == ARRAY_ID){
 			int arr_size = getArraySize(entry->attribute->attr.typeDescriptor->properties.arrayProperties);
@@ -452,7 +445,7 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 				entry->offset = AR_offset;
 				entry->global = 0;
 			}
-			else ERR_EXIT("processVarDecl2");
+			else ERR_EXIT("genVarDecl2");
 		}
 		else if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
 			if(type == GLOBAL){
@@ -462,7 +455,7 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
 					fprintf(fp, "_g_%s: .word %d\n", entry->name, FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
 				}
-				else ERR_EXIT("processVarDecl3");
+				else ERR_EXIT("genVarDecl3");
 				entry->global = 1;
 			}
 			else if(type == LOCAL){
@@ -477,17 +470,37 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 					fprintf(fp, "\tli %s, %d\n", float_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
 					fprintf(fp, "\tsw %s, %d(sp)\n", float_reg[reg], AR_offset);
 				}
-				else ERR_EXIT("processVarDecl4");
+				else ERR_EXIT("genVarDecl4");
 				entry->offset = AR_offset;
 				entry->global = 0;
 			}
-			else ERR_EXIT("processVarDecl5");
+			else ERR_EXIT("genVarDecl5");
 		}
-		else ERR_EXIT("processVarDecl6");
+		else ERR_EXIT("genVarDecl6");
 		varNode = varNode->rightSibling;
 	}
 }
-int load(AST_NODE *node, int shift){
+int FloatToInt (float f){
+    union {
+        float f;
+        uint32_t u;
+    } fu = { .f = f };
+    int i = sizeof f * CHAR_BIT;
+    unsigned int ret = 0;
+    while (i--){
+        ret = ret << 1;
+        ret += ((fu.u >> i) & 0x1);
+    }
+    return (int)ret;
+}
+int getArraySize(ArrayProperties ap){
+	int ret = 1;
+	for(int i = 0; i < ap.dimension; i++){
+		ret *= ap.sizeInEachDimension[i];
+	}
+	return ret;
+}
+/*int load(AST_NODE *node, int shift){
 	int rd;
 	if(node->nodeType == CONST_VALUE_NODE){
 		if(node->semantic_value.const1->const_type == INTEGERC){
@@ -544,24 +557,4 @@ int load(AST_NODE *node, int shift){
 		}
 	}
 	return rd;
-}
-int FloatToInt (float f){
-    union {
-        float f;
-        uint32_t u;
-    } fu = { .f = f };
-    int i = sizeof f * CHAR_BIT;
-    unsigned int ret = 0;
-    while (i--){
-        ret = ret << 1;
-        ret += ((fu.u >> i) & 0x1);
-    }
-    return (int)ret;
-}
-int getArraySize(ArrayProperties ap){
-	int ret = 1;
-	for(int i = 0; i < ap.dimension; i++){
-		ret *= ap.sizeInEachDimension[i];
-	}
-	return ret;
-}
+}*/
