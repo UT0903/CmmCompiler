@@ -396,6 +396,12 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
     SymbolTableEntry *entry = getSymbol(functionCallNode->child);
+    if(!strcmp("write", functionCallNode->child->semantic_value.identifierSemanticValue.identifierName)){
+        AST_NODE *param_list = functionCallNode->child->rightSibling;
+        AST_NODE *param = param_list->child;
+        NodeFolding(param);
+        return;
+    }
     if(entry == NULL){
         printError(NOT_DECLARED_IN_THIS_SCOPE, functionCallNode);
         return;
