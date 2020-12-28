@@ -213,8 +213,9 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	genNode(r);
 	char *id_reg = getOffsetPlace(l);
 	char *reg = getRegName(r);
-	if(l->dataType == INT_TYPE)
+	if(l->dataType == INT_TYPE){
 		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
+	}
 	else{
 		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
 	}
@@ -243,8 +244,8 @@ void genNode(AST_NODE* Node){
 }
 
 char* getOffsetPlace(AST_NODE* Node){
-	Node->place = getReg(INT_TYPE);
-	char *reg = getRegName(Node);
+	int reg_num = getReg(INT_TYPE);
+	char *reg = int_reg[reg_num];
 	if(Node->semantic_value.identifierSemanticValue.symbolTableEntry->global){
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
 			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
@@ -462,12 +463,12 @@ void genConstNode(AST_NODE* Node){
 }
 void genIDNode(AST_NODE* Node){
 	char *reg = getOffsetPlace(Node);
+	Node->place = getReg(Node->dataType);
+	char *n_reg = getRegName(Node);
 	if(Node->dataType == INT_TYPE)
-		fprintf(fp, "\tlw %s, 0(%s)\n", reg, reg);
+		fprintf(fp, "\tlw %s, 0(%s)\n", n_reg, reg);
 	else{
-		Node->place = getReg(FLOAT_TYPE);
-		char *f_reg = getRegName(Node);
-		fprintf(fp, "\tflw %s, 0(%s)\n", f_reg, reg);
+		fprintf(fp, "\tflw %s, 0(%s)\n", n_reg, reg);
 	}
 	return;
 }
