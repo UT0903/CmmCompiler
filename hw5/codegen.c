@@ -215,8 +215,9 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	char *reg = getRegName(r);
 	if(l->dataType == INT_TYPE)
 		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
-	else
+	else{
 		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
+	}
 	return;
 }
 
@@ -461,7 +462,13 @@ void genConstNode(AST_NODE* Node){
 }
 void genIDNode(AST_NODE* Node){
 	char *reg = getOffsetPlace(Node);
-	fprintf(fp, "\tlw %s, 0(%s)\n", reg, reg);
+	if(Node->dataType == INT_TYPE)
+		fprintf(fp, "\tlw %s, 0(%s)\n", reg, reg);
+	else{
+		Node->place = getReg(FLOAT_TYPE);
+		char *f_reg = getRegName(Node);
+		fprintf(fp, "\tflw %s, 0(%s)\n", f_reg, reg);
+	}
 	return;
 }
 
