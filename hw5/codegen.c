@@ -577,7 +577,7 @@ void genWhileStmt(AST_NODE* whileNode){
 	fprintf(fp, "\tj _L%d\n", L);
 	fprintf(fp, "_L%d:\n", L);
 	genNode(test);
-	fprintf(fp, "\tbne, %s, x0, _L%d\n", getRegName(test), L2);
+	fprintf(fp, "\tbne %s, x0, _L%d\n", getRegName(test), L2);
 	freeReg(test->place, test->dataType);
 	fprintf(fp, "\tj _L%d\n", L3);
 	fprintf(fp, "_L%d:\n", L2);
