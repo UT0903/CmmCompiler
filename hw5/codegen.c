@@ -509,26 +509,26 @@ void genIfStmt(AST_NODE* ifNode){
 	if(ELSE->nodeType == NUL_NODE){
 		genNode(test);
 		int L1 = L_ptr++, L2 = L_ptr++;
-		fprintf(fp, "\tbne %s, x0, ,L%d\n", getRegName(test), L1);
-		fprintf(fp, "\tj .L%d\n", L2);
+		fprintf(fp, "\tbne %s, x0, _L%d\n", getRegName(test), L1);
+		fprintf(fp, "\tj _L%d\n", L2);
 		freeReg(test->place, test->dataType);
-		fprintf(fp, ".L%d\n", L1);
+		fprintf(fp, "_L%d\n", L1);
 		genStmt(stmt);
-		fprintf(fp, ".L%d\n", L2);
+		fprintf(fp, "_L%d\n", L2);
 	}
 	else{
 		genNode(test);
 		int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
-		fprintf(fp, "\tbne %s, x0, L%d\n", getRegName(test), L1);
-		fprintf(fp, "\tj .L%d\n", L2);
+		fprintf(fp, "\tbne %s, x0, _L%d\n", getRegName(test), L1);
+		fprintf(fp, "\tj _L%d\n", L2);
 		freeReg(test->place, test->dataType);
-		fprintf(fp, ".L%d\n", L1);
+		fprintf(fp, "_L%d\n", L1);
 		genStmt(stmt);
-		fprintf(fp, "\tj L%d\n", L3);
-		fprintf(fp, ".L%d\n", L2);
+		fprintf(fp, "\tj _L%d\n", L3);
+		fprintf(fp, "_L%d\n", L2);
 		genStmt(ELSE);
-		fprintf(fp, "\tj .L%d\n", L3);
-		fprintf(fp, ".L%d\n", L3);
+		fprintf(fp, "\tj _L%d\n", L3);
+		fprintf(fp, "_L%d\n", L3);
 	}
 	return;
 }
@@ -574,16 +574,16 @@ void genWhileStmt(AST_NODE* whileNode){
 	AST_NODE *test = whileNode->child;
 	AST_NODE *stmt = test->rightSibling;
 	int L = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
-	fprintf(fp, "\tj L%d\n", L);
-	fprintf(fp, ".L%d\n", L);
+	fprintf(fp, "\tj _L%d\n", L);
+	fprintf(fp, "_L%d\n", L);
 	genNode(test);
-	fprintf(fp, "\tbne, %s, x0, L%d\n", getRegName(test), L2);
+	fprintf(fp, "\tbne, %s, x0, _L%d\n", getRegName(test), L2);
 	freeReg(test->place, test->dataType);
-	fprintf(fp, "\tj L%d\n", L3);
-	fprintf(fp, ".L%d\n", L2);
+	fprintf(fp, "\tj _L%d\n", L3);
+	fprintf(fp, "_L%d\n", L2);
 	genStmt(stmt);
-	fprintf(fp, "\tj L%d\n", L);
-	fprintf(fp, ".L%d\n", L3);
+	fprintf(fp, "\tj _L%d\n", L);
+	fprintf(fp, "_L%d\n", L3);
 	return;
 }
 
@@ -596,7 +596,13 @@ void genReturnNode(AST_NODE *Node){
 		genNode(Node->child);;
 		fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 	}
-	fprintf(fp, "\tret\n");
+	AST_NODE *now = Node;
+    while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
+    {
+        now = now->parent;
+    }
+	now = now->child->rightSibling;
+	fprintf(fp, "\tj _end_%s\n", now->semantic_value.identifierSemanticValue.identifierName);
 	return;
 }
 
