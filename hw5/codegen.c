@@ -242,7 +242,7 @@ void genNode(AST_NODE* Node){
 }
 
 char* getOffsetPlace(AST_NODE* Node){
-	Node->place = getReg(Node->dataType);
+	Node->place = getReg(INT_TYPE);
 	char *reg = getRegName(Node);
 	if(Node->semantic_value.identifierSemanticValue.symbolTableEntry->global){
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
