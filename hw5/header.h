@@ -163,7 +163,7 @@ struct AST_NODE {
     struct AST_NODE *rightSibling;
     struct AST_NODE *leftmostSibling;
     AST_TYPE nodeType;
-        DATA_TYPE dataType;
+    DATA_TYPE dataType;
     int place;
     int linenumber;
     union {

@@ -41,11 +41,27 @@ void processFuncDecl(AST_NODE* typeNode);
 void ReleaseConst();
 void processConstValueNode(AST_NODE *constNode);
 void processBlock(AST_NODE* Node, AST_NODE* typeNode);
+void processWhileStmt(AST_NODE* whileNode);
+void processForStmt(AST_NODE* forNode);
+void processAssignmentStmt(AST_NODE* assignmentNode);
+void processIfStmt(AST_NODE* ifNode);
+void processWriteFunction(AST_NODE* functionCallNode);
+void processFunctionCall(AST_NODE* functionCallNode);
+int getOffset(AST_NODE* Node);
+char* getRegName(AST_NODE* Node);
+void processNode(AST_NODE* Node);
+void processExprNode(AST_NODE* Node);
+void processConstNode(AST_NODE* Node);
+void processIDNode(AST_NODE* Node);
+void processReturnNode(AST_NODE *Node);
+void processBlockNode(AST_NODE* Node);
+void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
+void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg);
 
 
-int getReg(TYPE type){
+int getReg(DATA_TYPE type){
 	int ret;
-	if(type == INT){
+	if(type == INT_TYPE){
 		ret = int_ptr;
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
 	}
@@ -165,7 +181,217 @@ void processDecl(AST_NODE *declNode, TYPE type){
 }
 void processStmt(AST_NODE* stmtNode){
 	//TODO
+	if(stmtNode->nodeType == BLOCK_NODE){
+        processBlockNode(stmtNode);
+    }
+    else if(stmtNode->nodeType == CONST_VALUE_NODE){
+        processNode(stmtNode);
+    }
+    else if(stmtNode->nodeType == NUL_NODE){
+        return;
+    }
+    else if(stmtNode->nodeType == STMT_NODE){
+        switch (stmtNode->semantic_value.stmtSemanticValue.kind)
+        {
+        case WHILE_STMT:
+            processWhileStmt(stmtNode);
+            break;
+        case IF_STMT:
+            processIfStmt(stmtNode);
+            break;
+        case FOR_STMT:
+            processForStmt(stmtNode);
+            break;
+        case ASSIGN_STMT:
+            processAssignmentStmt(stmtNode);
+            break;
+        case FUNCTION_CALL_STMT:
+            processFunctionCall(stmtNode);
+            break;
+        case RETURN_STMT:
+            processReturnNode(stmtNode);
+            break;
+        default:
+            perror("no match stmt");
+            exit(0);
+            break;
+        }
+    }
+    else{
+        perror("input no stmt");
+        exit(0);
+    }
 }
+
+void processAssignmentStmt(AST_NODE* assignmentNode){
+	AST_NODE *l = assignmentNode->child;
+    AST_NODE *r = l->rightSibling;
+	processNode(r);
+	int off = getOffset(l);
+	char *reg = getRegName(r);
+	fprintf(fp, "\tld %s %d(sp)\n", reg, off);
+	return;
+}
+
+void processNode(AST_NODE* Node){
+	switch (Node->nodeType)
+	{
+	case STMT_NODE:
+		processStmt(Node);
+		break;
+	case EXPR_NODE:
+		processExprNode(Node);
+		break;
+	case CONST_VALUE_NODE:
+		processConstNode(Node);
+		break;
+	case IDENTIFIER_NODE:
+		processIDNode(Node);
+		break;
+	default:
+		break;
+	}
+	return;
+}
+
+int getOffset(AST_NODE* Node){
+	if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
+		return Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset;
+	}
+	else{
+		int dim = Node->child->semantic_value.const1->const_u.intval;
+		return Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset + dim * 4;
+	}
+}
+
+char* getRegName(AST_NODE* Node){
+	if(Node->dataType == INT_TYPE){
+		return int_reg[Node->place];
+	}
+	else{
+		return float_reg[Node->place];
+	}
+}
+
+void processExprNode(AST_NODE* Node){
+	EXPRSemanticValue *expr = &Node->semantic_value.exprSemanticValue; 
+	if(Node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION){
+		BINARY_OPERATOR op = expr->op.binaryOp;
+		AST_NODE *l = Node->child, *r = Node->child->rightSibling;
+		processNode(l);
+		processNode(r);
+		Node->place = getReg(Node->dataType);
+		char *l_reg = getRegName(l), *r_reg = getRegName(r), *reg = getRegName(Node);
+		processBinaryOp(op, l_reg, r_reg, reg);
+	}
+	else{
+		AST_NODE *child = Node->child;
+		processNode(child);
+		UNARY_OPERATOR op =expr->op.unaryOp;
+		Node->place = getReg(Node->dataType);
+		char *c_reg = getRegName(child), *reg = getRegName(Node);
+		processUnaryOp(op, c_reg, reg);
+	}
+	return;
+}
+
+void processBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
+	switch (op)
+    {
+    case BINARY_OP_ADD:
+		fprintf(fp, "\tadd %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    case BINARY_OP_SUB:
+		fprintf(fp, "\tsub %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    case BINARY_OP_MUL:
+		fprintf(fp, "\tmul %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    case BINARY_OP_DIV:
+		fprintf(fp, "\tdiv %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    case BINARY_OP_EQ:
+        break;
+    case BINARY_OP_GE:
+        break;
+    case BINARY_OP_LE:
+        break;
+    case BINARY_OP_NE:
+        break;
+    case BINARY_OP_GT:
+        break;
+    case BINARY_OP_LT:
+        break;
+    case BINARY_OP_AND:
+		fprintf(fp, "\tand %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    case BINARY_OP_OR:
+		fprintf(fp, "\tor %s %s %s\n", reg, l_reg, r_reg);
+        break;
+    default:
+        break;
+    }
+	return;
+}
+
+void processUnaryOp(UNARY_OPERATOR op, char *c_reg, char * reg){
+	switch (op)
+    {
+    case UNARY_OP_POSITIVE:
+        break;
+    case UNARY_OP_NEGATIVE:
+        break;
+    case UNARY_OP_LOGICAL_NEGATION:
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+void processConstNode(AST_NODE* Node){
+	Node->place = getReg(Node->dataType);
+	if(Node->dataType == INT_TYPE)
+		fprintf(fp, "\taddi %s x0 %d\r", getRegName(Node), Node->semantic_value.const1->const_u.intval);
+	else{
+		fprintf(fp, "\taddi %s x0 %f\r", getRegName(Node), Node->semantic_value.const1->const_u.fval);
+	}
+	return;
+}
+
+void processIDNode(AST_NODE* Node){
+	if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
+		Node->place = getReg(Node->dataType);
+		fprintf(fp, "\tadd %s x0 %d(sp)\n", getRegName(Node), Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+	}
+	else{
+
+	}
+	return;
+}
+
+void processIfStmt(AST_NODE* ifNode){
+	return;
+}
+void processWriteFunction(AST_NODE* functionCallNode){
+	return;
+}
+void processFunctionCall(AST_NODE* functionCallNode){
+	return;
+}
+
+void processWhileStmt(AST_NODE* whileNode){
+	return;
+}
+
+void processForStmt(AST_NODE* forNode){
+	return;
+}
+
+void processReturnNode(AST_NODE *Node){
+	return;
+}
+
 void processBlock(AST_NODE* Node, AST_NODE* typeNode){
 	while(Node != NULL){
 		if(Node->nodeType == VARIABLE_DECL_LIST_NODE){
@@ -242,12 +468,12 @@ void processVarDecl(AST_NODE* typeNode, TYPE type){
 			else if(type == LOCAL){
 				AR_offset -= 4;
 				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-					int reg = getReg(INT);
+					int reg = getReg(INT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
 					fprintf(fp, "\tsw %s, %d(sp)\n", int_reg[reg], AR_offset);
 				}
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					int reg = getReg(FLOAT);
+					int reg = getReg(FLOAT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", float_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
 					fprintf(fp, "\tsw %s, %d(sp)\n", float_reg[reg], AR_offset);
 				}
@@ -265,19 +491,19 @@ int load(AST_NODE *node, int shift){
 	int rd;
 	if(node->nodeType == CONST_VALUE_NODE){
 		if(node->semantic_value.const1->const_type == INTEGERC){
-			rd = getReg(INT);
+			rd = getReg(INT_TYPE);
 			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[rd], node->place);
 			fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
 		}
 		else if(node->semantic_value.const1->const_type == FLOATC){
-			rd = getReg(FLOAT);
-			int tmp = getReg(INT);
+			rd = getReg(FLOAT_TYPE);
+			int tmp = getReg(INT_TYPE);
 			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[tmp], node->place);
 			fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
 			freeReg(tmp, INT);
 		}
 		else{
-			rd = getReg(INT);
+			rd = getReg(INT_TYPE);
 			fprintf(fp, "\tla %s, _CONSTANT_%d\n", float_reg[rd], node->place);
 		}
 	}
@@ -293,13 +519,13 @@ int load(AST_NODE *node, int shift){
 		}
 		if(entry->global == 1){
 			if(data_type == INT_TYPE){
-				rd = getReg(INT);
+				rd = getReg(INT_TYPE);
 				fprintf(fp, "\tla %s, _g_%s\n", int_reg[rd], entry->name);
 				fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
 			}
 			else{
-				rd = getReg(FLOAT);
-				int tmp = getReg(INT);
+				rd = getReg(FLOAT_TYPE);
+				int tmp = getReg(INT_TYPE);
 				fprintf(fp, "\tla %s, _g_%s\n", int_reg[tmp], entry->name);
 				fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
 				freeReg(tmp, INT);
@@ -308,11 +534,11 @@ int load(AST_NODE *node, int shift){
 		}
 		else{ //local
 			if(data_type == INT_TYPE){
-				rd = getReg(INT);
+				rd = getReg(INT_TYPE);
 				fprintf(fp, "\tlw %s, %d(sp)\n", int_reg[rd], entry->offset + shift);
 			}
 			else{
-				rd = getReg(FLOAT);
+				rd = getReg(FLOAT_TYPE);
 				fprintf(fp, "\tflw %s, %d(sp)\n", float_reg[rd], entry->offset + shift);
 			}	
 		}
