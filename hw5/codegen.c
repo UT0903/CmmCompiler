@@ -520,7 +520,7 @@ void genIfStmt(AST_NODE* ifNode){
 		genNode(test);
 		int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
 		fprintf(fp, "\tbne %s, x0, _L%d\n", getRegName(test), L1);
-		fprintf(fp, "\tj _L%d:\n", L2);
+		fprintf(fp, "\tj _L%d\n", L2);
 		freeReg(test->place, test->dataType);
 		fprintf(fp, "_L%d:\n", L1);
 		genStmt(stmt);
