@@ -14,7 +14,7 @@ FLOAT g8[2];
 INTA g9;
 FLOATA g10;
 
-int MAIN() {
+int main() {
     int l1;
     float l2;
     INT l3;

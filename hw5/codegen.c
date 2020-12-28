@@ -125,12 +125,22 @@ void codeGen(AST_NODE *rootNode){
 }
 void gen_prologue (char *name){
 	fprintf(fp, "\t.text\n");
-	fprintf(fp, "_start_%s:\n", name);
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "_start_MAIN:\n");
+	}
+	else{
+		fprintf(fp, "_start_%s:\n", name);
+	}
 	fprintf(fp, "\tsd ra, 0(sp)\n"); // store return address
 	fprintf(fp, "\tsd fp, -8(sp)\n"); // save old fp
 	fprintf(fp, "\taddi fp, sp, -8\n"); // new fp
 	fprintf(fp, "\taddi sp, sp, -16\n"); // new sp
-	fprintf(fp, "\tla ra, _frameSize_%s\n", name);
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "\tla ra, _frameSize_MAIN\n");
+	}
+	else{
+		fprintf(fp, "\tla ra, _frameSize_%s\n", name);
+	}
 	fprintf(fp, "\tlw ra, 0(ra)\n");
 	fprintf(fp, "\tsub sp, sp, ra\n"); // push new AR
 	for(int i = 0; i < INT_REG_NUM; i++){
@@ -142,7 +152,12 @@ void gen_prologue (char *name){
 	AR_offset = 0;
 } 
 void gen_epilogue(char *name){
-	fprintf(fp, "_end_%s:\n", name);
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "_end_MAIN:\n");
+	}
+	else{
+		fprintf(fp, "_end_%s:\n", name);
+	}
 	for(int i = 0; i < INT_REG_NUM; i++){
 		fprintf(fp, "\tld %s, %d(sp)\n", int_reg[i], i*8 + 8);
 	}
@@ -154,7 +169,13 @@ void gen_epilogue(char *name){
 	fprintf(fp, "\tld fp, 0(fp)\n"); // restore caller (old) fp
 	fprintf(fp, "\tjr ra\n");
 	fprintf(fp, "\t.data\n");
-	fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "_frameSize_MAIN:\t.word\t%d\n", INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	}
+	else{
+		fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	}
+	
 	ReleaseConst();
 }
 
@@ -608,7 +629,13 @@ void genReturnNode(AST_NODE *Node){
         now = now->parent;
     }
 	now = now->child->rightSibling;
-	fprintf(fp, "\tj _end_%s\n", now->semantic_value.identifierSemanticValue.identifierName);
+	if(strcmp(now->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
+		fprintf(fp, "\tj _end_MAIN\n");
+	}
+	else{
+		fprintf(fp, "\tj _end_%s\n", now->semantic_value.identifierSemanticValue.identifierName);
+	}
+	
 	return;
 }
 
@@ -653,19 +680,52 @@ void genVarDecl(AST_NODE* typeNode, TYPE type){
 		//fprintf(stderr, "%s\n", varNode->semantic_value.identifierSemanticValue.identifierName);
 		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 		assert(entry != NULL);
-		if(varNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-			if(type == GLOBAL){
-				fprintf(fp, "_g_%s: .word\n", entry->name);
-				entry->global = 1;
+		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
+			if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
+				if(type == GLOBAL){
+					if(varNode->child->semantic_value.const1->const_type == INTEGERC){
+						fprintf(fp, "_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
+					}
+					else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+						fprintf(fp, "_g_%s: .word %d\n", entry->name, FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
+					}
+					else ERR_EXIT("genVarDecl3");
+					entry->global = 1;
+				}
+				else if(type == LOCAL){
+					AR_offset -= 4;
+					if(varNode->child->semantic_value.const1->const_type == INTEGERC){
+						int reg = getReg(INT_TYPE);
+						fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
+						fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
+					}
+					else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+						int reg = getReg(INT_TYPE);
+						fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
+						fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
+					}
+					else ERR_EXIT("genVarDecl4");
+					entry->offset = AR_offset;
+					entry->global = 0;
+				}
+				else ERR_EXIT("genVarDecl5");
 			}
-			else if(type == LOCAL){
-				AR_offset -= 4;
-				entry->offset = AR_offset;
-				entry->global = 0;
+			else if(varNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
+				if(type == GLOBAL){
+					fprintf(fp, "_g_%s: .word 0\n", entry->name);
+					entry->global = 1;
+				}
+				else if(type == LOCAL){
+					AR_offset -= 4;
+					entry->offset = AR_offset;
+					entry->global = 0;
+				}
+				else ERR_EXIT("genVarDecl1");
 			}
-			else ERR_EXIT("genVarDecl1");
+			else ERR_EXIT("genVarDecl10");
+			
 		}
-		else if(varNode->semantic_value.identifierSemanticValue.kind == ARRAY_ID){
+		else if(entry->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR){
 			int arr_size = getArraySize(entry->attribute->attr.typeDescriptor->properties.arrayProperties);
 			if(type == GLOBAL){
 				fprintf(fp, "_g_%s: .space %d\n", entry->name, arr_size*4);
@@ -677,35 +737,6 @@ void genVarDecl(AST_NODE* typeNode, TYPE type){
 				entry->global = 0;
 			}
 			else ERR_EXIT("genVarDecl2");
-		}
-		else if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
-			if(type == GLOBAL){
-				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-					fprintf(fp, "_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
-				}
-				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					fprintf(fp, "_g_%s: .word %d\n", entry->name, FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-				}
-				else ERR_EXIT("genVarDecl3");
-				entry->global = 1;
-			}
-			else if(type == LOCAL){
-				AR_offset -= 4;
-				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-					int reg = getReg(INT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
-					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-				}
-				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					int reg = getReg(INT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-				}
-				else ERR_EXIT("genVarDecl4");
-				entry->offset = AR_offset;
-				entry->global = 0;
-			}
-			else ERR_EXIT("genVarDecl5");
 		}
 		else ERR_EXIT("genVarDecl6");
 		varNode = varNode->rightSibling;
