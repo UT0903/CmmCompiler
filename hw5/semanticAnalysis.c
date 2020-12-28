@@ -303,6 +303,7 @@ int checkArrayDim(AST_NODE *Node){
 void checkAssignmentStmt(AST_NODE* assignmentNode)
 {
     AST_NODE *l = assignmentNode->child;
+    NodeFolding(l);
     AST_NODE *r = l->rightSibling;
     if(l->nodeType != IDENTIFIER_NODE){
         perror("it need id node at assignment right side");
