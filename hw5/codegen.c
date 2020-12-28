@@ -666,12 +666,12 @@ void genVarDecl(AST_NODE* typeNode, TYPE type){
 				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
 					int reg = getReg(INT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
-					fprintf(fp, "\tsw %s, %d(sp)\n", int_reg[reg], AR_offset);
+					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
 				}
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
 					int reg = getReg(FLOAT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", float_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					fprintf(fp, "\tsw %s, %d(sp)\n", float_reg[reg], AR_offset);
+					fprintf(fp, "\tsw %s, %d(fp)\n", float_reg[reg], AR_offset);
 				}
 				else ERR_EXIT("genVarDecl4");
 				entry->offset = AR_offset;
@@ -751,11 +751,11 @@ int getArraySize(ArrayProperties ap){
 		else{ //local
 			if(data_type == INT_TYPE){
 				rd = getReg(INT_TYPE);
-				fprintf(fp, "\tlw %s, %d(sp)\n", int_reg[rd], entry->offset + shift);
+				fprintf(fp, "\tlw %s, %d(fp)\n", int_reg[rd], entry->offset + shift);
 			}
 			else{
 				rd = getReg(FLOAT_TYPE);
-				fprintf(fp, "\tflw %s, %d(sp)\n", float_reg[rd], entry->offset + shift);
+				fprintf(fp, "\tflw %s, %d(fp)\n", float_reg[rd], entry->offset + shift);
 			}	
 		}
 	}
