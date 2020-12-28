@@ -139,11 +139,11 @@ void gen_epilogue(char *name){
 void Read(char* to, DATA_TYPE type){
 	if(type == INT_TYPE){
 		fprintf(fp, "\tcall _read_int\n");
-		fprintf(fp, "\tmv %s a0\n", to);
+		fprintf(fp, "\tmv %s, a0\n", to);
 	}
 	else if(type == FLOAT_TYPE){
 		fprintf(fp, "\tcall _read_float\n");
-		fprintf(fp, "\tfmv.s %s fa0\n", to);
+		fprintf(fp, "\tfmv.s %s, fa0\n", to);
 	}
 	else ERR_EXIT("Read");
 }
@@ -214,9 +214,9 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	char *id_reg = getOffsetPlace(l);
 	char *reg = getRegName(r);
 	if(l->dataType == INT_TYPE)
-		fprintf(fp, "\tsw %s 0(%s)\n", reg, id_reg);
+		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
 	else
-		fprintf(fp, "\tfsw %s 0(%s)\n", reg, id_reg);
+		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
 	return;
 }
 
@@ -246,28 +246,28 @@ char* getOffsetPlace(AST_NODE* Node){
 	char *reg = getRegName(Node);
 	if(Node->semantic_value.identifierSemanticValue.symbolTableEntry->global){
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-			fprintf(fp, "\tla %s _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
+			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
 		}
 		else{
 			AST_NODE *dim = Node->child;
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\tla %s _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
-			fprintf(fp, "\tslli %s %s 2\n", dim_reg, dim_reg);
-			fprintf(fp, "\tadd %s %s %s\n", reg, reg, dim_reg);
+			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
+			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
+			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
 		}
 	}
 	else{
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-			fprintf(fp, "\taddi %s fp %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\taddi %s, fp, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
 		}
 		else{
 			AST_NODE *dim = Node->child;
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\taddi %s %d fp\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
-			fprintf(fp, "\tslli %s %s 2\n", dim_reg, dim_reg);
-			fprintf(fp, "\tadd %s %s %s\n", reg, reg, dim_reg);
+			fprintf(fp, "\taddi %s, %d, fp\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
+			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
 		}
 	}
 	return reg;
@@ -314,44 +314,44 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 	switch (op)
     {
     case BINARY_OP_ADD:
-		fprintf(fp, "\tadd %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tadd %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_SUB:
-		fprintf(fp, "\tsub %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tsub %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_MUL:
-		fprintf(fp, "\tmul %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tmul %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_DIV:
-		fprintf(fp, "\tdiv %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tdiv %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_EQ:
-		fprintf(fp, "\tsub %s %s %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tseqz %s %s\n", reg, l_reg );
+		fprintf(fp, "\tsub %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_GE:
-		fprintf(fp, "\tslt %s %s %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_LE:
-		fprintf(fp, "\tslt %s %s %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, r_reg, l_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_NE:
-		fprintf(fp, "\tsub %s %s %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tsub %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_GT:
-		fprintf(fp, "\tslt %s %s %s\n", reg, r_reg, l_reg);
+		fprintf(fp, "\tslt %s, %s, %s\n", reg, r_reg, l_reg);
         break;
     case BINARY_OP_LT:
-		fprintf(fp, "\tslt %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tslt %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_AND:
-		fprintf(fp, "\tand %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tand %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_OR:
-		fprintf(fp, "\tor %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tor %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     default:
         break;
@@ -365,10 +365,10 @@ void genUnaryOp(UNARY_OPERATOR op, char *c_reg){
     case UNARY_OP_POSITIVE:
         break;
     case UNARY_OP_NEGATIVE:
-		fprintf(fp, "\tsub %s x0 %s\n", c_reg, c_reg);
+		fprintf(fp, "\tsub %s, x0, %s\n", c_reg, c_reg);
         break;
     case UNARY_OP_LOGICAL_NEGATION:
-		fprintf(fp, "\tseqz %s %s\n", c_reg, c_reg);
+		fprintf(fp, "\tseqz %s, %s\n", c_reg, c_reg);
         break;
     default:
         break;
@@ -380,37 +380,37 @@ void genfBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 	switch (op)
     {
     case BINARY_OP_ADD:
-		fprintf(fp, "\tfadd.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tfadd.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_SUB:
-		fprintf(fp, "\tfsub.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tfsub.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_MUL:
-		fprintf(fp, "\tfmul.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tfmul.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_DIV:
-		fprintf(fp, "\tfdiv.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tfdiv.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_EQ:
-		fprintf(fp, "\tfeq.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tfeq.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_GE:
-		fprintf(fp, "\tflt.s %s %s %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_LE:
-		fprintf(fp, "\tflt.s %s %s %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, r_reg, l_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_NE:
-		fprintf(fp, "\tfeq.s %s %s %s\n", reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s %s\n", reg, reg );
+		fprintf(fp, "\tfeq.s %s, %s, %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
         break;
     case BINARY_OP_GT:
-		fprintf(fp, "\tflt.s %s %s %s\n", reg, r_reg, l_reg);
+		fprintf(fp, "\tflt.s %s, %s, %s\n", reg, r_reg, l_reg);
         break;
     case BINARY_OP_LT:
-		fprintf(fp, "\tflt.s %s %s %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tflt.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_AND:
         break;
@@ -428,7 +428,7 @@ void genfUnaryOp(UNARY_OPERATOR op, char *c_reg){
     case UNARY_OP_POSITIVE:
         break;
     case UNARY_OP_NEGATIVE:
-		fprintf(fp, "\tfneg.s %s %s\n", c_reg, c_reg);
+		fprintf(fp, "\tfneg.s %s, %s\n", c_reg, c_reg);
         break;
     case UNARY_OP_LOGICAL_NEGATION:
         break;
@@ -461,7 +461,7 @@ void genConstNode(AST_NODE* Node){
 }
 void genIDNode(AST_NODE* Node){
 	char *reg = getOffsetPlace(Node);
-	fprintf(fp, "\tlw %s 0(%s)\n", reg, reg);
+	fprintf(fp, "\tlw %s, 0(%s)\n", reg, reg);
 	return;
 }
 
@@ -478,15 +478,15 @@ void genFunctionCall(AST_NODE* functionCallNode){
 		AST_NODE *param = paramList->child;
 		genNode(param);
 		if(param->dataType == INT_TYPE){
-			fprintf(fp, "\tmv a0 %s\n", getRegName(param));
+			fprintf(fp, "\tmv a0, %s\n", getRegName(param));
 			fprintf(fp, "\tjal _write_int\n");
 		}
 		else if(param->dataType == FLOAT_TYPE){
-			fprintf(fp, "\tfmv.s fa0 %s\n", getRegName(param));
+			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
 			fprintf(fp, "\tjal _write_float\n");
 		}
 		else{
-			fprintf(fp, "\tmv a0 %s\n", getRegName(param));
+			fprintf(fp, "\tmv a0, %s\n", getRegName(param));
 			fprintf(fp, "\tjal _write_str\n");
 		}
 	}
@@ -496,10 +496,10 @@ void genFunctionCall(AST_NODE* functionCallNode){
 		if(signature->returnType != VOID_TYPE){
 			functionCallNode->place = getReg(signature->returnType);
 			if(functionCallNode->dataType == INT_TYPE){
-				fprintf(fp, "\tmv %s a0\n", getRegName(functionCallNode));
+				fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
 			}
 			else{
-				fprintf(fp, "\tfmv %s fa0\n", getRegName(functionCallNode));
+				fprintf(fp, "\tfmv %s, fa0\n", getRegName(functionCallNode));
 			}
 		}
 	}
@@ -517,7 +517,7 @@ void genForStmt(AST_NODE* forNode){
 void genReturnNode(AST_NODE *Node){
 	if(Node->child->nodeType != NUL_NODE){
 		genNode(Node->child);
-		fprintf(fp, "\tmv a0 %s\n", getRegName(Node->child));
+		fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 	}
 	return;
 }
