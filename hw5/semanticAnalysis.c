@@ -24,7 +24,6 @@ void checkWriteFunction(AST_NODE* functionCallNode);
 void checkFunctionCall(AST_NODE* functionCallNode);
 void processExprRelatedNode(AST_NODE* exprRelatedNode);
 void checkParameterPassing(Parameter* formalParameter, AST_NODE* actualParameter);
-void processExprNode(AST_NODE* exprNode);
 void processVariableLValue(AST_NODE* idNode);
 void processVariableRValue(AST_NODE* idNode);
 void getExprOrConstValue(AST_NODE* exprOrConstNode, int* iValue, float* fValue);
@@ -225,7 +224,7 @@ void checkWhileStmt(AST_NODE* whileNode)
         checkAssignmentStmt(test);
     }
     else
-        processExprNode(test);
+        NodeFolding(test);
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
     closeScope();
@@ -243,14 +242,14 @@ void checkForStmt(AST_NODE* forNode)
                 checkAssignmentStmt(assign_expr);
             }
             else
-                processExprNode(assign_expr);
+                NodeFolding(assign_expr);
             assign_expr = assign_expr->rightSibling;
         }
     }
     if(relop_expr_list->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
         AST_NODE *relop_expr = relop_expr_list->child;
         while(relop_expr){
-            processExprNode(relop_expr);
+            NodeFolding(relop_expr);
             relop_expr = relop_expr->rightSibling;
         }
     }
@@ -261,7 +260,7 @@ void checkForStmt(AST_NODE* forNode)
                 checkAssignmentStmt(assign_expr);
             }
             else
-                processExprNode(assign_expr);
+                NodeFolding(assign_expr);
             assign_expr = assign_expr->rightSibling;
         }
     }
@@ -342,7 +341,7 @@ void checkIfStmt(AST_NODE* ifNode)
         checkAssignmentStmt(test);
     }
     else
-        processExprNode(test);
+        NodeFolding(test);
     AST_NODE *stmt = test->rightSibling;
     processStmtNode(stmt);
     AST_NODE *ELSE = stmt->rightSibling;
@@ -442,11 +441,6 @@ void evaluateExprValue(AST_NODE* exprNode)
 {
 }
 
-
-void processExprNode(AST_NODE* exprNode)
-{
-    NodeFolding(exprNode);
-}
 
 void declareIdList(AST_NODE* declarationNode, SymbolAttributeKind isVariableOrTypeAttribute, int ignoreArrayFirstDimSize){
 
