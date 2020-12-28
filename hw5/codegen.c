@@ -401,6 +401,7 @@ void genBlockNode(AST_NODE* blockNode){
 				stmtNode = stmtNode->rightSibling;
 			}
 		}
+		else ERR_EXIT("genBlockNode");
 		Node = Node->rightSibling;
 	}
 }

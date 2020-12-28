@@ -1,6 +1,6 @@
 float a = 1.0, b;
-void write(int a){}
+void write(int c){}
 int MAIN(){
-    int a = 4, b = 5;
+    int d = 4, e = 5;
     write(a);
 }
