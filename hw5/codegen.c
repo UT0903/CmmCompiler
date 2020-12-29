@@ -562,9 +562,6 @@ void genIfStmt(AST_NODE* ifNode){
 	}
 	return;
 }
-void genWriteFunction(AST_NODE* functionCallNode){
-	return;
-}
 
 void genWriteFunction(AST_NODE* functionCallNode){
 	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
