@@ -382,7 +382,7 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tdiv %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_EQ:
-		fprintf(fp, "\tsub %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\txor %s, %s, %s\n", l_reg, l_reg, r_reg);
 		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_GE:
@@ -394,7 +394,7 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_NE:
-		fprintf(fp, "\tsub %s, %s, %s\n", l_reg, l_reg, r_reg);
+		fprintf(fp, "\txor %s, %s, %s\n", l_reg, l_reg, r_reg);
 		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_GT:
