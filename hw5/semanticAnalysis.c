@@ -533,6 +533,8 @@ void processStmtNode(AST_NODE* stmtNode)
         }
     }
     else{
+        fprintf(stderr, "stmtNode->nodeType: %d\n", stmtNode->nodeType);
+        fprintf(stderr, "%d\n", stmtNode->semantic_value.exprSemanticValue.op.binaryOp);
         perror("input no stmt");
         exit(0);
     }

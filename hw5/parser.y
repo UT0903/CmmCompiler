@@ -896,7 +896,7 @@ char *argv[];
      symbolTableEnd();
      codeGen(prog);
      if (!g_anyErrorOccur) {
-        //printf("Parsing completed. No errors found.\n");
+        printf("Parsing completed. No errors found.\n");
      }
   } /* main */
 

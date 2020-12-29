@@ -212,6 +212,7 @@ void genDecl(AST_NODE *declNode, TYPE type){
 }
 void genStmt(AST_NODE* stmtNode){
 	//TODO
+	fprintf(stderr, "stmtNode->nodeType: %d\n", stmtNode->nodeType);
 	if(stmtNode->nodeType == BLOCK_NODE){
         genBlockNode(stmtNode);
     }
@@ -249,6 +250,7 @@ void genStmt(AST_NODE* stmtNode){
         }
     }
     else{
+		fprintf(stderr, "codegen stmtNode->nodeType: %d\n", stmtNode->nodeType);
         perror("input no stmt");
         exit(0);
     }
@@ -615,7 +617,37 @@ void genWhileStmt(AST_NODE* whileNode){
 }
 
 void genForStmt(AST_NODE* forNode){
-	return;
+    AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling, *stmt = second_assign_expr_list->rightSibling;
+    if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
+        AST_NODE *assign_expr = assign_expr_list->child;
+        while(assign_expr){
+            if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+                genAssignmentStmt(assign_expr);
+            }
+            else
+                genNode(assign_expr);
+            assign_expr = assign_expr->rightSibling;
+        }
+    }
+    if(relop_expr_list->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
+        AST_NODE *relop_expr = relop_expr_list->child;
+        while(relop_expr){
+            genNode(relop_expr);
+            relop_expr = relop_expr->rightSibling;
+        }
+    }
+    if(second_assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
+        AST_NODE *assign_expr = second_assign_expr_list->child;
+        while(assign_expr){
+            if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
+                genAssignmentStmt(assign_expr);
+            }
+            else
+                genNode(assign_expr);
+            assign_expr = assign_expr->rightSibling;
+        }
+    }
+    genStmt(stmt);
 }
 
 void genReturnNode(AST_NODE *Node){
