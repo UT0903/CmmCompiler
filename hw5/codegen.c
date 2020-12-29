@@ -585,14 +585,14 @@ void genWriteFunction(AST_NODE* functionCallNode){
 void genRead(AST_NODE* functionCallNode){
 	fprintf(fp, "\tjal _read_int\n");
 	functionCallNode->place = getReg(INT_TYPE);
-	fprintf(fp, "\tmv %s a0\n", getRegName(functionCallNode));
+	fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
 	return;
 }
 
 void genFread(AST_NODE* functionCallNode){
 	fprintf(fp, "\tjal _read_float\n");
 	functionCallNode->place = getReg(FLOAT_TYPE);
-	fprintf(fp, "\tfmv.s %s fa0\n", getRegName(functionCallNode));
+	fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
 	return;
 }
 
