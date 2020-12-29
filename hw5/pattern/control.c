@@ -4,50 +4,50 @@ int main() {
     a = 1;
     b = 0;
     if (a > b) {
-        write("correct1\n");
+        write("correct\n");
     } else {
-        write("wrong1\n");
+        write("wrong\n");
     }
     if (a < b) {
-        write("wrong2\n");
+        write("wrong\n");
     } else {
-        write("correct2\n");
+        write("correct\n");
     }
     if (a == b) {
-        write("wrong3\n");
+        write("wrong\n");
     } else {
-        write("correct3\n");
+        write("correct\n");
     }
     if (a != b) {
-        write("correct4\n");
+        write("correct\n");
     } else {
-        write("wrong4\n");
+        write("wrong\n");
     }
 
     c = 1.0;
     d = 0.0;
     if (c > d) {
-        write("correct5\n");
+        write("correct\n");
     } else {
-        write("wrong5\n");
+        write("wrong\n");
     }
     if (c < d) {
-        write("wrong6\n");
+        write("wrong\n");
     } else {
-        write("correct6\n");
+        write("correct\n");
     }
     if (c != d) {
-        write("correct7\n");
+        write("correct\n");
     } else {
-        write("wrong7\n");
+        write("wrong\n");
     }
 
     if (a && b) {
-        write("wrong8\n");
+        write("wrong\n");
     }
 
     if (a || b) {
-        write("correct9\n");
+        write("correct\n");
     }
 
     a = 0;
