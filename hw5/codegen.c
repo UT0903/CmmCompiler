@@ -94,7 +94,7 @@ void freeReg(int reg, DATA_TYPE type){
 void ReleaseConst(){
 	for(int i = 0; i < constant.ptr; i++){
 		fprintf(fp, "%s", constant.value[i]);
-		fprintf(fp, "\t.align 3\n");
+		
 	}
 	constant.ptr = 0;
 }
@@ -508,7 +508,7 @@ void genConstNode(AST_NODE* Node){
 		constant.ptr++;
 	}
 	else if(Node->dataType == CONST_STRING_TYPE){
-		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .ascii %s\n", constant.ptr, Node->semantic_value.const1->const_u.sc);
+		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .string %s\n", constant.ptr, Node->semantic_value.const1->const_u.sc);
 		fprintf(fp, "\tla %s, _CONSTANT_%d\n", getRegName(Node), constant.ptr);
 		constant.ptr++;
 	}
