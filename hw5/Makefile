@@ -37,4 +37,4 @@ functions.o: functions.c
 clean:
 	rm -f $(TARGET) $(OBJECT) $(OUTPUT) a.out AST_Graph.gv output.s
 test:
-	/home/ntu/.local/riscv/bin/qemu-riscv64 a.out 
+	qemu-riscv64 a.out 
