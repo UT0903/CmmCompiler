@@ -7,7 +7,7 @@
 #include "header.h"
 #include "symbolTable.h"
 #define ERR_EXIT(a) { fprintf(stderr, "%s\n", a); exit(0); }
-#define INT_REG_NUM 18
+#define INT_REG_NUM 17
 #define FLOAT_REG_NUM 8
 typedef enum{
 	GLOBAL,
@@ -15,7 +15,7 @@ typedef enum{
 }TYPE;
 
 FILE *fp;
-char int_reg[INT_REG_NUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"};
+char int_reg[INT_REG_NUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"};
 int used_int[INT_REG_NUM] = {};
 char float_reg[FLOAT_REG_NUM][10] = {"ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7"};
 int used_float[FLOAT_REG_NUM] = {};
@@ -387,15 +387,15 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
         break;
     case BINARY_OP_GE:
 		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
+		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_LE:
 		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
+		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_NE:
 		fprintf(fp, "\tsub %s, %s, %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, reg );
+		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_GT:
 		fprintf(fp, "\tslt %s, %s, %s\n", reg, r_reg, l_reg);
