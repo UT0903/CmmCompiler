@@ -215,7 +215,6 @@ void genDecl(AST_NODE *declNode, TYPE type){
 }
 void genStmt(AST_NODE* stmtNode){
 	//TODO
-	fprintf(stderr, "stmtNode->nodeType: %d\n", stmtNode->nodeType);
 	if(stmtNode->nodeType == BLOCK_NODE){
         genBlockNode(stmtNode);
     }
