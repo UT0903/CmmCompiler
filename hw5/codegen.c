@@ -57,6 +57,9 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
 void genUnaryOp(UNARY_OPERATOR op, char *c_reg);
 void genfBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
 void genfUnaryOp(UNARY_OPERATOR op, char *c_reg);
+void genRead(AST_NODE* functionCallNode);
+void genFread(AST_NODE* functionCallNode);
+
 
 
 
@@ -562,24 +565,51 @@ void genIfStmt(AST_NODE* ifNode){
 void genWriteFunction(AST_NODE* functionCallNode){
 	return;
 }
+
+void genWriteFunction(AST_NODE* functionCallNode){
+	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
+	AST_NODE *param = paramList->child;
+	genNode(param);
+	if(param->dataType == INT_TYPE){
+		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
+		fprintf(fp, "\tjal _write_int\n");
+	}
+	else if(param->dataType == FLOAT_TYPE){
+		fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
+		fprintf(fp, "\tjal _write_float\n");
+	}
+	else{
+		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
+		fprintf(fp, "\tjal _write_str\n");
+	}
+	return;
+}
+
+void genRead(AST_NODE* functionCallNode){
+	fprintf(fp, "\tjal _read_int\n");
+	functionCallNode->place = getReg(INT_TYPE);
+	fprintf(fp, "\tmv %s a0\n", getRegName(functionCallNode));
+	return;
+}
+
+void genFread(AST_NODE* functionCallNode){
+	fprintf(fp, "\tjal _read_float\n");
+	functionCallNode->place = getReg(FLOAT_TYPE);
+	fprintf(fp, "\tfmv.s %s fa0\n", getRegName(functionCallNode));
+	return;
+}
+
 void genFunctionCall(AST_NODE* functionCallNode){
 	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
 	char *name = funcName->semantic_value.identifierSemanticValue.identifierName;
 	if(!strcmp(name, "write")){
-		AST_NODE *param = paramList->child;
-		genNode(param);
-		if(param->dataType == INT_TYPE){
-			fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-			fprintf(fp, "\tjal _write_int\n");
-		}
-		else if(param->dataType == FLOAT_TYPE){
-			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
-			fprintf(fp, "\tjal _write_float\n");
-		}
-		else{
-			fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-			fprintf(fp, "\tjal _write_str\n");
-		}
+		genWriteFunction(functionCallNode);
+	}
+	else if(!strcmp(name, "read")){
+		genRead(functionCallNode);
+	}
+	else if(!strcmp(name, "fread")){
+		genFread(functionCallNode);
 	}
 	else{
 		fprintf(fp, "\tjal _start_%s\n", name);
