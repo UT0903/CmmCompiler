@@ -395,13 +395,22 @@ int checkParam(Parameter *decl_param, AST_NODE *param){
 
 void checkFunctionCall(AST_NODE* functionCallNode)
 {
-    SymbolTableEntry *entry = getSymbol(functionCallNode->child);
-    if(!strcmp("write", functionCallNode->child->semantic_value.identifierSemanticValue.identifierName)){
+    char *funcName = functionCallNode->child->semantic_value.identifierSemanticValue.identifierName;
+    if(!strcmp("write", funcName)){
         AST_NODE *param_list = functionCallNode->child->rightSibling;
         AST_NODE *param = param_list->child;
         NodeFolding(param);
         return;
     }
+    else if(!strcmp("read", funcName)){
+        functionCallNode->dataType = INT_TYPE;
+        return;
+    }
+    else if(!strcmp("fread", funcName)){
+        functionCallNode->dataType = FLOAT_TYPE;
+        return;
+    }
+    SymbolTableEntry *entry = getSymbol(functionCallNode->child);
     if(entry == NULL){
         printError(NOT_DECLARED_IN_THIS_SCOPE, functionCallNode);
         return;
@@ -828,7 +837,6 @@ AST_NODE* NodeFolding(AST_NODE *Node){
     }
     else if(Node->nodeType == STMT_NODE && Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
         checkFunctionCall(Node);
-        Node->dataType = checkType(Node->child);
     }
     else if(Node->nodeType == IDENTIFIER_NODE){
         Node->dataType = checkType(Node);
@@ -953,7 +961,15 @@ DATA_TYPE checkType(AST_NODE *Node){
     }
     else if(Node->nodeType == STMT_NODE){
         if(Node->semantic_value.stmtSemanticValue.kind == FUNCTION_CALL_STMT){
-            return checkType(Node->child);
+            char *funcName = Node->child->semantic_value.identifierSemanticValue.identifierName;
+            if(!strcmp("read", funcName)){
+                return INT_TYPE;
+            }
+            else if(!strcmp("fread", funcName)){
+                return FLOAT_TYPE;
+            }
+            else
+                return checkType(Node->child);
         }
         else{
             //handle error
