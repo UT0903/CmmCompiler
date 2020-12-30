@@ -695,7 +695,7 @@ void genReturnNode(AST_NODE *Node){
 		if(Node->child->dataType == INT_TYPE)
 			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 		else
-			fprintf(fp, "\tmv fa0, %s\n", getRegName(Node->child));
+			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
 	}
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
