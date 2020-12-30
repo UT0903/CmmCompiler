@@ -618,7 +618,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 				fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
 			}
 			else{
-				fprintf(fp, "\tfmv %s, fa0\n", getRegName(functionCallNode));
+				fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
 			}
 		}
 	}
