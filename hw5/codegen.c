@@ -35,7 +35,8 @@ int FloatToInt (float f);
 int getArraySize(ArrayProperties ap);
 void genStmt(AST_NODE *stmtNode);
 void genDecl(AST_NODE *declNode, TYPE type);
-void genVarDecl(AST_NODE* typeNode, TYPE type);
+void genGlobalVarDecl(AST_NODE* typeNode);
+void genLocalVarDecl(AST_NODE* typeNode);
 void genFuncDecl(AST_NODE* typeNode);
 void ReleaseConst();
 
@@ -199,10 +200,17 @@ void genDecl(AST_NODE *declNode, TYPE type){
 	assert(declNode->nodeType == DECLARATION_NODE);
 	switch(declNode->semantic_value.declSemanticValue.kind){
 		case(VARIABLE_DECL):
-		case(FUNCTION_PARAMETER_DECL):
-			genVarDecl(declNode->child, type);
-			//fprintf(stderr, "genVarDecl\n");
+			if(type == GLOBAL){
+				genGlobalVarDecl(declNode->child);
+			}
+			else if(type == LOCAL){
+				genLocalVarDecl(declNode->child);
+			}
+			else ERR_EXIT("gen_decl");
 			break;
+		case(FUNCTION_PARAMETER_DECL):
+			fprintf(stderr, "Eror in genDecl\n");
+			exit(0);
 		case(TYPE_DECL):
 			break;
 		case(FUNCTION_DECL):
@@ -723,8 +731,10 @@ void genFuncDecl(AST_NODE* typeNode){
 	gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 	AST_NODE *paramListNode = nameNode->rightSibling;
 	AST_NODE *paramDeclNode = paramListNode->child;
+	int paramNum = 0;
 	while(paramDeclNode != NULL){
-		genDecl(paramDeclNode, LOCAL);
+		genParamVarDecl(paramDeclNode->child, paramNum);
+		paramNum++;
 		paramDeclNode = paramDeclNode->rightSibling;
 	}
 	AST_NODE *blockNode = paramListNode->rightSibling;
@@ -732,71 +742,80 @@ void genFuncDecl(AST_NODE* typeNode){
 	gen_epilogue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 	
 }
-void genVarDecl(AST_NODE* typeNode, TYPE type){
+void genParamVarDecl(AST_NODE* typeNode, int paramNum){
+	
+}
+void genGlobalVarDecl(AST_NODE* typeNode){
 	AST_NODE* varNode = typeNode->rightSibling;
 	while(varNode != NULL){
-		//fprintf(stderr, "%s\n", varNode->semantic_value.identifierSemanticValue.identifierName);
 		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
 		assert(entry != NULL);
 		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
 			if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
-				if(type == GLOBAL){
-					if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-						fprintf(fp, "_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
-					}
-					else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-						fprintf(fp, "_g_%s: .word %d\n", entry->name, FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					}
-					else ERR_EXIT("genVarDecl3");
-					entry->global = 1;
+				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
+					fprintf(fp, "_g_%s: .word %d\n", entry->name, varNode->child->semantic_value.const1->const_u.intval);
 				}
-				else if(type == LOCAL){
-					AR_offset -= 4;
-					if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-						int reg = getReg(INT_TYPE);
-						fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
-						fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-					}
-					else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-						int reg = getReg(INT_TYPE);
-						fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-						fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-					}
-					else ERR_EXIT("genVarDecl4");
-					entry->offset = AR_offset;
-					entry->global = 0;
+				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+					fprintf(fp, "_g_%s: .word %d\n", entry->name, FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
 				}
-				else ERR_EXIT("genVarDecl5");
+				else ERR_EXIT("genGlobalVarDecl1");
+				entry->global = 1;
 			}
 			else if(varNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-				if(type == GLOBAL){
-					fprintf(fp, "_g_%s: .word 0\n", entry->name);
-					entry->global = 1;
-				}
-				else if(type == LOCAL){
-					AR_offset -= 4;
-					entry->offset = AR_offset;
-					entry->global = 0;
-				}
-				else ERR_EXIT("genVarDecl1");
+				fprintf(fp, "_g_%s: .word 0\n", entry->name);
+				entry->global = 1;
 			}
-			else ERR_EXIT("genVarDecl10");
+			else ERR_EXIT("genGlobalVarDecl2");
 			
 		}
 		else if(entry->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR){
 			int arr_size = getArraySize(entry->attribute->attr.typeDescriptor->properties.arrayProperties);
-			if(type == GLOBAL){
-				fprintf(fp, "_g_%s: .space %d\n", entry->name, arr_size*4);
-				entry->global = 1;
-			}
-			else if(type == LOCAL){
-				AR_offset -= arr_size*4;
+			fprintf(fp, "_g_%s: .space %d\n", entry->name, arr_size*4);
+			entry->global = 1;
+		}
+		else ERR_EXIT("genGlobalVarDecl3");
+		varNode = varNode->rightSibling;
+	}
+}
+void genLocalVarDecl(AST_NODE* typeNode){
+	AST_NODE* varNode = typeNode->rightSibling;
+	while(varNode != NULL){
+		SymbolTableEntry *entry = varNode->semantic_value.identifierSemanticValue.symbolTableEntry;
+		assert(entry != NULL);
+		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
+			if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
+				AR_offset -= 4;
+				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
+					int reg = getReg(INT_TYPE);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
+					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
+					freeReg(reg, INT_TYPE);
+				}
+				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+					int reg = getReg(INT_TYPE);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
+					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
+					freeReg(reg, INT_TYPE);
+				}
+				else ERR_EXIT("genLocalVarDecl1");
 				entry->offset = AR_offset;
 				entry->global = 0;
 			}
-			else ERR_EXIT("genVarDecl2");
+			else if(varNode->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
+				AR_offset -= 4;
+				entry->offset = AR_offset;
+				entry->global = 0;
+			}
+			else ERR_EXIT("genLocalVarDecl2");
+			
 		}
-		else ERR_EXIT("genVarDecl6");
+		else if(entry->attribute->attr.typeDescriptor->kind == ARRAY_TYPE_DESCRIPTOR){
+			int arr_size = getArraySize(entry->attribute->attr.typeDescriptor->properties.arrayProperties);
+			AR_offset -= arr_size*4;
+			entry->offset = AR_offset;
+			entry->global = 0;
+		}
+		else ERR_EXIT("genLocalVarDecl3");
 		varNode = varNode->rightSibling;
 	}
 }
@@ -820,61 +839,3 @@ int getArraySize(ArrayProperties ap){
 	}
 	return ret;
 }
-/*int load(AST_NODE *node, int shift){
-	int rd;
-	if(node->nodeType == CONST_VALUE_NODE){
-		if(node->semantic_value.const1->const_type == INTEGERC){
-			rd = getReg(INT_TYPE);
-			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[rd], node->place);
-			fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
-		}
-		else if(node->semantic_value.const1->const_type == FLOATC){
-			rd = getReg(FLOAT_TYPE);
-			int tmp = getReg(INT_TYPE);
-			fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[tmp], node->place);
-			fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
-			freeReg(tmp, INT);
-		}
-		else{
-			rd = getReg(INT_TYPE);
-			fprintf(fp, "\tla %s, _CONSTANT_%d\n", float_reg[rd], node->place);
-		}
-	}
-	else if(node->nodeType == IDENTIFIER_NODE){
-		SymbolTableEntry *entry = node->semantic_value.identifierSemanticValue.symbolTableEntry;
-		TypeDescriptor *td = entry->attribute->attr.typeDescriptor;
-		DATA_TYPE data_type;
-		if(td->kind == SCALAR_TYPE_DESCRIPTOR){
-			data_type = td->properties.dataType;
-		}
-		else{
-			data_type = td->properties.arrayProperties.elementType;
-		}
-		if(entry->global == 1){
-			if(data_type == INT_TYPE){
-				rd = getReg(INT_TYPE);
-				fprintf(fp, "\tla %s, _g_%s\n", int_reg[rd], entry->name);
-				fprintf(fp, "\tlw %s, %d(%s)\n", int_reg[rd], shift, int_reg[rd]);
-			}
-			else{
-				rd = getReg(FLOAT_TYPE);
-				int tmp = getReg(INT_TYPE);
-				fprintf(fp, "\tla %s, _g_%s\n", int_reg[tmp], entry->name);
-				fprintf(fp, "\tflw %s, %d(%s)\n", float_reg[rd], shift, int_reg[tmp]);
-				freeReg(tmp, INT);
-			}
-			fprintf(fp, "\tlw %s, %d(%s)\n", rd, shift, rd);
-		}
-		else{ //local
-			if(data_type == INT_TYPE){
-				rd = getReg(INT_TYPE);
-				fprintf(fp, "\tlw %s, %d(fp)\n", int_reg[rd], entry->offset + shift);
-			}
-			else{
-				rd = getReg(FLOAT_TYPE);
-				fprintf(fp, "\tflw %s, %d(fp)\n", float_reg[rd], entry->offset + shift);
-			}	
-		}
-	}
-	return rd;
-}*/
