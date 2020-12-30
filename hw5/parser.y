@@ -891,9 +891,9 @@ char *argv[];
      yyparse();
      
         //printGV(prog, NULL);
-    printf("init\n");
+    //printf("init\n");
      initializeSymbolTable();
-     printf("codeGen\n");
+     //printf("codeGen\n");
      semanticAnalysis(prog);
      
      symbolTableEnd();
