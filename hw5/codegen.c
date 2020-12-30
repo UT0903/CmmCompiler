@@ -462,12 +462,12 @@ void genfBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tfeq.s %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_GE:
-		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tflt.s %s, %s, %s\n", reg, l_reg, r_reg);
+		fprintf(fp, "\tseqz %s, %s\n", reg, reg );
         break;
     case BINARY_OP_LE:
-		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tflt.s %s, %s, %s\n", reg, r_reg, l_reg);
+		fprintf(fp, "\tseqz %s, %s\n", reg, reg );
         break;
     case BINARY_OP_NE:
 		fprintf(fp, "\tfeq.s %s, %s, %s\n", reg, l_reg, r_reg);
