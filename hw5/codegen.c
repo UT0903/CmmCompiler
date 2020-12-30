@@ -124,6 +124,7 @@ void codeGen(AST_NODE *rootNode){
 		}
 		declNode = declNode->rightSibling;
 	}
+	ReleaseConst();
 	fclose(fp);
 	fprintf(stderr, "End Code generation\n");
 }
@@ -179,8 +180,6 @@ void gen_epilogue(char *name){
 	else{
 		fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
 	}
-	
-	ReleaseConst();
 }
 
 void Read(char* to, DATA_TYPE type){
