@@ -815,16 +815,20 @@ void genLocalVarDecl(AST_NODE* typeNode){
 			if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
 				AR_offset -= 4;
 				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-					int reg = getReg(INT_TYPE);
+					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
-					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-					freeReg(reg, INT_TYPE);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
+					fprintf(fp, "\tadd %s, fp, %d\n", int_reg[reg2], int_reg[reg2]);
+					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
+					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
 				}
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					int reg = getReg(INT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					fprintf(fp, "\tsw %s, %d(fp)\n", int_reg[reg], AR_offset);
-					freeReg(reg, INT_TYPE);
+					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.intval));
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
+					fprintf(fp, "\tadd %s, fp, %d\n", int_reg[reg2], int_reg[reg2]);
+					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
+					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
 				}
 				else ERR_EXIT("genLocalVarDecl1");
 				entry->offset = AR_offset;
