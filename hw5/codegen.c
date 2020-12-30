@@ -666,9 +666,9 @@ void genForStmt(AST_NODE* forNode){
             assign_expr = assign_expr->rightSibling;
         }
     }
+	fprintf(fp, "L%d:\n", L1);
     if(relop_expr_list->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
         AST_NODE *relop_expr = relop_expr_list->child;
-		fprintf(fp, "L%d:\n", L1);
         while(relop_expr){
             genNode(relop_expr);
 			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(relop_expr), L4);
@@ -676,9 +676,9 @@ void genForStmt(AST_NODE* forNode){
         }
 		fprintf(fp, "\tj L%d\n", L3);
     }
+	fprintf(fp, "L%d:\n", L2);
     if(second_assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = second_assign_expr_list->child;
-		fprintf(fp, "L%d:\n", L2);
         while(assign_expr){
             if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
                 genAssignmentStmt(assign_expr);
