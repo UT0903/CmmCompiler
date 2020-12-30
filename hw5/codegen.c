@@ -419,7 +419,7 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		L = L_ptr++;
 		fprintf(fp, "\tmv %s, zero\n", reg);
 		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
-		fprintf(fp, "\tsnez %s, L%d\n", r_reg, L);
+		fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
 		fprintf(fp, "L%d:", L);
         break;
     case BINARY_OP_OR:
@@ -428,8 +428,9 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tseqz %s, %s\n", l_reg, l_reg);
 		fprintf(fp, "\tseqz %s, %s\n", r_reg, r_reg);
 		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
-		fprintf(fp, "\tsnez %s, L%d\n", r_reg, L);
+		fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
 		fprintf(fp, "L%d:", L);
+		fprintf(fp, "\tseqz %s, %s\n", reg, reg);
         break;
     default:
         break;
