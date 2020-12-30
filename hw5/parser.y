@@ -887,13 +887,17 @@ int argc;
 char *argv[];
   {
      yyin = fopen(argv[1],"r");
-     yyparse();
-        printGV(prog, NULL);
-     initializeSymbolTable();
      
+     yyparse();
+     
+        //printGV(prog, NULL);
+    printf("init\n");
+     initializeSymbolTable();
+     printf("codeGen\n");
      semanticAnalysis(prog);
      
      symbolTableEnd();
+     
      codeGen(prog);
      if (!g_anyErrorOccur) {
         printf("Parsing completed. No errors found.\n");

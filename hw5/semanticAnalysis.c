@@ -653,7 +653,7 @@ void declareFunction(AST_NODE* returnTypeNode){
     //END ADD
 
     processBlockNode(paramListNode->rightSibling);
-    PrintSymbolTable();
+    //PrintSymbolTable();
     closeScope();
 }
 TypeDescriptor* getTypeDescriptor(AST_NODE* IDNode){ //get DATA_TYPE from ID Node
