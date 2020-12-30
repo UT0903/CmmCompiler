@@ -378,6 +378,7 @@ void genExprNode(AST_NODE* Node){
 }
 
 void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
+	int L;
 	switch (op)
     {
     case BINARY_OP_ADD:
@@ -415,20 +416,20 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tslt %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_AND:
-		int L = L_ptr++;
+		L = L_ptr++;
 		fprintf(fp, "\tmv %s zero\n", reg);
 		fprintf(fp, "\tbeqz %s L%d\n", l_reg, L);
 		fprintf(fp, "\tsnez %s L%d\n", r_reg, L);
 		fprintf(fp, "L%d:", L);
         break;
     case BINARY_OP_OR:
-		int L2 = L_ptr++;
+		L = L_ptr++;
 		fprintf(fp, "\tmv %s zero\n", reg);
 		fprintf(fp, "\tseqz %s %s\n", l_reg, l_reg);
 		fprintf(fp, "\tseqz %s %s\n", r_reg, r_reg);
-		fprintf(fp, "\tbeqz %s L%d\n", l_reg, L2);
-		fprintf(fp, "\tsnez %s L%d\n", r_reg, L2);
-		fprintf(fp, "L%d:", L2);
+		fprintf(fp, "\tbeqz %s L%d\n", l_reg, L);
+		fprintf(fp, "\tsnez %s L%d\n", r_reg, L);
+		fprintf(fp, "L%d:", L);
         break;
     default:
         break;
