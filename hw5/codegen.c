@@ -322,13 +322,15 @@ int getOffsetPlace(AST_NODE* Node){
 	}
 	else{
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-			fprintf(fp, "\taddi %s, fp, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 		}
 		else{
 			AST_NODE *dim = Node->child;
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\taddi %s, fp, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
 			freeReg(dim->place, dim->dataType);
@@ -378,6 +380,7 @@ void genExprNode(AST_NODE* Node){
 }
 
 void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
+	int L;
 	switch (op)
     {
     case BINARY_OP_ADD:
@@ -415,10 +418,21 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
 		fprintf(fp, "\tslt %s, %s, %s\n", reg, l_reg, r_reg);
         break;
     case BINARY_OP_AND:
-		fprintf(fp, "\tand %s, %s, %s\n", reg, l_reg, r_reg);
+		L = L_ptr++;
+		fprintf(fp, "\tmv %s, zero\n", reg);
+		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
+		fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
+		fprintf(fp, "L%d:", L);
         break;
     case BINARY_OP_OR:
-		fprintf(fp, "\tor %s, %s, %s\n", reg, l_reg, r_reg);
+		L = L_ptr++;
+		fprintf(fp, "\tmv %s, zero\n", reg);
+		fprintf(fp, "\tseqz %s, %s\n", l_reg, l_reg);
+		fprintf(fp, "\tseqz %s, %s\n", r_reg, r_reg);
+		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
+		fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
+		fprintf(fp, "L%d:", L);
+		fprintf(fp, "\tseqz %s, %s\n", reg, reg);
         break;
     default:
         break;
