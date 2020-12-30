@@ -398,11 +398,11 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
         break;
     case BINARY_OP_GE:
 		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_LE:
 		fprintf(fp, "\tslt %s, %s, %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_NE:
 		fprintf(fp, "\txor %s, %s, %s\n", l_reg, l_reg, r_reg);
@@ -463,11 +463,11 @@ void genfBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
         break;
     case BINARY_OP_GE:
 		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, l_reg, r_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_LE:
 		fprintf(fp, "\tflt.s %s, %s, %s\n", l_reg, r_reg, l_reg);
-		fprintf(fp, "\tsnez %s, %s\n", reg, l_reg );
+		fprintf(fp, "\tseqz %s, %s\n", reg, l_reg );
         break;
     case BINARY_OP_NE:
 		fprintf(fp, "\tfeq.s %s, %s, %s\n", reg, l_reg, r_reg);
@@ -625,7 +625,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 				fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
 			}
 			else{
-				fprintf(fp, "\tfmv %s, fa0\n", getRegName(functionCallNode));
+				fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
 			}
 		}
 	}
@@ -698,8 +698,11 @@ void genForStmt(AST_NODE* forNode){
 
 void genReturnNode(AST_NODE *Node){
 	if(Node->child->nodeType != NUL_NODE){
-		genNode(Node->child);;
-		fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
+		genNode(Node->child);
+		if(Node->child->dataType == INT_TYPE)
+			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
+		else
+			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
 	}
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
