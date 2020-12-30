@@ -514,7 +514,9 @@ void processBlockNode(AST_NODE* blockNode)
 void processStmtNode(AST_NODE* stmtNode)
 {
     if(stmtNode->nodeType == BLOCK_NODE){
+        openScope();
         processBlockNode(stmtNode);
+        closeScope();
     }
     else if(stmtNode->nodeType == CONST_VALUE_NODE){
         NodeFolding(stmtNode);
