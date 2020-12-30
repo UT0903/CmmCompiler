@@ -6,4 +6,4 @@ for filename in ./testdata/*.c; do
     g++ temp.cpp
     ./a.out > ${filename/".c"/".output"}
 done
-rm a.out
+rm a.out temp.cpp
