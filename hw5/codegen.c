@@ -417,18 +417,18 @@ void genBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg){
         break;
     case BINARY_OP_AND:
 		L = L_ptr++;
-		fprintf(fp, "\tmv %s zero\n", reg);
-		fprintf(fp, "\tbeqz %s L%d\n", l_reg, L);
-		fprintf(fp, "\tsnez %s L%d\n", r_reg, L);
+		fprintf(fp, "\tmv %s, zero\n", reg);
+		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
+		fprintf(fp, "\tsnez %s, L%d\n", r_reg, L);
 		fprintf(fp, "L%d:", L);
         break;
     case BINARY_OP_OR:
 		L = L_ptr++;
-		fprintf(fp, "\tmv %s zero\n", reg);
-		fprintf(fp, "\tseqz %s %s\n", l_reg, l_reg);
-		fprintf(fp, "\tseqz %s %s\n", r_reg, r_reg);
-		fprintf(fp, "\tbeqz %s L%d\n", l_reg, L);
-		fprintf(fp, "\tsnez %s L%d\n", r_reg, L);
+		fprintf(fp, "\tmv %s, zero\n", reg);
+		fprintf(fp, "\tseqz %s, %s\n", l_reg, l_reg);
+		fprintf(fp, "\tseqz %s, %s\n", r_reg, r_reg);
+		fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
+		fprintf(fp, "\tsnez %s, L%d\n", r_reg, L);
 		fprintf(fp, "L%d:", L);
         break;
     default:
