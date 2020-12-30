@@ -324,9 +324,17 @@ void checkAssignmentStmt(AST_NODE* assignmentNode)
         NodeFolding(r);
         DATA_TYPE type = checkType(l);
         if(type == INT_TYPE && r->dataType != INT_TYPE){
+            if(r->nodeType == CONST_VALUE_NODE && r->dataType == FLOAT_TYPE){
+                r->semantic_value.const1->const_type = INTEGERC;
+                r->semantic_value.const1->const_u.intval = (int)r->semantic_value.const1->const_u.fval;
+            }
             r->dataType = INT_TYPE;
         }
         else if(type == FLOAT_TYPE && r->dataType != FLOAT_TYPE){
+            if(r->nodeType == CONST_VALUE_NODE && r->dataType == INT_TYPE){
+                r->semantic_value.const1->const_type = FLOATC;
+                r->semantic_value.const1->const_u.fval = (float)r->semantic_value.const1->const_u.intval;
+            }
             r->dataType = FLOAT_TYPE;
         }
     }
