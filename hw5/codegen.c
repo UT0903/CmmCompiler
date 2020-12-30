@@ -322,13 +322,15 @@ int getOffsetPlace(AST_NODE* Node){
 	}
 	else{
 		if(Node->semantic_value.identifierSemanticValue.kind == NORMAL_ID){
-			fprintf(fp, "\taddi %s, fp, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 		}
 		else{
 			AST_NODE *dim = Node->child;
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\taddi %s, fp, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
+			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
 			freeReg(dim->place, dim->dataType);
