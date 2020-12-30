@@ -644,36 +644,49 @@ void genWhileStmt(AST_NODE* whileNode){
 
 void genForStmt(AST_NODE* forNode){
     AST_NODE *assign_expr_list = forNode->child, *relop_expr_list = assign_expr_list->rightSibling, *second_assign_expr_list = relop_expr_list->rightSibling, *stmt = second_assign_expr_list->rightSibling;
+	int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++, L4 = L_ptr++;
     if(assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = assign_expr_list->child;
         while(assign_expr){
             if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
                 genAssignmentStmt(assign_expr);
             }
-            else
+            else{
                 genNode(assign_expr);
+				freeReg(assign_expr->place, assign_expr->dataType);
+			}
             assign_expr = assign_expr->rightSibling;
         }
     }
     if(relop_expr_list->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
         AST_NODE *relop_expr = relop_expr_list->child;
+		fprintf(fp, "L%d:\n", L1);
         while(relop_expr){
             genNode(relop_expr);
+			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(relop_expr), L4);
             relop_expr = relop_expr->rightSibling;
         }
+		fprintf(fp, "\tj L%d\n", L3);
     }
     if(second_assign_expr_list->nodeType == NONEMPTY_ASSIGN_EXPR_LIST_NODE){
         AST_NODE *assign_expr = second_assign_expr_list->child;
+		fprintf(fp, "L%d:\n", L2);
         while(assign_expr){
             if(assign_expr->nodeType == STMT_NODE && assign_expr->semantic_value.stmtSemanticValue.kind == ASSIGN_STMT){
                 genAssignmentStmt(assign_expr);
             }
-            else
+            else{
                 genNode(assign_expr);
+				freeReg(assign_expr->place, assign_expr->dataType);
+			}
             assign_expr = assign_expr->rightSibling;
         }
+		fprintf(fp, "\tj L%d\n", L1);
     }
+	fprintf(fp, "L%d:\n", L3);
     genStmt(stmt);
+	fprintf(fp, "\tj L%d\n", L2);
+	fprintf(fp, "L%d:\n", L4);
 }
 
 void genReturnNode(AST_NODE *Node){
