@@ -316,7 +316,7 @@ int getOffsetPlace(AST_NODE* Node){
 	char *reg = int_reg[reg_num];
 	SymbolTableEntry *entry = Node->semantic_value.identifierSemanticValue.symbolTableEntry;
 	if(entry->global){
-		if(entry->attribute->attributeKind == SCALAR_TYPE_DESCRIPTOR){
+		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
 			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
 		}
 		else{
@@ -330,7 +330,7 @@ int getOffsetPlace(AST_NODE* Node){
 		}
 	}
 	else{
-		if(entry->attribute->attributeKind == SCALAR_TYPE_DESCRIPTOR){
+		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
 			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
 			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 		}
