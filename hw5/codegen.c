@@ -755,7 +755,7 @@ void genReturnNode(AST_NODE *Node){
 			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 		else
 			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
-		freeReg(Node->place, Node->dataType);
+		freeReg(Node->child->place, Node->child->dataType);
 	}
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
