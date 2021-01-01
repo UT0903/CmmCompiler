@@ -74,6 +74,7 @@ int getReg(DATA_TYPE type){
 			ret = int_ptr;
 		}
 		used_int[ret] = 1;
+		fprintf("use %s\n", int_reg[ret]);
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
 	}
 	else{
@@ -84,6 +85,7 @@ int getReg(DATA_TYPE type){
 			ret = float_ptr;
 		}
 		used_float[ret] = 1;
+		fprintf("use %s\n", float_reg[ret]);
 		float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 	}
 	return ret;
@@ -91,9 +93,11 @@ int getReg(DATA_TYPE type){
 void freeReg(int reg, DATA_TYPE type){
 	if(type == INT_TYPE){
 		used_int[reg] = 0;
+		fprintf("free %s\n", int_reg[reg]);
 	}
 	else{
 		used_float[reg] = 0;
+		fprintf("free %s\n", float_reg[reg]);
 	}
 	return;
 }
