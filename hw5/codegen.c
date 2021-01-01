@@ -91,7 +91,7 @@ int getReg(DATA_TYPE type){
 	return ret;
 }
 void freeReg(int reg, DATA_TYPE type){
-	if(type == INT_TYPE){
+	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		used_int[reg] = 0;
 		//fprintf(stderr, "free %s\n", int_reg[reg]);
 	}
@@ -624,6 +624,7 @@ void genWriteFunction(AST_NODE* functionCallNode){
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
+	freeReg(param, param->dataType);
 	return;
 }
 
@@ -761,13 +762,16 @@ void genReturnNode(AST_NODE *Node){
         now = now->parent;
     }
 	now = now->child->rightSibling;
+	int j_reg = getReg(INT_TYPE);
 	if(strcmp(now->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
-		fprintf(fp, "\tj _end_MAIN\n");
+		fprintf(fp, "\tla %s, _end_MAIN\n", int_reg[j_reg]);
+		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	}
 	else{
-		fprintf(fp, "\tj _end_%s\n", now->semantic_value.identifierSemanticValue.identifierName);
+		fprintf(fp, "\tla %s, _end_%s\n", int_reg[j_reg], now->semantic_value.identifierSemanticValue.identifierName);
+		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	}
-	
+	freeReg(j_reg, INT_TYPE);
 	return;
 }
 
