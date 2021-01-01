@@ -70,6 +70,7 @@ int getReg(DATA_TYPE type){
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		ret = int_ptr;
 		while(used_int[ret]){
+			fprintf(stderr, "hihi\n");
 			int_ptr = (int_ptr + 1) % INT_REG_NUM;
 			ret = int_ptr;
 		}
@@ -81,6 +82,7 @@ int getReg(DATA_TYPE type){
 		ret = float_ptr;
 		while (used_float[ret])
 		{
+			fprintf(stderr, "hihi\n");
 			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 			ret = float_ptr;
 		}
