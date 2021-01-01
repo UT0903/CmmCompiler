@@ -759,7 +759,6 @@ void genReturnNode(AST_NODE *Node){
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
     {
-		fprintf(stderr, "hihi\n");
         now = now->parent;
     }
 	now = now->child->rightSibling;
