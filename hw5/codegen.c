@@ -326,6 +326,7 @@ int getOffsetPlace(AST_NODE* Node){
 			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
 			fprintf(fp, "\tslli %s, %s, 2\n", dim_reg, dim_reg);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, dim_reg);
+			freeReg(dim->place, dim->dataType);
 		}
 	}
 	else{
