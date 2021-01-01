@@ -572,7 +572,10 @@ void genIfStmt(AST_NODE* ifNode){
 		genNode(test);
 		int L1 = L_ptr++, L2 = L_ptr++;
 		fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L1);
-		fprintf(fp, "\tj _L%d\n", L2);
+		int j_reg = getReg(INT_TYPE);
+		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L2);
+		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
+		freeReg(j_reg, INT_TYPE);
 		freeReg(test->place, test->dataType);
 		fprintf(fp, "_L%d:\n", L1);
 		genStmt(stmt);
@@ -582,14 +585,19 @@ void genIfStmt(AST_NODE* ifNode){
 		genNode(test);
 		int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
 		fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L1);
-		fprintf(fp, "\tj _L%d\n", L2);
+		int j_reg = getReg(INT_TYPE);
+		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L2);
+		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
+		freeReg(j_reg, INT_TYPE);
 		freeReg(test->place, test->dataType);
 		fprintf(fp, "_L%d:\n", L1);
 		genStmt(stmt);
-		fprintf(fp, "\tj _L%d\n", L3);
+		j_reg = getReg(INT_TYPE);
+		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L3);
+		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
+		freeReg(j_reg, INT_TYPE);
 		fprintf(fp, "_L%d:\n", L2);
 		genStmt(ELSE);
-		fprintf(fp, "\tj _L%d\n", L3);
 		fprintf(fp, "_L%d:\n", L3);
 	}
 	return;
@@ -599,30 +607,41 @@ void genWriteFunction(AST_NODE* functionCallNode){
 	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
 	AST_NODE *param = paramList->child;
 	genNode(param);
+	int j_reg = getReg(INT_TYPE);
 	if(param->dataType == INT_TYPE){
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-		fprintf(fp, "\tjal _write_int\n");
+		fprintf(fp, "\tla %s _write_int\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
 	}
 	else if(param->dataType == FLOAT_TYPE){
 		fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
-		fprintf(fp, "\tjal _write_float\n");
+		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
 	}
 	else{
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-		fprintf(fp, "\tjal _write_str\n");
+		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
 	}
+	freeReg(j_reg, INT_TYPE);
 	return;
 }
 
 void genRead(AST_NODE* functionCallNode){
-	fprintf(fp, "\tjal _read_int\n");
+	int j_reg = getReg(INT_TYPE);
+	fprintf(fp, "\tla %s _read_int\n", int_reg[j_reg]);
+	fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(INT_TYPE);
 	fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
 	return;
 }
 
 void genFread(AST_NODE* functionCallNode){
-	fprintf(fp, "\tjal _read_float\n");
+	int j_reg = getReg(INT_TYPE);
+	fprintf(fp, "\tla %s _read_float\n", int_reg[j_reg]);
+	fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(FLOAT_TYPE);
 	fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
 	return;
@@ -641,7 +660,10 @@ void genFunctionCall(AST_NODE* functionCallNode){
 		genFread(functionCallNode);
 	}
 	else{
-		fprintf(fp, "\tjal _start_%s\n", name);
+		int j_reg = getReg(INT_TYPE);
+		fprintf(fp, "\tla %s _start_%s\n", int_reg[j_reg], name);
+		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+		freeReg(j_reg, INT_TYPE);
 		FunctionSignature *signature = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature;
 		if(signature->returnType != VOID_TYPE){
 			functionCallNode->place = getReg(signature->returnType);
@@ -660,15 +682,20 @@ void genWhileStmt(AST_NODE* whileNode){
 	AST_NODE *test = whileNode->child;
 	AST_NODE *stmt = test->rightSibling;
 	int L = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
-	fprintf(fp, "\tj _L%d\n", L);
 	fprintf(fp, "_L%d:\n", L);
 	genNode(test);
 	fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L2);
 	freeReg(test->place, test->dataType);
-	fprintf(fp, "\tj _L%d\n", L3);
+	int j_reg = getReg(INT_TYPE);
+	fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L3);
+	fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
+	freeReg(j_reg, INT_TYPE);
 	fprintf(fp, "_L%d:\n", L2);
 	genStmt(stmt);
-	fprintf(fp, "\tj _L%d\n", L);
+	j_reg = getReg(INT_TYPE);
+	fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L);
+	fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
+	freeReg(j_reg, INT_TYPE);
 	fprintf(fp, "_L%d:\n", L3);
 	return;
 }
