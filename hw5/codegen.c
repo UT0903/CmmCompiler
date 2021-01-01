@@ -573,7 +573,7 @@ void genIfStmt(AST_NODE* ifNode){
 		int L1 = L_ptr++, L2 = L_ptr++;
 		fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L1);
 		int j_reg = getReg(INT_TYPE);
-		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L2);
+		fprintf(fp, "\tla %s, _L%d\n", int_reg[j_reg], L2);
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
 		freeReg(test->place, test->dataType);
@@ -586,14 +586,14 @@ void genIfStmt(AST_NODE* ifNode){
 		int L1 = L_ptr++, L2 = L_ptr++, L3 = L_ptr++;
 		fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L1);
 		int j_reg = getReg(INT_TYPE);
-		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L2);
+		fprintf(fp, "\tla %s, _L%d\n", int_reg[j_reg], L2);
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
 		freeReg(test->place, test->dataType);
 		fprintf(fp, "_L%d:\n", L1);
 		genStmt(stmt);
 		j_reg = getReg(INT_TYPE);
-		fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L3);
+		fprintf(fp, "\tla %s, _L%d\n", int_reg[j_reg], L3);
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
 		fprintf(fp, "_L%d:\n", L2);
@@ -610,17 +610,17 @@ void genWriteFunction(AST_NODE* functionCallNode){
 	int j_reg = getReg(INT_TYPE);
 	if(param->dataType == INT_TYPE){
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-		fprintf(fp, "\tla %s _write_int\n", int_reg[j_reg]);
+		fprintf(fp, "\tla %s, _write_int\n", int_reg[j_reg]);
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	else if(param->dataType == FLOAT_TYPE){
 		fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
-		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
+		fprintf(fp, "\tla %s, _write_float\n", int_reg[j_reg]);
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	else{
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
-		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
+		fprintf(fp, "\tla %s, _write_float\n", int_reg[j_reg]);
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
@@ -629,7 +629,7 @@ void genWriteFunction(AST_NODE* functionCallNode){
 
 void genRead(AST_NODE* functionCallNode){
 	int j_reg = getReg(INT_TYPE);
-	fprintf(fp, "\tla %s _read_int\n", int_reg[j_reg]);
+	fprintf(fp, "\tla %s, _read_int\n", int_reg[j_reg]);
 	fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(INT_TYPE);
@@ -639,7 +639,7 @@ void genRead(AST_NODE* functionCallNode){
 
 void genFread(AST_NODE* functionCallNode){
 	int j_reg = getReg(INT_TYPE);
-	fprintf(fp, "\tla %s _read_float\n", int_reg[j_reg]);
+	fprintf(fp, "\tla %s, _read_float\n", int_reg[j_reg]);
 	fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(FLOAT_TYPE);
@@ -661,7 +661,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 	}
 	else{
 		int j_reg = getReg(INT_TYPE);
-		fprintf(fp, "\tla %s _start_%s\n", int_reg[j_reg], name);
+		fprintf(fp, "\tla %s, _start_%s\n", int_reg[j_reg], name);
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
 		FunctionSignature *signature = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature;
@@ -687,13 +687,13 @@ void genWhileStmt(AST_NODE* whileNode){
 	fprintf(fp, "\tbnez %s, _L%d\n", getRegName(test), L2);
 	freeReg(test->place, test->dataType);
 	int j_reg = getReg(INT_TYPE);
-	fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L3);
+	fprintf(fp, "\tla %s, _L%d\n", int_reg[j_reg], L3);
 	fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	fprintf(fp, "_L%d:\n", L2);
 	genStmt(stmt);
 	j_reg = getReg(INT_TYPE);
-	fprintf(fp, "\tla %s _L%d\n", int_reg[j_reg], L);
+	fprintf(fp, "\tla %s, _L%d\n", int_reg[j_reg], L);
 	fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	fprintf(fp, "_L%d:\n", L3);
