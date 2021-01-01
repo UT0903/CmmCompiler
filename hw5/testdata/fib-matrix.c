@@ -76,16 +76,16 @@ int MAIN() {
   int m;
   kP = 10003;
   m = 1;
-  while (m <= 1) {
+  while (m <= 10) {
     n = m;
     write(Fib());
     write("\n");
     m = m + 1;
   }
-  /*while (m <= 1000000000) {
+  while (m <= 1000000000) {
     n = m;
     write(Fib());
     write("\n");
     m = m * 10;
-  }*/
+  }
 }
