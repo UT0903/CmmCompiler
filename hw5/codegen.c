@@ -624,7 +624,7 @@ void genWriteFunction(AST_NODE* functionCallNode){
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
-	freeReg(param, param->dataType);
+	freeReg(param->place, param->dataType);
 	return;
 }
 
