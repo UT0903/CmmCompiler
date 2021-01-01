@@ -8,8 +8,9 @@
 #define REGNUM 25
 typedef enum NodeKind{
     NOTUSED,
-    ID,
-    CONST
+    USED, // for temp register
+    ID, //for s register
+    CONST //for s register
 }NodeKind;
 typedef struct{
     char name[10];
@@ -23,7 +24,7 @@ REG reg[REGNUM];
 void InitReg();
 void FlushReg();
 int getTempReg(DATA_TYPE type);
-int CheckInRegister(AST_NODE *node);
+int CheckSRegister(AST_NODE *node);
 int useReg(AST_NODE *node, int shift, int readWrite);
 char reg_name[REGNUM][10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", \ //7
      "ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7", \ //8
@@ -39,17 +40,21 @@ int CheckSRegister(AST_NODE *node, int shift){
         }
         return -1;
     }
+    else{
+        //TODO: CONST_VALUE_NODE
+        return -1;
+    }
+}void FlushReg(){
     //TODO
-    return -1;
 }
-int useReg(AST_NODE *node, int shift, int readWrite){ //read:0 write:1
+int getReg(AST_NODE *node, int shift, int readWrite){ //read:0 write:1
     assert(node->nodeType == IDENTIFIER_NODE || node->nodeType == CONST_VALUE_NODE);
     SymbolTableEntry *entry = NULL;
     if(node->nodeType == IDENTIFIER_NODE){
         entry = node->semantic_value.identifierSemanticValue.symbolTableEntry;
         assert(entry != NULL);
         int reg_num;
-        if((reg_num = CheckInRegister(node, shift)) == -1){ //not load into reg yet
+        if((reg_num = CheckSRegister(node, shift)) == -1){ //not load into reg yet
             DATA_TYPE dataType;
             if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
                 dataType = entry->attribute->attr.typeDescriptor->properties.dataType;
@@ -118,43 +123,30 @@ int useReg(AST_NODE *node, int shift, int readWrite){ //read:0 write:1
     }
     //TODO: const node
 }
-
-char* getRegName(AST_NODE* Node){
-	if(Node->dataType == INT_TYPE || Node->dataType == CONST_STRING_TYPE){
-		return int_reg[Node->place];
-	}
-	else{
-		return float_reg[Node->place];
-	}
+int getTempReg(DATA_TYPE type){
+    assert(type == INT_TYPE || type == FLOAT_TYPE);
+    if(type == INT_TYPE){
+        for(int i = 0; i < 7; i++){
+            if(reg[i].kind == NOTUSED){
+                reg[i].kind == USED;
+                return i;
+            }
+        }
+        ERR_EXIT("NOT enough temp int reg");
+    }
+    else{
+        for(int i = 7; i < 15; i++){
+            if(reg[i].kind == NOTUSED){
+                reg[i].kind == USED;
+                return i;
+            }
+        }
+        ERR_EXIT("NOT enough temp float reg");
+    }
+    
 }
-int getReg(DATA_TYPE type){
-	int ret;
-	if(type == INT_TYPE || type == CONST_STRING_TYPE){
-		ret = int_ptr;
-		while(used_int[ret]){
-			int_ptr = (int_ptr + 1) % INT_REG_NUM;
-			ret = int_ptr;
-		}
-		int_ptr = (int_ptr + 1) % INT_REG_NUM;
-	}
-	else{
-		ret = float_ptr;
-		while (used_float[ret])
-		{
-			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
-			ret = float_ptr;
-		}
-		float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
-	}
-	return ret;
-}
-void freeReg(int reg, DATA_TYPE type){
-	if(type == INT_TYPE){
-		used_int[reg] = 0;
-	}
-	else{
-		used_float[reg] = 0;
-	}
+void freetempReg(int reg_num){
+	reg[reg_num].kind = NOTUSED;
 	return;
 }
 void InitReg(){
