@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "header.h"
 #include "symbolTable.h"
+//#include "reg_alloc.h"
 #define ERR_EXIT(a) { fprintf(stderr, "%s\n", a); exit(0); }
 #define INT_REG_NUM 17
 #define FLOAT_REG_NUM 8
@@ -526,6 +527,7 @@ void genConstNode(AST_NODE* Node){
 	}
 	else if(Node->dataType == FLOAT_TYPE){
 		int tmp_reg = getReg(INT_TYPE);
+		//newConst(); //TODO
 		sprintf(constant.value[constant.ptr], "_CONSTANT_%d: .word %d\n", constant.ptr, FloatToInt(Node->semantic_value.const1->const_u.fval));
 		fprintf(fp, "\tla %s, _CONSTANT_%d\n", int_reg[tmp_reg], constant.ptr);
 		fprintf(fp, "\tflw %s, 0(%s)\n", getRegName(Node), int_reg[tmp_reg]);
