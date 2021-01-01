@@ -1,3 +1,0 @@
-fib-matrix.c
-float-arith.c
-scope-2.c

@@ -47,7 +47,7 @@ int CheckSRegister(AST_NODE *node, int shift){
 }void FlushReg(){
     //TODO
 }
-int getReg(AST_NODE *node, int shift, int readWrite){ //read:0 write:1
+char* getReg(AST_NODE *node, int shift, int readWrite){ //read:0 write:1
     assert(node->nodeType == IDENTIFIER_NODE || node->nodeType == CONST_VALUE_NODE);
     SymbolTableEntry *entry = NULL;
     if(node->nodeType == IDENTIFIER_NODE){
