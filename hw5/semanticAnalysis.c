@@ -570,7 +570,6 @@ void handleReturnNode(AST_NODE* returnNode){
     AST_NODE *now = returnNode;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
     {
-        fprintf("hihi\n");
         now = now->parent;
     }
     if(now == NULL){
