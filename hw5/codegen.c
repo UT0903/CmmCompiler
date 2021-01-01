@@ -70,7 +70,6 @@ int getReg(DATA_TYPE type){
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		ret = int_ptr;
 		while(used_int[ret]){
-			fprintf(stderr, "hihi\n");
 			int_ptr = (int_ptr + 1) % INT_REG_NUM;
 			ret = int_ptr;
 		}
@@ -82,7 +81,6 @@ int getReg(DATA_TYPE type){
 		ret = float_ptr;
 		while (used_float[ret])
 		{
-			fprintf(stderr, "hihi\n");
 			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 			ret = float_ptr;
 		}
@@ -757,6 +755,7 @@ void genReturnNode(AST_NODE *Node){
 			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
 		else
 			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
+		freeReg(Node->place, Node->dataType);
 	}
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
