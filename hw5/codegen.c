@@ -611,17 +611,17 @@ void genWriteFunction(AST_NODE* functionCallNode){
 	if(param->dataType == INT_TYPE){
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
 		fprintf(fp, "\tla %s _write_int\n", int_reg[j_reg]);
-		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	else if(param->dataType == FLOAT_TYPE){
 		fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(param));
 		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
-		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	else{
 		fprintf(fp, "\tmv a0, %s\n", getRegName(param));
 		fprintf(fp, "\tla %s _write_float\n", int_reg[j_reg]);
-		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
 	return;
@@ -630,7 +630,7 @@ void genWriteFunction(AST_NODE* functionCallNode){
 void genRead(AST_NODE* functionCallNode){
 	int j_reg = getReg(INT_TYPE);
 	fprintf(fp, "\tla %s _read_int\n", int_reg[j_reg]);
-	fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+	fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(INT_TYPE);
 	fprintf(fp, "\tmv %s, a0\n", getRegName(functionCallNode));
@@ -640,7 +640,7 @@ void genRead(AST_NODE* functionCallNode){
 void genFread(AST_NODE* functionCallNode){
 	int j_reg = getReg(INT_TYPE);
 	fprintf(fp, "\tla %s _read_float\n", int_reg[j_reg]);
-	fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+	fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 	freeReg(j_reg, INT_TYPE);
 	functionCallNode->place = getReg(FLOAT_TYPE);
 	fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
@@ -662,7 +662,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 	else{
 		int j_reg = getReg(INT_TYPE);
 		fprintf(fp, "\tla %s _start_%s\n", int_reg[j_reg], name);
-		fprintf(fp, "\tjalr %s\n", int_reg[j_reg]);
+		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
 		FunctionSignature *signature = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature;
 		if(signature->returnType != VOID_TYPE){
