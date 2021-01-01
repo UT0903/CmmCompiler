@@ -73,6 +73,7 @@ int getReg(DATA_TYPE type){
 			int_ptr = (int_ptr + 1) % INT_REG_NUM;
 			ret = int_ptr;
 		}
+		used_int[ret] = 1;
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
 	}
 	else{
@@ -82,6 +83,7 @@ int getReg(DATA_TYPE type){
 			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 			ret = float_ptr;
 		}
+		used_float[ret] = 1;
 		float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
 	}
 	return ret;
