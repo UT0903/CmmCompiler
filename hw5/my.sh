@@ -1,6 +1,6 @@
 #!/bin/bash
 make
-for filename in ./testdata/*.c; do
+for filename in ./pattern/*.c; do
     echo $filename
     ./parser $filename
     riscv64-unknown-linux-gnu-gcc -O0 -static main.S

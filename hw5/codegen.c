@@ -21,7 +21,7 @@ int used_int[INT_REG_NUM] = {};
 char float_reg[FLOAT_REG_NUM][10] = {"ft0", "ft1", "ft2", "ft3", "ft4", "ft5", "ft6", "ft7"};
 int used_float[FLOAT_REG_NUM] = {};
 int int_ptr, float_ptr, L_ptr;
-int AR_offset;
+int AR_offset, param_offset;
 typedef struct{
 	int ptr;
 	char value[1000][200];
@@ -61,8 +61,8 @@ void genfBinaryOp(BINARY_OPERATOR op, char *l_reg, char *r_reg, char * reg);
 void genfUnaryOp(UNARY_OPERATOR op, char *c_reg);
 void genRead(AST_NODE* functionCallNode);
 void genFread(AST_NODE* functionCallNode);
-
-
+int pushParamOnAR(AST_NODE* paramListNode);
+void popParam(int num);
 
 
 int getReg(DATA_TYPE type){
@@ -105,7 +105,6 @@ void freeReg(int reg, DATA_TYPE type){
 void ReleaseConst(){
 	for(int i = 0; i < constant.ptr; i++){
 		fprintf(fp, "%s", constant.value[i]);
-		
 	}
 	constant.ptr = 0;
 }
@@ -135,71 +134,7 @@ void codeGen(AST_NODE *rootNode){
 	fclose(fp);
 	fprintf(stderr, "End Code generation\n");
 }
-void gen_prologue (char *name){
-	fprintf(fp, "\t.text\n");
-	if(strcmp(name, "main") == 0){
-		fprintf(fp, "_start_MAIN:\n");
-	}
-	else{
-		fprintf(fp, "_start_%s:\n", name);
-	}
-	fprintf(fp, "\tsd ra, 0(sp)\n"); // store return address
-	fprintf(fp, "\tsd fp, -8(sp)\n"); // save old fp
-	fprintf(fp, "\taddi fp, sp, -8\n"); // new fp
-	fprintf(fp, "\taddi sp, sp, -16\n"); // new sp
-	if(strcmp(name, "main") == 0){
-		fprintf(fp, "\tla ra, _frameSize_MAIN\n");
-	}
-	else{
-		fprintf(fp, "\tla ra, _frameSize_%s\n", name);
-	}
-	fprintf(fp, "\tlw ra, 0(ra)\n");
-	fprintf(fp, "\tsub sp, sp, ra\n"); // push new AR
-	for(int i = 0; i < INT_REG_NUM; i++){
-		fprintf(fp, "\tsd %s, %d(sp)\n", int_reg[i], i*8 + 8);
-	}
-	for(int i = 0; i < FLOAT_REG_NUM; i++){
-		fprintf(fp, "\tfsw %s, %d(sp)\n", float_reg[i], i*4 + 8 + INT_REG_NUM*8);
-	}
-	AR_offset = 0;
-} 
-void gen_epilogue(char *name){
-	if(strcmp(name, "main") == 0){
-		fprintf(fp, "_end_MAIN:\n");
-	}
-	else{
-		fprintf(fp, "_end_%s:\n", name);
-	}
-	for(int i = 0; i < INT_REG_NUM; i++){
-		fprintf(fp, "\tld %s, %d(sp)\n", int_reg[i], i*8 + 8);
-	}
-	for(int i = 0; i < FLOAT_REG_NUM; i++){
-		fprintf(fp, "\tflw %s, %d(sp)\n", float_reg[i], i*4 + 8 + INT_REG_NUM*8);
-	}
-	fprintf(fp, "\tld ra, 8(fp)\n"); // restore return address
-	fprintf(fp, "\taddi sp, fp, 8\n"); // pop AR
-	fprintf(fp, "\tld fp, 0(fp)\n"); // restore caller (old) fp
-	fprintf(fp, "\tjr ra\n");
-	fprintf(fp, "\t.data\n");
-	if(strcmp(name, "main") == 0){
-		fprintf(fp, "_frameSize_MAIN:\t.word\t%d\n", INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
-	}
-	else{
-		fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
-	}
-}
 
-void Read(char* to, DATA_TYPE type){
-	if(type == INT_TYPE){
-		fprintf(fp, "\tcall _read_int\n");
-		fprintf(fp, "\tmv %s, a0\n", to);
-	}
-	else if(type == FLOAT_TYPE){
-		fprintf(fp, "\tcall _read_float\n");
-		fprintf(fp, "\tfmv.s %s, fa0\n", to);
-	}
-	else ERR_EXIT("Read");
-}
 void genDecl(AST_NODE *declNode, TYPE type){
 	
 	//fprintf(stderr, "declNode type: %d\n", declNode->nodeType);
@@ -270,24 +205,6 @@ void genStmt(AST_NODE* stmtNode){
         perror("input no stmt");
         exit(0);
     }
-}
-
-void genAssignmentStmt(AST_NODE* assignmentNode){
-	AST_NODE *l = assignmentNode->child;
-    AST_NODE *r = l->rightSibling;
-	genNode(r);
-	int reg_num = getOffsetPlace(l);
-	char *id_reg = int_reg[reg_num];
-	char *reg = getRegName(r);
-	if(l->dataType == INT_TYPE){
-		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
-	}
-	else{
-		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
-	}
-	freeReg(reg_num, INT_TYPE);
-	freeReg(r->place, r->dataType);
-	return;
 }
 
 void genNode(AST_NODE* Node){
@@ -647,6 +564,23 @@ void genFread(AST_NODE* functionCallNode){
 	fprintf(fp, "\tfmv.s %s, fa0\n", getRegName(functionCallNode));
 	return;
 }
+void genAssignmentStmt(AST_NODE* assignmentNode){
+	AST_NODE *l = assignmentNode->child;
+    AST_NODE *r = l->rightSibling;
+	genNode(r);
+	int reg_num = getOffsetPlace(l);
+	char *id_reg = int_reg[reg_num];
+	char *reg = getRegName(r);
+	if(l->dataType == INT_TYPE){
+		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
+	}
+	else{
+		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
+	}
+	freeReg(reg_num, INT_TYPE);
+	freeReg(r->place, r->dataType);
+	return;
+}
 
 void genFunctionCall(AST_NODE* functionCallNode){
 	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
@@ -661,10 +595,34 @@ void genFunctionCall(AST_NODE* functionCallNode){
 		genFread(functionCallNode);
 	}
 	else{
+		int paramCount = 0;
+		if(paramList->nodeType == NUL_NODE){}
+		else if(paramList->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
+			AST_NODE* paramNode = paramList->child;
+			while(paramNode != NULL){
+				genNode(paramNode);
+				fprintf(stderr, "datatype: %d\n", paramNode->dataType);
+				if(paramNode->dataType == INT_TYPE){
+					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
+					fprintf(fp, "\taddi sp, sp, -8\n", getRegName(paramNode));
+				}
+				else{
+					fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
+					fprintf(fp, "\taddi sp, sp, -8\n");
+				}
+				paramCount++;
+				freeReg(paramNode->place, paramNode->dataType);
+				paramNode = paramNode->rightSibling;
+			}
+		}
+		else{
+			fprintf(stderr, "error in pushParamOnAR\n");
+		}
 		int j_reg = getReg(INT_TYPE);
 		fprintf(fp, "\tla %s, _start_%s\n", int_reg[j_reg], name);
 		fprintf(fp, "\tjalr 0(%s)\n", int_reg[j_reg]);
 		freeReg(j_reg, INT_TYPE);
+		fprintf(fp, "\taddi sp, sp, %d\n", paramCount*8);
 		FunctionSignature *signature = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature;
 		if(signature->returnType != VOID_TYPE){
 			functionCallNode->place = getReg(signature->returnType);
@@ -678,7 +636,6 @@ void genFunctionCall(AST_NODE* functionCallNode){
 	}
 	return;
 }
-
 void genWhileStmt(AST_NODE* whileNode){
 	AST_NODE *test = whileNode->child;
 	AST_NODE *stmt = test->rightSibling;
@@ -797,23 +754,78 @@ void genBlockNode(AST_NODE* blockNode){
 		Node = Node->rightSibling;
 	}
 }
+void gen_prologue (char *name){
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "\tla ra, _frameSize_MAIN\n");
+	}
+	else{
+		fprintf(fp, "\tla ra, _frameSize_%s\n", name);
+	}
+	fprintf(fp, "\tlw ra, 0(ra)\n");
+	fprintf(fp, "\tsub sp, sp, ra\n"); // push new AR
+	for(int i = 0; i < INT_REG_NUM; i++){
+		fprintf(fp, "\tsd %s, %d(sp)\n", int_reg[i], i*8 + 8);
+	}
+	for(int i = 0; i < FLOAT_REG_NUM; i++){
+		fprintf(fp, "\tfsw %s, %d(sp)\n", float_reg[i], i*4 + 8 + INT_REG_NUM*8);
+	}
+	AR_offset = 0;
+	param_offset = 0;
+}
+void gen_epilogue(char *name){
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "_end_MAIN:\n");
+	}
+	else{
+		fprintf(fp, "_end_%s:\n", name);
+	}
+	for(int i = 0; i < INT_REG_NUM; i++){
+		fprintf(fp, "\tld %s, %d(sp)\n", int_reg[i], i*8 + 8);
+	}
+	for(int i = 0; i < FLOAT_REG_NUM; i++){
+		fprintf(fp, "\tflw %s, %d(sp)\n", float_reg[i], i*4 + 8 + INT_REG_NUM*8);
+	}
+	fprintf(fp, "\tld ra, 8(fp)\n"); // restore return address
+	fprintf(fp, "\taddi sp, fp, 8\n"); // pop AR
+	fprintf(fp, "\tld fp, 0(fp)\n"); // restore caller (old) fp
+	fprintf(fp, "\tjr ra\n");
+	fprintf(fp, "\t.data\n");
+	if(strcmp(name, "main") == 0){
+		fprintf(fp, "_frameSize_MAIN:\t.word\t%d\n", INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	}
+	else{
+		fprintf(fp, "_frameSize_%s:\t.word\t%d\n", name, INT_REG_NUM*8 + FLOAT_REG_NUM*4 + 8 - AR_offset);
+	}
+}
 void genFuncDecl(AST_NODE* typeNode){
 	AST_NODE *nameNode = typeNode->rightSibling;
-	gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
+	//gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
+	fprintf(fp, "\t.text\n");
+	if(strcmp(nameNode->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
+		fprintf(fp, "_start_MAIN:\n");
+	}
+	else{
+		fprintf(fp, "_start_%s:\n", nameNode->semantic_value.identifierSemanticValue.identifierName);
+	}
+	int paramCount = nameNode->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature->parametersCount;
+	
+	fprintf(fp, "\tsd fp, -8(sp)\n"); // save old fp
+	fprintf(fp, "\tsd ra, 0(sp)\n"); // store return address
+	fprintf(fp, "\taddi fp, sp, -8\n"); // new fp
+	fprintf(fp, "\taddi sp, sp, -16\n"); // new sp
+	int offset = 8 + 8*paramCount;
 	AST_NODE *paramListNode = nameNode->rightSibling;
 	AST_NODE *paramDeclNode = paramListNode->child;
-	int paramNum = 0;
 	while(paramDeclNode != NULL){
-		genParamVarDecl(paramDeclNode->child, paramNum);
-		paramNum++;
+		paramDeclNode->child->rightSibling->semantic_value.identifierSemanticValue.symbolTableEntry->offset = offset;
+		offset -= 8;
 		paramDeclNode = paramDeclNode->rightSibling;
 	}
+	assert(offset == 8);
+	gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 	AST_NODE *blockNode = paramListNode->rightSibling;
 	genBlockNode(blockNode);
 	gen_epilogue(nameNode->semantic_value.identifierSemanticValue.identifierName);
-	
-}
-void genParamVarDecl(AST_NODE* typeNode, int paramNum){
 	
 }
 void genGlobalVarDecl(AST_NODE* typeNode){
@@ -860,15 +872,17 @@ void genLocalVarDecl(AST_NODE* typeNode){
 					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
-					fprintf(fp, "\tadd %s, fp, %d\n", int_reg[reg2], int_reg[reg2]);
+					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg2], int_reg[reg2]);
 					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
 					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
 				}
 				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
+					//printf("varNode type: %d\n", varNode->child->nodeType);
 					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.intval));
+					//printf("value: %d\n", varNode->child->semantic_value.const1->const_u.intval);
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
 					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
-					fprintf(fp, "\tadd %s, fp, %d\n", int_reg[reg2], int_reg[reg2]);
+					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg2], int_reg[reg2]);
 					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
 					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
 				}
