@@ -950,9 +950,9 @@ int handleBinaryIntFolding(int a, int b, BINARY_OPERATOR op){
     case BINARY_OP_LT:
         return a < b;
     case BINARY_OP_AND:
-        return a & b;
+        return a && b;
     case BINARY_OP_OR:
-        return a | b;
+        return a || b;
     default:
         break;
     }
