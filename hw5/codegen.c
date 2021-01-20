@@ -987,7 +987,7 @@ void typeConservation(AST_NODE *Node, DATA_TYPE target_type){
 	}
 	else{
 		int reg_num = getReg(FLOAT_TYPE);
-		fprintf(fp, "\tfcvt.s.w %s %s\n", float_reg[reg_num], getRegName(Node));
+		fprintf(fp, "\tfcvt.s.w %s, %s\n", float_reg[reg_num], getRegName(Node));
 		freeReg(Node->place, Node->dataType);
 		Node->place = reg_num;
 		Node->dataType = FLOAT_TYPE;
