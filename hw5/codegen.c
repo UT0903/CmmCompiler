@@ -643,23 +643,36 @@ void genFunctionCall(AST_NODE* functionCallNode){
 	}
 	else{
 		int paramCount = 0;
+		Parameter* param = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature->parameterList;
 		if(paramList->nodeType == NUL_NODE){}
 		else if(paramList->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
 			AST_NODE* paramNode = paramList->child;
 			while(paramNode != NULL){
 				genNode(paramNode);
-				fprintf(stderr, "datatype: %d\n", paramNode->dataType);
 				if(paramNode->dataType == INT_TYPE){
-					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
+					if(param->type->properties.dataType == FLOAT_TYPE){
+						typeConservation(paramNode, FLOAT_TYPE);
+						fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
+					}
+					else{
+						fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
+					}
 					fprintf(fp, "\taddi sp, sp, -8\n", getRegName(paramNode));
 				}
 				else{
-					fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
+					if(param->type->properties.dataType == INT_TYPE){
+						typeConservation(paramNode, INT_TYPE);
+						fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
+					}
+					else{
+						fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
+					}
 					fprintf(fp, "\taddi sp, sp, -8\n");
 				}
 				paramCount++;
 				freeReg(paramNode->place, paramNode->dataType);
 				paramNode = paramNode->rightSibling;
+				param = param->next;
 			}
 		}
 		else{

@@ -1,5 +1,5 @@
 #!/bin/bash
-for filename in ./testdata/*.c; do
+for filename in ./testcase_hw6/*.c; do
     echo $filename
     cat ./testdata/link.cpp > temp.cpp
     cat $filename >> temp.cpp
