@@ -248,7 +248,7 @@ int getOffsetPlace(AST_NODE* Node){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
 				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\taddi %s, x0, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[i]);
 				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
@@ -280,7 +280,7 @@ int getOffsetPlace(AST_NODE* Node){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
 				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\taddi %s, x0, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[i]);
 				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
@@ -612,18 +612,17 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	genNode(r);
 	int reg_num = getOffsetPlace(l);
 	char *id_reg = int_reg[reg_num];
-	char *reg = getRegName(r);
 	if(l->dataType == INT_TYPE){
 		if(r->dataType != INT_TYPE){
 			typeConservation(r, INT_TYPE);
 		}
-		fprintf(fp, "\tsw %s, 0(%s)\n", reg, id_reg);
+		fprintf(fp, "\tsw %s, 0(%s)\n", getRegName(r), id_reg);
 	}
 	else{
 		if(r->dataType != FLOAT_TYPE){
 			typeConservation(r, FLOAT_TYPE);
 		}
-		fprintf(fp, "\tfsw %s, 0(%s)\n", reg, id_reg);
+		fprintf(fp, "\tfsw %s, 0(%s)\n", getRegName(r), id_reg);
 	}
 	freeReg(reg_num, INT_TYPE);
 	freeReg(r->place, r->dataType);
