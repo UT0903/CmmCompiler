@@ -66,10 +66,18 @@ void popParam(int num);
 void typeConservation(AST_NODE *Node, DATA_TYPE target_type);
 
 
+int int_reg_use = 0, float_reg_use = 0;
+
+
 int getReg(DATA_TYPE type){
 	int ret;
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		ret = int_ptr;
+		// fprintf(stderr, "int less %d\n", INT_REG_NUM - int_reg_use);
+		if(INT_REG_NUM - int_reg_use == 0){
+			perror("no reg\n");
+			exit(0);
+		}
 		while(used_int[ret]){
 			int_ptr = (int_ptr + 1) % INT_REG_NUM;
 			ret = int_ptr;
@@ -77,9 +85,15 @@ int getReg(DATA_TYPE type){
 		used_int[ret] = 1;
 		//fprintf(stderr,"use %s\n", int_reg[ret]);
 		int_ptr = (int_ptr + 1) % INT_REG_NUM;
+		int_reg_use ++;
 	}
 	else{
 		ret = float_ptr;
+		// fprintf(stderr, "float less %d\n", FLOAT_REG_NUM - float_reg_use);
+		if(INT_REG_NUM - float_reg_use == 0){
+			perror("no reg\n");
+			exit(0);
+		}
 		while (used_float[ret])
 		{
 			float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
@@ -88,16 +102,21 @@ int getReg(DATA_TYPE type){
 		used_float[ret] = 1;
 		//fprintf(stderr,"use %s\n", float_reg[ret]);
 		float_ptr = (float_ptr + 1) % FLOAT_REG_NUM;
+		float_reg_use ++;
 	}
 	return ret;
 }
 void freeReg(int reg, DATA_TYPE type){
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		used_int[reg] = 0;
+		int_reg_use --;
+		// fprintf(stderr, "int less %d\n", INT_REG_NUM - int_reg_use);
 		//fprintf(stderr, "free %s\n", int_reg[reg]);
 	}
 	else{
 		used_float[reg] = 0;
+		float_reg_use --;
+		// fprintf(stderr, "float less %d\n", FLOAT_REG_NUM - float_reg_use);
 		//fprintf(stderr,"free %s\n", float_reg[reg]);
 	}
 	return;
@@ -314,21 +333,44 @@ void genExprNode(AST_NODE* Node){
 	if(Node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION){
 		BINARY_OPERATOR op = expr->op.binaryOp;
 		AST_NODE *l = Node->child, *r = Node->child->rightSibling;
-		genNode(l);
-		genNode(r);
 		Node->place = getReg(Node->dataType);
 		char  *reg = getRegName(Node);
-		if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE){
-			if(l->dataType != FLOAT_TYPE){
-				typeConservation(l, FLOAT_TYPE);
-			}
-			if(r->dataType != FLOAT_TYPE){
-				typeConservation(r, FLOAT_TYPE);
-			}
-			genfBinaryOp(op, getRegName(l), getRegName(r), reg);
+		if(op == BINARY_OP_AND){
+			genNode(l);
+			int L = L_ptr++;
+			fprintf(fp, "\tmv %s, zero\n", reg);
+			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(l->place), L);
+			genNode(r);
+			fprintf(fp, "\tsnez %s, %s\n", reg, getRegName(r->place));
+			fprintf(fp, "L%d:", L);
 		}
-		else
-			genBinaryOp(op, getRegName(l), getRegName(r), reg);
+		else if(op == BINARY_OP_OR){
+			int L = L_ptr++;
+			genNode(l);
+			char *l_reg = getRegName(l);
+			fprintf(fp, "\tli %s, 1\n", reg);
+			fprintf(fp, "\tseqz %s, %s\n", l_reg, l_reg);
+			fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
+			genNode(r);
+			char *r_reg = getRegName(l);
+			fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
+			fprintf(fp, "L%d:", L);
+		}
+		else{
+			genNode(l);
+			genNode(r);
+			if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE){
+				if(l->dataType != FLOAT_TYPE){
+					typeConservation(l, FLOAT_TYPE);
+				}
+				if(r->dataType != FLOAT_TYPE){
+					typeConservation(r, FLOAT_TYPE);
+				}
+				genfBinaryOp(op, getRegName(l), getRegName(r), reg);
+			}
+			else
+				genBinaryOp(op, getRegName(l), getRegName(r), reg);
+		}
 		freeReg(l->place, l->dataType);
 		freeReg(r->place, r->dataType);
 	}
@@ -727,6 +769,7 @@ void genForStmt(AST_NODE* forNode){
         while(relop_expr){
             genNode(relop_expr);
 			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(relop_expr), L4);
+			freeReg(relop_expr->place, relop_expr->dataType);
             relop_expr = relop_expr->rightSibling;
         }
 		fprintf(fp, "\tj L%d\n", L3);
