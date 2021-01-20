@@ -796,20 +796,35 @@ void genForStmt(AST_NODE* forNode){
 }
 
 void genReturnNode(AST_NODE *Node){
-	if(Node->child->nodeType != NUL_NODE){
-		genNode(Node->child);
-		if(Node->child->dataType == INT_TYPE)
-			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
-		else
-			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
-		freeReg(Node->child->place, Node->child->dataType);
-	}
 	AST_NODE *now = Node;
     while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
     {
         now = now->parent;
     }
-	now = now->child->rightSibling;
+    if(now == NULL){
+        perror("wrong return place");
+        exit(0);
+        return;
+    }
+    now = now->child->rightSibling;
+    SymbolTableEntry *entry = getSymbol(now);
+    DATA_TYPE return_type = entry->attribute->attr.functionSignature->returnType;
+	if(Node->child->nodeType != NUL_NODE){
+		genNode(Node->child);
+		if(return_type == INT_TYPE){
+			if(Node->child->dataType != INT_TYPE){
+				typeConservation(Node->child, INT_TYPE);
+			}
+			fprintf(fp, "\tmv a0, %s\n", getRegName(Node->child));
+		}
+		else{
+			if(Node->child->dataType != FLOAT_TYPE){
+				typeConservation(Node->child, FLOAT_TYPE);
+			}
+			fprintf(fp, "\tfmv.s fa0, %s\n", getRegName(Node->child));
+		}
+		freeReg(Node->child->place, Node->child->dataType);
+	}
 	int j_reg = getReg(INT_TYPE);
 	if(strcmp(now->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
 		fprintf(fp, "\tla %s, _end_MAIN\n", int_reg[j_reg]);
