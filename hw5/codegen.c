@@ -339,9 +339,9 @@ void genExprNode(AST_NODE* Node){
 			genNode(l);
 			int L = L_ptr++;
 			fprintf(fp, "\tmv %s, zero\n", reg);
-			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(l->place), L);
+			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(l), L);
 			genNode(r);
-			fprintf(fp, "\tsnez %s, %s\n", reg, getRegName(r->place));
+			fprintf(fp, "\tsnez %s, %s\n", reg, getRegName(r));
 			fprintf(fp, "L%d:", L);
 		}
 		else if(op == BINARY_OP_OR){
