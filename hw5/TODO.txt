@@ -1,4 +1,4 @@
 pattern_hw6/
 test2.c
 test6.c
-test7.c
+test9.c
