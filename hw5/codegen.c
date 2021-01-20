@@ -317,7 +317,7 @@ void genExprNode(AST_NODE* Node){
 		genNode(l);
 		genNode(r);
 		Node->place = getReg(Node->dataType);
-		char *l_reg = getRegName(l), *r_reg = getRegName(r);
+		char  *reg = getRegName(Node);
 		if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE){
 			if(l->dataType != FLOAT_TYPE){
 				typeConservation(l, FLOAT_TYPE);
@@ -325,10 +325,10 @@ void genExprNode(AST_NODE* Node){
 			if(r->dataType != FLOAT_TYPE){
 				typeConservation(r, FLOAT_TYPE);
 			}
-			genfBinaryOp(op, l_reg, r_reg, getRegName(Node));
+			genfBinaryOp(op, getRegName(l), getRegName(r), reg);
 		}
 		else
-			genBinaryOp(op, l_reg, r_reg, getRegName(Node));
+			genBinaryOp(op, getRegName(l), getRegName(r), reg);
 		freeReg(l->place, l->dataType);
 		freeReg(r->place, r->dataType);
 	}
@@ -643,36 +643,23 @@ void genFunctionCall(AST_NODE* functionCallNode){
 	}
 	else{
 		int paramCount = 0;
-		Parameter* param = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature->parameterList;
 		if(paramList->nodeType == NUL_NODE){}
 		else if(paramList->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
 			AST_NODE* paramNode = paramList->child;
 			while(paramNode != NULL){
 				genNode(paramNode);
+				fprintf(stderr, "datatype: %d\n", paramNode->dataType);
 				if(paramNode->dataType == INT_TYPE){
-					if(param->type->properties.dataType == FLOAT_TYPE){
-						typeConservation(paramNode, FLOAT_TYPE);
-						fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
-					}
-					else{
-						fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
-					}
+					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
 					fprintf(fp, "\taddi sp, sp, -8\n", getRegName(paramNode));
 				}
 				else{
-					if(param->type->properties.dataType == INT_TYPE){
-						typeConservation(paramNode, INT_TYPE);
-						fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
-					}
-					else{
-						fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
-					}
+					fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
 					fprintf(fp, "\taddi sp, sp, -8\n");
 				}
 				paramCount++;
 				freeReg(paramNode->place, paramNode->dataType);
 				paramNode = paramNode->rightSibling;
-				param = param->next;
 			}
 		}
 		else{
