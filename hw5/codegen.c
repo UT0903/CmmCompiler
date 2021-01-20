@@ -243,7 +243,7 @@ int getOffsetPlace(AST_NODE* Node){
 			int dimSize = entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension;
 			int tmp_reg = getReg(INT_TYPE);
 			int size_reg = getReg(INT_TYPE);
-			fprintf(fp, "\tadd %s, x0, x0\n", int_reg[tmp_reg]);
+			fprintf(fp, "\tli %s, 0\n", int_reg[tmp_reg]);
 			for(int i = dimSize - 2; i >= 0; i --){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
@@ -648,10 +648,10 @@ void genFunctionCall(AST_NODE* functionCallNode){
 			AST_NODE* paramNode = paramList->child;
 			while(paramNode != NULL){
 				genNode(paramNode);
-				fprintf(stderr, "datatype: %d\n", paramNode->dataType);
+				//fprintf(stderr, "datatype: %d\n", paramNode->dataType);
 				if(paramNode->dataType == INT_TYPE){
 					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
-					fprintf(fp, "\taddi sp, sp, -8\n", getRegName(paramNode));
+					fprintf(fp, "\taddi sp, sp, -8\n");
 				}
 				else{
 					fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
@@ -727,6 +727,7 @@ void genForStmt(AST_NODE* forNode){
         while(relop_expr){
             genNode(relop_expr);
 			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(relop_expr), L4);
+			freeReg(relop_expr->place, relop_expr->dataType);
             relop_expr = relop_expr->rightSibling;
         }
 		fprintf(fp, "\tj L%d\n", L3);
