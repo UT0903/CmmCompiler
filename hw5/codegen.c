@@ -601,7 +601,7 @@ void genFunctionCall(AST_NODE* functionCallNode){
 			AST_NODE* paramNode = paramList->child;
 			while(paramNode != NULL){
 				genNode(paramNode);
-				fprintf(stderr, "datatype: %d\n", paramNode->dataType);
+				//fprintf(stderr, "datatype: %d\n", paramNode->dataType);
 				if(paramNode->dataType == INT_TYPE){
 					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
 					fprintf(fp, "\taddi sp, sp, -8\n", getRegName(paramNode));
