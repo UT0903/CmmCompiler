@@ -242,23 +242,26 @@ int getOffsetPlace(AST_NODE* Node){
 			int *arraySize = entry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension;
 			int dimSize = entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension;
 			int tmp_reg = getReg(INT_TYPE);
+			int size_reg = getReg(INT_TYPE);
 			fprintf(fp, "\tadd %s, x0, x0\n", int_reg[tmp_reg]);
 			for(int i = dimSize - 2; i >= 0; i --){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
-				fprintf(fp, "\tadd %s %s %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\tmuli %s, %s, %d\n", int_reg[tmp_reg], int_reg[tmp_reg], arraySize[i]);
+				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
+				fprintf(fp, "\taddi %s, x0, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
 			}
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\tadd %s %s %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
+			fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
 			fprintf(fp, "\tla %s, _g_%s\n", reg, Node->semantic_value.identifierSemanticValue.identifierName);
 			fprintf(fp, "\tslli %s, %s, 2\n", int_reg[tmp_reg], int_reg[tmp_reg]);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, int_reg[tmp_reg]);
 			freeReg(dim->place, dim->dataType);
 			freeReg(tmp_reg, INT_TYPE);
+			freeReg(size_reg, INT_TYPE);
 		}
 	}
 	else{
@@ -271,24 +274,27 @@ int getOffsetPlace(AST_NODE* Node){
 			int *arraySize = entry->attribute->attr.typeDescriptor->properties.arrayProperties.sizeInEachDimension;
 			int dimSize = entry->attribute->attr.typeDescriptor->properties.arrayProperties.dimension;
 			int tmp_reg = getReg(INT_TYPE);
+			int size_reg = getReg(INT_TYPE);
 			fprintf(fp, "\tadd %s, x0, x0\n", int_reg[tmp_reg]);
 			for(int i = dimSize - 2; i >= 0; i --){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
-				fprintf(fp, "\tadd %s %s %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\tmuli %s, %s, %d\n", int_reg[tmp_reg], int_reg[tmp_reg], arraySize[i]);
+				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
+				fprintf(fp, "\taddi %s, x0, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
 			}
 			genNode(dim);
 			char *dim_reg = getRegName(dim);
-			fprintf(fp, "\tadd %s %s %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
+			fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
 			fprintf(fp, "\tli %s, %d\n", reg, Node->semantic_value.identifierSemanticValue.symbolTableEntry->offset);
 			fprintf(fp, "\tadd %s, fp, %s\n", reg, reg);
 			fprintf(fp, "\tslli %s, %s, 2\n", int_reg[tmp_reg], int_reg[tmp_reg]);
 			fprintf(fp, "\tadd %s, %s, %s\n", reg, reg, int_reg[tmp_reg]);
 			freeReg(dim->place, dim->dataType);
 			freeReg(tmp_reg, INT_TYPE);
+			freeReg(size_reg, INT_TYPE);
 		}
 	}
 	return reg_num;
