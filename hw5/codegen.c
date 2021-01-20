@@ -317,7 +317,7 @@ void genExprNode(AST_NODE* Node){
 		genNode(l);
 		genNode(r);
 		Node->place = getReg(Node->dataType);
-		char *l_reg = getRegName(l), *reg = getRegName(Node);
+		char  *reg = getRegName(Node);
 		if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE){
 			if(l->dataType != FLOAT_TYPE){
 				typeConservation(l, FLOAT_TYPE);
@@ -325,10 +325,10 @@ void genExprNode(AST_NODE* Node){
 			if(r->dataType != FLOAT_TYPE){
 				typeConservation(r, FLOAT_TYPE);
 			}
-			genfBinaryOp(op, l_reg, getRegName(r), reg);
+			genfBinaryOp(op, getRegName(l), getRegName(r), reg);
 		}
 		else
-			genBinaryOp(op, l_reg, getRegName(r), reg);
+			genBinaryOp(op, getRegName(l), getRegName(r), reg);
 		freeReg(l->place, l->dataType);
 		freeReg(r->place, r->dataType);
 	}
