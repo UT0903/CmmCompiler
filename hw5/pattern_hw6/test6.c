@@ -3,7 +3,7 @@ int is_prime(int n)
   int k, limit;
   if (n == 2) 
     return 1;
-  if ((n/2 * 2)== 0) 
+  if (n-(n/2 * 2)== 0) 
     return 0; 
   limit = n / 2;
  
