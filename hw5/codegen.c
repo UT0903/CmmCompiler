@@ -64,7 +64,7 @@ void genFread(AST_NODE* functionCallNode);
 int pushParamOnAR(AST_NODE* paramListNode);
 void popParam(int num);
 void typeConservation(AST_NODE *Node, DATA_TYPE target_type);
-
+DATA_TYPE genReturnType(AST_NODE *now);
 
 int int_reg_use = 0, float_reg_use = 0;
 
@@ -794,21 +794,25 @@ void genForStmt(AST_NODE* forNode){
 	fprintf(fp, "\tj L%d\n", L2);
 	fprintf(fp, "L%d:\n", L4);
 }
-
-void genReturnNode(AST_NODE *Node){
-	AST_NODE *now = Node;
-    while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
+DATA_TYPE genReturnType(AST_NODE *now){
+	while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
     {
         now = now->parent;
     }
     if(now == NULL){
         perror("wrong return place");
         exit(0);
-        return;
+        return ;
     }
     now = now->child->rightSibling;
-    SymbolTableEntry *entry = getSymbol(now);
+    SymbolTableEntry *entry = now->semantic_value.identifierSemanticValue.symbolTableEntry;
     DATA_TYPE return_type = entry->attribute->attr.functionSignature->returnType;
+	return return_type;
+}
+void genReturnNode(AST_NODE *Node){
+	AST_NODE *now = Node;
+    DATA_TYPE return_type = genReturnType(now);
+	printf("returntype: %d\n", return_type);
 	if(Node->child->nodeType != NUL_NODE){
 		genNode(Node->child);
 		if(return_type == INT_TYPE){
@@ -825,6 +829,7 @@ void genReturnNode(AST_NODE *Node){
 		}
 		freeReg(Node->child->place, Node->child->dataType);
 	}
+	
 	int j_reg = getReg(INT_TYPE);
 	if(strcmp(now->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
 		fprintf(fp, "\tla %s, _end_MAIN\n", int_reg[j_reg]);
@@ -835,6 +840,7 @@ void genReturnNode(AST_NODE *Node){
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
+	printf("here: %d\n", return_type);
 	return;
 }
 
