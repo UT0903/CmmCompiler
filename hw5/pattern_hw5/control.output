@@ -1,19 +1,8 @@
-correct
-correct
-correct
-correct
-correct
-correct
-correct
-correct
-correct: 0
-correct: 1
-correct: 2
-correct: 3
-correct: 4
-correct: 5
-correct: 6
-correct: 7
-correct: 8
-correct: 9
-correct
+Enter matrix 1 of dim 2 x 2 x 2: 
+Enter matrix 2 of dim 2 x 2 x 2 : 
+9 20 
+33 48 
+
+65 84 
+105 128 
+

@@ -6,9 +6,15 @@ void write( double a) {cout << std::fixed << std::setprecision(6) << a;}
 void write( float a) {cout << std::fixed << std::setprecision(6) << a;}
 void write( bool   a) {cout << a;}
 void write( const char* a) {cout << a;}
-int global_num = 1;
-int read(){return global_num++;}
-float fread(){return global_num++;}
+int read(){
+    int a;
+    scanf("%d", &a);
+    return a;
+}
+float fread(){int a;
+    scanf("%d", &a);
+    return a;
+    }
 int MAIN();
 int main(){
     MAIN();

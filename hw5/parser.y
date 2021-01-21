@@ -890,7 +890,7 @@ char *argv[];
      
      yyparse();
      
-        printGV(prog, NULL);
+       // printGV(prog, NULL);
     //printf("init\n");
      initializeSymbolTable();
      //printf("codeGen\n");

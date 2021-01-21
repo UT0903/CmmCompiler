@@ -107,16 +107,17 @@ int getReg(DATA_TYPE type){
 	return ret;
 }
 void freeReg(int reg, DATA_TYPE type){
+	// fprintf(stderr, "freeReg\n");
 	if(type == INT_TYPE || type == CONST_STRING_TYPE){
 		used_int[reg] = 0;
 		int_reg_use --;
-		// fprintf(stderr, "int less %d\n", INT_REG_NUM - int_reg_use);
+		// fprintf(stderr, "free: int less %d\n", INT_REG_NUM - int_reg_use);
 		//fprintf(stderr, "free %s\n", int_reg[reg]);
 	}
 	else{
 		used_float[reg] = 0;
 		float_reg_use --;
-		// fprintf(stderr, "float less %d\n", FLOAT_REG_NUM - float_reg_use);
+		// fprintf(stderr, "free: float less %d\n", FLOAT_REG_NUM - float_reg_use);
 		//fprintf(stderr,"free %s\n", float_reg[reg]);
 	}
 	return;
@@ -333,11 +334,11 @@ void genExprNode(AST_NODE* Node){
 	if(Node->semantic_value.exprSemanticValue.kind == BINARY_OPERATION){
 		BINARY_OPERATOR op = expr->op.binaryOp;
 		AST_NODE *l = Node->child, *r = Node->child->rightSibling;
-		Node->place = getReg(Node->dataType);
-		char  *reg = getRegName(Node);
 		if(op == BINARY_OP_AND){
 			genNode(l);
 			int L = L_ptr++;
+			Node->place = getReg(Node->dataType);
+			char  *reg = getRegName(Node);
 			fprintf(fp, "\tmv %s, zero\n", reg);
 			fprintf(fp, "\tbeqz %s, L%d\n", getRegName(l), L);
 			genNode(r);
@@ -348,17 +349,21 @@ void genExprNode(AST_NODE* Node){
 			int L = L_ptr++;
 			genNode(l);
 			char *l_reg = getRegName(l);
+			Node->place = getReg(Node->dataType);
+			char  *reg = getRegName(Node);
 			fprintf(fp, "\tli %s, 1\n", reg);
 			fprintf(fp, "\tseqz %s, %s\n", l_reg, l_reg);
 			fprintf(fp, "\tbeqz %s, L%d\n", l_reg, L);
 			genNode(r);
-			char *r_reg = getRegName(l);
+			char *r_reg = getRegName(r);
 			fprintf(fp, "\tsnez %s, %s\n", reg, r_reg);
 			fprintf(fp, "L%d:", L);
 		}
 		else{
 			genNode(l);
 			genNode(r);
+			Node->place = getReg(Node->dataType);
+			char  *reg = getRegName(Node);
 			if(l->dataType == FLOAT_TYPE || r->dataType == FLOAT_TYPE){
 				if(l->dataType != FLOAT_TYPE){
 					typeConservation(l, FLOAT_TYPE);
@@ -652,6 +657,7 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 	AST_NODE *l = assignmentNode->child;
     AST_NODE *r = l->rightSibling;
 	genNode(r);
+	
 	int reg_num = getOffsetPlace(l);
 	char *id_reg = int_reg[reg_num];
 	if(l->dataType == INT_TYPE){
@@ -674,6 +680,7 @@ void genAssignmentStmt(AST_NODE* assignmentNode){
 void genFunctionCall(AST_NODE* functionCallNode){
 	AST_NODE *funcName = functionCallNode->child, *paramList = funcName->rightSibling;
 	char *name = funcName->semantic_value.identifierSemanticValue.identifierName;
+	//printf("func call name: %s\n", name);
 	if(!strcmp(name, "write")){
 		genWriteFunction(functionCallNode);
 	}
@@ -794,8 +801,10 @@ void genForStmt(AST_NODE* forNode){
 	fprintf(fp, "\tj L%d\n", L2);
 	fprintf(fp, "L%d:\n", L4);
 }
-DATA_TYPE genReturnType(AST_NODE *now){
-	while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
+
+void genReturnNode(AST_NODE *Node){
+	AST_NODE *now = Node;
+    while (now != NULL && now->nodeType != DECLARATION_NODE && now->semantic_value.declSemanticValue.kind != FUNCTION_DECL)
     {
         now = now->parent;
     }
@@ -807,12 +816,6 @@ DATA_TYPE genReturnType(AST_NODE *now){
     now = now->child->rightSibling;
     SymbolTableEntry *entry = now->semantic_value.identifierSemanticValue.symbolTableEntry;
     DATA_TYPE return_type = entry->attribute->attr.functionSignature->returnType;
-	return return_type;
-}
-void genReturnNode(AST_NODE *Node){
-	AST_NODE *now = Node;
-    DATA_TYPE return_type = genReturnType(now);
-	printf("returntype: %d\n", return_type);
 	if(Node->child->nodeType != NUL_NODE){
 		genNode(Node->child);
 		if(return_type == INT_TYPE){
@@ -831,6 +834,7 @@ void genReturnNode(AST_NODE *Node){
 	}
 	
 	int j_reg = getReg(INT_TYPE);
+
 	if(strcmp(now->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
 		fprintf(fp, "\tla %s, _end_MAIN\n", int_reg[j_reg]);
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
@@ -840,7 +844,6 @@ void genReturnNode(AST_NODE *Node){
 		fprintf(fp, "\tjr %s\n", int_reg[j_reg]);
 	}
 	freeReg(j_reg, INT_TYPE);
-	printf("here: %d\n", return_type);
 	return;
 }
 
@@ -910,6 +913,7 @@ void gen_epilogue(char *name){
 }
 void genFuncDecl(AST_NODE* typeNode){
 	AST_NODE *nameNode = typeNode->rightSibling;
+	//printf("funcName: %s\n", nameNode->semantic_value.identifierSemanticValue.identifierName);
 	//gen_prologue(nameNode->semantic_value.identifierSemanticValue.identifierName);
 	fprintf(fp, "\t.text\n");
 	if(strcmp(nameNode->semantic_value.identifierSemanticValue.identifierName, "main") == 0){
@@ -937,7 +941,6 @@ void genFuncDecl(AST_NODE* typeNode){
 	AST_NODE *blockNode = paramListNode->rightSibling;
 	genBlockNode(blockNode);
 	gen_epilogue(nameNode->semantic_value.identifierSemanticValue.identifierName);
-	
 }
 void genGlobalVarDecl(AST_NODE* typeNode){
 	AST_NODE* varNode = typeNode->rightSibling;
@@ -979,25 +982,23 @@ void genLocalVarDecl(AST_NODE* typeNode){
 		if(entry->attribute->attr.typeDescriptor->kind == SCALAR_TYPE_DESCRIPTOR){
 			if(varNode->semantic_value.identifierSemanticValue.kind == WITH_INIT_ID){
 				AR_offset -= 4;
-				if(varNode->child->semantic_value.const1->const_type == INTEGERC){
-					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], varNode->child->semantic_value.const1->const_u.intval);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
-					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg2], int_reg[reg2]);
-					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
-					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
+				genNode(varNode->child);
+				int reg = getReg(INT_TYPE);
+				if(entry->attribute->attr.typeDescriptor->properties.dataType == FLOAT_TYPE){
+					if(varNode->child->dataType == INT_TYPE){
+						typeConservation(varNode->child, FLOAT_TYPE);
+					}
 				}
-				else if(varNode->child->semantic_value.const1->const_type == FLOATC){
-					//printf("varNode type: %d\n", varNode->child->nodeType);
-					int reg = getReg(INT_TYPE), reg2 = getReg(INT_TYPE);
-					//printf("value: %d\n", varNode->child->semantic_value.const1->const_u.intval);
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg], FloatToInt(varNode->child->semantic_value.const1->const_u.fval));
-					fprintf(fp, "\tli %s, %d\n", int_reg[reg2], AR_offset);
-					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg2], int_reg[reg2]);
-					fprintf(fp, "\tsw %s, 0(%s)\n", int_reg[reg], int_reg[reg2]);
-					freeReg(reg, INT_TYPE); freeReg(reg2, INT_TYPE);
+				else if(entry->attribute->attr.typeDescriptor->properties.dataType == INT_TYPE){
+					if(varNode->child->dataType == FLOAT_TYPE){
+						typeConservation(varNode->child, INT_TYPE);
+					}
 				}
 				else ERR_EXIT("genLocalVarDecl1");
+				fprintf(fp, "\tli %s, %d\n", int_reg[reg], AR_offset);
+				fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg], int_reg[reg]);
+				fprintf(fp, "\tsw %s, 0(%s)\n", getRegName(varNode->child), int_reg[reg]);
+				freeReg(reg, INT_TYPE);
 				entry->offset = AR_offset;
 				entry->global = 0;
 			}
