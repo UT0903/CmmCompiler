@@ -8,7 +8,8 @@ float sqr(float num)
 float calarea(int r)
 {
   float area;
-  area = pi * sqr(r);
+  float r2 = r;
+  area = pi * sqr(r2);
   return area;
 }
 

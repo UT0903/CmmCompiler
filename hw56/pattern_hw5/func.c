@@ -1,7 +1,5 @@
 int k;
-
-
-void try() {
+void try(){
     if (k < 10) {
         write(k);
         write("\n");
@@ -10,7 +8,7 @@ void try() {
     }
 }
 
-int main() {
+int MAIN() {
     k = 0;
     try();
     return 0;

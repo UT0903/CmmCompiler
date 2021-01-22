@@ -1,4 +1,11 @@
 #!/bin/bash
+for filename in ./pattern_hw5/*.c; do
+    echo $filename
+    cat ./link.cpp > temp.cpp
+    cat $filename >> temp.cpp
+    g++ temp.cpp
+    ./a.out > ${filename/".c"/".output"} < input.txt
+done
 for filename in ./testdata/*.c; do
     echo $filename
     cat ./link.cpp > temp.cpp

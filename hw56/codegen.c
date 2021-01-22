@@ -268,7 +268,7 @@ int getOffsetPlace(AST_NODE* Node){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
 				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[dimSize - i - 1]);
 				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
@@ -300,7 +300,7 @@ int getOffsetPlace(AST_NODE* Node){
 				genNode(dim);
 				char *dim_reg = getRegName(dim);
 				fprintf(fp, "\tadd %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], dim_reg);
-				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[i]);
+				fprintf(fp, "\tli %s, %d\n", int_reg[size_reg], arraySize[dimSize - i - 1]);
 				fprintf(fp, "\tmul %s, %s, %s\n", int_reg[tmp_reg], int_reg[tmp_reg], int_reg[size_reg]);
 				freeReg(dim->place, dim->dataType);
 				dim = dim->rightSibling;
@@ -695,20 +695,28 @@ void genFunctionCall(AST_NODE* functionCallNode){
 		if(paramList->nodeType == NUL_NODE){}
 		else if(paramList->nodeType == NONEMPTY_RELOP_EXPR_LIST_NODE){
 			AST_NODE* paramNode = paramList->child;
+			Parameter* prmt = funcName->semantic_value.identifierSemanticValue.symbolTableEntry->attribute->attr.functionSignature->parameterList;
 			while(paramNode != NULL){
 				genNode(paramNode);
 				//fprintf(stderr, "datatype: %d\n", paramNode->dataType);
 				if(paramNode->dataType == INT_TYPE){
+					if(prmt->type->properties.dataType == FLOAT_TYPE){
+						typeConservation(paramNode, INT_TYPE);
+					}
 					fprintf(fp, "\tsd %s, 0(sp)\n", getRegName(paramNode));
 					fprintf(fp, "\taddi sp, sp, -8\n");
 				}
 				else{
+					if(prmt->type->properties.dataType == INT_TYPE){
+						typeConservation(paramNode, FLOAT_TYPE);
+					}
 					fprintf(fp, "\tfsd %s, 0(sp)\n", getRegName(paramNode));
 					fprintf(fp, "\taddi sp, sp, -8\n");
 				}
 				paramCount++;
 				freeReg(paramNode->place, paramNode->dataType);
 				paramNode = paramNode->rightSibling;
+				prmt = prmt->next;
 			}
 		}
 		else{
@@ -988,16 +996,20 @@ void genLocalVarDecl(AST_NODE* typeNode){
 					if(varNode->child->dataType == INT_TYPE){
 						typeConservation(varNode->child, FLOAT_TYPE);
 					}
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], AR_offset);
+					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg], int_reg[reg]);
+					fprintf(fp, "\tfsw %s, 0(%s)\n", getRegName(varNode->child), int_reg[reg]);
 				}
 				else if(entry->attribute->attr.typeDescriptor->properties.dataType == INT_TYPE){
 					if(varNode->child->dataType == FLOAT_TYPE){
 						typeConservation(varNode->child, INT_TYPE);
 					}
+					fprintf(fp, "\tli %s, %d\n", int_reg[reg], AR_offset);
+					fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg], int_reg[reg]);
+					fprintf(fp, "\tsw %s, 0(%s)\n", getRegName(varNode->child), int_reg[reg]);
 				}
 				else ERR_EXIT("genLocalVarDecl1");
-				fprintf(fp, "\tli %s, %d\n", int_reg[reg], AR_offset);
-				fprintf(fp, "\tadd %s, fp, %s\n", int_reg[reg], int_reg[reg]);
-				fprintf(fp, "\tsw %s, 0(%s)\n", getRegName(varNode->child), int_reg[reg]);
+				
 				freeReg(reg, INT_TYPE);
 				entry->offset = AR_offset;
 				entry->global = 0;

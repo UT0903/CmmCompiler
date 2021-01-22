@@ -41,8 +41,6 @@ int MAIN(){
   
   for(i=1;i<=N;i=i+1){
     for(j=0;j<=W;j=j+1){
-      write(dp[i][j]);
-      write("\n");
       dp[i][j]=dp[i-1][j];
       if((j>=w[i])&&(dp[i][j]<dp[i-1][j-w[i]]+value[i])){
         dp[i][j]=dp[i-1][j-w[i]]+value[i];
